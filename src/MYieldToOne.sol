@@ -7,7 +7,7 @@ import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
 
-import { MExtension } from "./MExtension.sol";
+import { MExtension } from "./abstract/MExtension.sol";
 
 /**
  * @title  ERC20 Token contract for wrapping M into a non-rebasing token with claimable yields.

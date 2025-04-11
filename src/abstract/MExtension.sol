@@ -2,12 +2,11 @@
 
 pragma solidity 0.8.26;
 
-import { ERC20Extended } from "../lib/common/src/ERC20Extended.sol";
-import { UIntMath } from "../lib/common/src/libs/UIntMath.sol";
+import { ERC20Extended } from "../../lib/common/src/ERC20Extended.sol";
 
-import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
-import { IMExtension } from "./interfaces/IMExtension.sol";
-import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
+import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
+import { IMExtension } from "../interfaces/IMExtension.sol";
+import { IRegistrarLike } from "../interfaces/IRegistrarLike.sol";
 
 /**
  * @title  ERC20 Token contract for wrapping M into a non-rebasing token with claimable yields.
