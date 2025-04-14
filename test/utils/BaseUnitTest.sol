@@ -15,12 +15,16 @@ contract BaseUnitTest is Test {
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
 
     MockM public mToken;
     MockRegistrar public registrar;
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
+    address public yieldRecipient = makeAddr("yieldRecipient");
+    address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
+    address public yieldFeeManager = makeAddr("yieldFeeManager");
 
     address public alice;
     uint256 public aliceKey;

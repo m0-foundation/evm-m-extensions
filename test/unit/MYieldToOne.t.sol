@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 
 import { IAccessControl } from "../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
-import { MockM, MockRegistrar } from "../utils/Mocks.sol";
+import { MockM } from "../utils/Mocks.sol";
 
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
 
@@ -18,11 +18,6 @@ import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.s
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
 contract MYieldToOneUnitTests is BaseUnitTest {
-    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
-
-    address public yieldRecipient = makeAddr("yieldRecipient");
-    address public yieldRecipientManager = makeAddr("yieldRecipientManager");
-
     MYieldToOne public mYieldToOne;
 
     string public constant NAME = "HALO USD";
@@ -32,7 +27,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         super.setUp();
 
         mToken = new MockM();
-        registrar = new MockRegistrar();
 
         mYieldToOne = new MYieldToOne(
             NAME,
@@ -519,9 +513,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     /* ============ enableEarning ============ */
 
     function test_enableEarning_earningEnabled() external {
-        mToken.setCurrentIndex(1_100000000000);
-
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
         mYieldToOne.enableEarning();
 
         vm.expectRevert(IMExtension.EarningIsEnabled.selector);
@@ -529,8 +520,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_enableEarning() external {
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
-
         mToken.setCurrentIndex(1_210000000000);
 
         vm.expectEmit();
@@ -542,6 +531,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     /* ============ disableEarning ============ */
+
     function test_disableEarning_earningIsDisabled() external {
         vm.expectRevert(IMExtension.EarningIsDisabled.selector);
         mYieldToOne.disableEarning();
@@ -549,12 +539,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     function test_disableEarning() external {
         mToken.setCurrentIndex(1_100000000000);
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
+
         mYieldToOne.enableEarning();
 
         mToken.setCurrentIndex(1_200000000000);
-
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), false);
 
         mYieldToOne.disableEarning();
 

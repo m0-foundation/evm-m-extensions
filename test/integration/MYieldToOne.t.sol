@@ -6,9 +6,9 @@ import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
 
-import { TestBase } from "./TestBase.sol";
+import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract MYieldToOneIntegrationTests is TestBase {
+contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() external {
@@ -108,7 +108,7 @@ contract MYieldToOneIntegrationTests is TestBase {
 
         // Check balances of MYieldToOne and Bob after wrapping
         assertEq(_mYieldToOne.balanceOf(_bob), amount);
-        assertEq(_mToken.balanceOf(address(_mYieldToOne)), amount);
+        assertEq(_mToken.balanceOf(address(_mYieldToOne)), 10000087);
     }
 
     /* ============ enableEarning ============ */

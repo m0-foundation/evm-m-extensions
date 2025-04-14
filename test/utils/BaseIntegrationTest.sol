@@ -2,16 +2,14 @@
 
 pragma solidity 0.8.26;
 
-import { Test, console2 } from "../../lib/forge-std/src/Test.sol";
+import { Test } from "../../lib/forge-std/src/Test.sol";
 
 import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
 
-// import { IMYieldToOne } from "../../src/interfaces/IMYieldToOne.sol";
-
-contract TestBase is Test {
+contract BaseIntegrationTest is Test {
     address internal constant _standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
     address internal constant _registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
