@@ -106,9 +106,9 @@ abstract contract YieldFeeComponent is AccessControl, IYieldFeeComponent {
     /**
      * @dev    Compute the yield given an account's balance, earning principal, and the current index.
      * @param  principal_ The earning principal of the account.
-     * @param  currentIndex_     The current index.
-     * @return yield_            The yield accrued since the last interaction.
-     * @return yieldFee_         The yield fee accrued since the last interaction.
+     * @param  currentIndex_ The current index.
+     * @return yield_        The yield accrued since the last interaction.
+     * @return yieldFee_     The yield fee accrued since the last interaction.
      */
     function _getAccruedYield(
         uint240 balance_,
