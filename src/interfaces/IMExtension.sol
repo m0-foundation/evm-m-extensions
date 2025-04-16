@@ -32,6 +32,14 @@ interface IMExtension is IERC20Extended {
     /// @notice Emitted when performing an operation that is not allowed when earning is enabled.
     error EarningIsEnabled();
 
+    /**
+     * @notice Emitted when there is insufficient balance to decrement from `account`.
+     * @param  account The account with insufficient balance.
+     * @param  balance The balance of the account.
+     * @param  amount  The amount to decrement.
+     */
+    error InsufficientBalance(address account, uint256 balance, uint256 amount);
+
     /// @notice Emitted when calling `stopEarning` for an account approved as earner by the TTG Registrar.
     error IsApprovedEarner(address account);
 
@@ -94,6 +102,12 @@ interface IMExtension is IERC20Extended {
     function unwrap(address recipient, uint256 amount) external;
 
     /* ============ View/Pure Functions ============ */
+
+    /**
+     * @notice The current index of the M extension.
+     * @dev SHOULD be virtual to allow M extensions to override it.
+     */
+    function currentIndex() external view returns (uint128);
 
     /// @notice The address of the M Token contract.
     function mToken() external view returns (address);
