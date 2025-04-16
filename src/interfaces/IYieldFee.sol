@@ -3,10 +3,10 @@
 pragma solidity ^0.8.26;
 
 /**
- * @title  Interface for the Yield Fee Component abstract contract.
+ * @title  Interface for the Yield Fee component abstract contract.
  * @author M^0 Labs
  */
-interface IYieldFeeComponent {
+interface IYieldFee {
     /* ============ Events ============ */
 
     /**

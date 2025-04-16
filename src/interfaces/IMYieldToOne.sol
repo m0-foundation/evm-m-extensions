@@ -23,14 +23,6 @@ interface IMYieldToOne {
 
     /* ============ Custom Errors ============ */
 
-    /**
-     * @notice Emitted when there is insufficient balance to decrement from `account`.
-     * @param  account The account with insufficient balance.
-     * @param  balance The balance of the account.
-     * @param  amount  The amount to decrement.
-     */
-    error InsufficientBalance(address account, uint256 balance, uint256 amount);
-
     /// @notice Emitted if no yield is available to claim.
     error NoYield();
 

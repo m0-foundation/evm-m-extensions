@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
+import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
+
 import { MockM, MockRegistrar } from "../utils/Mocks.sol";
 
 contract BaseUnitTest is Test {
@@ -42,5 +44,42 @@ contract BaseUnitTest is Test {
 
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, charlie, david];
+    }
+
+    /* ============ Utils ============ */
+
+    function _getBalanceWithYield(
+        uint240 balance_,
+        uint112 principal_,
+        uint128 index_
+    ) internal pure returns (uint240 balanceWithYield_, uint240 yield_) {
+        balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, index_);
+        yield_ = (balanceWithYield_ <= balance_) ? 0 : balanceWithYield_ - balance_;
+    }
+
+    function _getMaxAmount(uint128 index_) internal pure returns (uint240) {
+        return (uint240(type(uint112).max) * index_) / EXP_SCALED_ONE;
+    }
+
+    function _getYieldFee(uint240 yield_, uint16 yieldFeeRate_) internal pure returns (uint240) {
+        return yield_ == 0 ? 0 : (yield_ * yieldFeeRate_) / HUNDRED_PERCENT;
+    }
+
+    /* ============ Fuzz Utils ============ */
+
+    function _getFuzzedBalances(
+        uint128 index_,
+        uint240 balanceWithYield_,
+        uint240 balance_,
+        uint240 maxAmount_
+    ) internal view returns (uint240, uint240) {
+        balanceWithYield_ = uint240(bound(balanceWithYield_, 0, maxAmount_));
+        balance_ = uint240(bound(balance_, (balanceWithYield_ * EXP_SCALED_ONE) / index_, balanceWithYield_));
+
+        return (balanceWithYield_, balance_);
+    }
+
+    function _getFuzzedIndex(uint128 index_) internal view returns (uint128) {
+        return uint128(bound(index_, EXP_SCALED_ONE, 10 * EXP_SCALED_ONE));
     }
 }

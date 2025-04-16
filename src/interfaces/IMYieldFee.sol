@@ -25,15 +25,14 @@ interface IMYieldFee {
      */
     event YieldFeeClaimed(address indexed claimer, address indexed recipient, uint256 yieldFee);
 
-    /* ============ Custom Errors ============ */
-
     /**
-     * @notice Emitted when there is insufficient balance to decrement from `account`.
-     * @param  account The account with insufficient balance.
-     * @param  balance The balance of the account.
-     * @param  amount  The amount to decrement.
+     * @notice Emitted when yield is claimed for an account and the yield fee is distributed.
+     * @param  recipient The address of the recipient.
+     * @param  yieldFee  The amount of yield fee distributed and claimable by the recipient.
      */
-    error InsufficientBalance(address account, uint256 balance, uint256 amount);
+    event YieldFeeDistributed(address indexed recipient, uint256 yieldFee);
+
+    /* ============ Custom Errors ============ */
 
     /// @notice Emitted if no yield is available to claim.
     error NoYield();

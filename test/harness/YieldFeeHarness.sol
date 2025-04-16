@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.26;
 
-import { YieldFeeComponent } from "../../src/abstract/YieldFeeComponent.sol";
+import { YieldFee } from "../../src/abstract/components/YieldFee.sol";
 
-contract YieldFeeComponentHarness is YieldFeeComponent {
+contract YieldFeeHarness is YieldFee {
     constructor(
         uint16 yieldFeeRate_,
         address yieldFeeRecipient_,
         address admin_,
         address yieldFeeManager_
-    ) YieldFeeComponent(yieldFeeRate_, yieldFeeRecipient_, admin_, yieldFeeManager_) {}
+    ) YieldFee(yieldFeeRate_, yieldFeeRecipient_, admin_, yieldFeeManager_) {}
 
     function getAccruedYield(
         uint240 balance_,

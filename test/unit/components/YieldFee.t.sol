@@ -6,44 +6,44 @@ import { IAccessControl } from "../../../lib/openzeppelin-contracts/contracts/ac
 
 import { IndexingMath } from "../../../lib/common/src/libs/IndexingMath.sol";
 
-import { IYieldFeeComponent } from "../../../src/interfaces/IYieldFeeComponent.sol";
+import { IYieldFee } from "../../../src/interfaces/IYieldFee.sol";
 
-import { YieldFeeComponentHarness } from "../../harness/YieldFeeComponentHarness.sol";
+import { YieldFeeHarness } from "../../harness/YieldFeeHarness.sol";
 
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
-contract YieldFeeComponentUnitTests is BaseUnitTest {
-    YieldFeeComponentHarness public yieldFeeComponent;
+contract YieldFeeUnitTests is BaseUnitTest {
+    YieldFeeHarness public yieldFee;
 
     function setUp() public override {
         super.setUp();
 
-        yieldFeeComponent = new YieldFeeComponentHarness(YIELD_FEE_RATE, yieldFeeRecipient, admin, yieldFeeManager);
+        yieldFee = new YieldFeeHarness(YIELD_FEE_RATE, yieldFeeRecipient, admin, yieldFeeManager);
     }
 
     /* ============ constructor ============ */
 
     function test_constructor() external view {
-        assertEq(yieldFeeComponent.HUNDRED_PERCENT(), 10_000);
-        assertEq(yieldFeeComponent.yieldFeeRate(), YIELD_FEE_RATE);
-        assertEq(yieldFeeComponent.yieldFeeRecipient(), yieldFeeRecipient);
-        assertTrue(yieldFeeComponent.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(yieldFeeComponent.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
+        assertEq(yieldFee.HUNDRED_PERCENT(), 10_000);
+        assertEq(yieldFee.yieldFeeRate(), YIELD_FEE_RATE);
+        assertEq(yieldFee.yieldFeeRecipient(), yieldFeeRecipient);
+        assertTrue(yieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(yieldFee.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
     }
 
     function test_constructor_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IYieldFeeComponent.ZeroYieldFeeRecipient.selector);
-        new YieldFeeComponentHarness(YIELD_FEE_RATE, address(0), admin, yieldFeeManager);
+        vm.expectRevert(IYieldFee.ZeroYieldFeeRecipient.selector);
+        new YieldFeeHarness(YIELD_FEE_RATE, address(0), admin, yieldFeeManager);
     }
 
     function test_constructor_zeroAdmin() external {
-        vm.expectRevert(IYieldFeeComponent.ZeroAdmin.selector);
-        new YieldFeeComponentHarness(YIELD_FEE_RATE, yieldFeeRecipient, address(0), yieldFeeManager);
+        vm.expectRevert(IYieldFee.ZeroAdmin.selector);
+        new YieldFeeHarness(YIELD_FEE_RATE, yieldFeeRecipient, address(0), yieldFeeManager);
     }
 
     function test_constructor_zeroYieldFeeManager() external {
-        vm.expectRevert(IYieldFeeComponent.ZeroYieldFeeManager.selector);
-        new YieldFeeComponentHarness(YIELD_FEE_RATE, yieldFeeRecipient, admin, address(0));
+        vm.expectRevert(IYieldFee.ZeroYieldFeeManager.selector);
+        new YieldFeeHarness(YIELD_FEE_RATE, yieldFeeRecipient, admin, address(0));
     }
 
     /* ============ setYieldFeeRate ============ */
@@ -58,43 +58,39 @@ contract YieldFeeComponentUnitTests is BaseUnitTest {
         );
 
         vm.prank(alice);
-        yieldFeeComponent.setYieldFeeRate(0);
+        yieldFee.setYieldFeeRate(0);
     }
 
     function test_setYieldFeeRate_yieldFeeRateTooHigh() external {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IYieldFeeComponent.YieldFeeRateTooHigh.selector,
-                HUNDRED_PERCENT + 1,
-                HUNDRED_PERCENT
-            )
+            abi.encodeWithSelector(IYieldFee.YieldFeeRateTooHigh.selector, HUNDRED_PERCENT + 1, HUNDRED_PERCENT)
         );
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(HUNDRED_PERCENT + 1);
+        yieldFee.setYieldFeeRate(HUNDRED_PERCENT + 1);
     }
 
     function test_setYieldFeeRate_noUpdate() external {
-        assertEq(yieldFeeComponent.yieldFeeRate(), YIELD_FEE_RATE);
+        assertEq(yieldFee.yieldFeeRate(), YIELD_FEE_RATE);
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(YIELD_FEE_RATE);
+        yieldFee.setYieldFeeRate(YIELD_FEE_RATE);
 
-        assertEq(yieldFeeComponent.yieldFeeRate(), YIELD_FEE_RATE);
+        assertEq(yieldFee.yieldFeeRate(), YIELD_FEE_RATE);
     }
 
     function test_setYieldFeeRate() external {
         // Reset rate
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(0);
+        yieldFee.setYieldFeeRate(0);
 
         vm.expectEmit();
-        emit IYieldFeeComponent.YieldFeeRateSet(YIELD_FEE_RATE);
+        emit IYieldFee.YieldFeeRateSet(YIELD_FEE_RATE);
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(YIELD_FEE_RATE);
+        yieldFee.setYieldFeeRate(YIELD_FEE_RATE);
 
-        assertEq(yieldFeeComponent.yieldFeeRate(), YIELD_FEE_RATE);
+        assertEq(yieldFee.yieldFeeRate(), YIELD_FEE_RATE);
     }
 
     /* ============ setYieldFeeRecipient ============ */
@@ -109,53 +105,53 @@ contract YieldFeeComponentUnitTests is BaseUnitTest {
         );
 
         vm.prank(alice);
-        yieldFeeComponent.setYieldFeeRecipient(alice);
+        yieldFee.setYieldFeeRecipient(alice);
     }
 
     function test_setYieldFeeRecipient_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IYieldFeeComponent.ZeroYieldFeeRecipient.selector);
+        vm.expectRevert(IYieldFee.ZeroYieldFeeRecipient.selector);
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRecipient(address(0));
+        yieldFee.setYieldFeeRecipient(address(0));
     }
 
     function test_setYieldFeeRecipient_noUpdate() external {
-        assertEq(yieldFeeComponent.yieldFeeRecipient(), yieldFeeRecipient);
+        assertEq(yieldFee.yieldFeeRecipient(), yieldFeeRecipient);
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRecipient(yieldFeeRecipient);
+        yieldFee.setYieldFeeRecipient(yieldFeeRecipient);
 
-        assertEq(yieldFeeComponent.yieldFeeRecipient(), yieldFeeRecipient);
+        assertEq(yieldFee.yieldFeeRecipient(), yieldFeeRecipient);
     }
 
     function test_setYieldFeeRecipient() external {
         address newYieldFeeRecipient = makeAddr("newYieldFeeRecipient");
 
         vm.expectEmit();
-        emit IYieldFeeComponent.YieldFeeRecipientSet(newYieldFeeRecipient);
+        emit IYieldFee.YieldFeeRecipientSet(newYieldFeeRecipient);
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRecipient(newYieldFeeRecipient);
+        yieldFee.setYieldFeeRecipient(newYieldFeeRecipient);
 
-        assertEq(yieldFeeComponent.yieldFeeRecipient(), newYieldFeeRecipient);
+        assertEq(yieldFee.yieldFeeRecipient(), newYieldFeeRecipient);
     }
 
     /* ============ accruedYieldFeeOf ============ */
 
     function test_accruedYieldFeeOf() external {
-        assertEq(yieldFeeComponent.accruedYieldFeeOf(yieldFeeRecipient), 0);
+        assertEq(yieldFee.accruedYieldFeeOf(yieldFeeRecipient), 0);
 
         uint256 accruedYieldFee = 1_000e6;
 
-        yieldFeeComponent.setAccruedYieldFee(yieldFeeRecipient, accruedYieldFee);
+        yieldFee.setAccruedYieldFee(yieldFeeRecipient, accruedYieldFee);
 
-        assertEq(yieldFeeComponent.accruedYieldFeeOf(yieldFeeRecipient), accruedYieldFee);
+        assertEq(yieldFee.accruedYieldFeeOf(yieldFeeRecipient), accruedYieldFee);
     }
 
     /* ============ getAccruedYield ============ */
 
     function test_getAccruedYield_noYield() external {
-        (uint240 yield_, uint240 yieldFee_) = yieldFeeComponent.getAccruedYield(1_000e6, 1_000e6, 1e12);
+        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 1_000e6, 1e12);
 
         assertEq(yield_, 0);
         assertEq(yieldFee_, 0);
@@ -163,9 +159,9 @@ contract YieldFeeComponentUnitTests is BaseUnitTest {
 
     function test_getAccruedYield_noFee() external {
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(0);
+        yieldFee.setYieldFeeRate(0);
 
-        (uint240 yield_, uint240 yieldFee_) = yieldFeeComponent.getAccruedYield(1_000e6, 800e6, 2e12);
+        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 800e6, 2e12);
 
         assertEq(yield_, 600e6); // 1_600e6 - 1_000e6
         assertEq(yieldFee_, 0);
@@ -173,16 +169,16 @@ contract YieldFeeComponentUnitTests is BaseUnitTest {
 
     function test_getAccruedYield_maxFee() external {
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(HUNDRED_PERCENT);
+        yieldFee.setYieldFeeRate(HUNDRED_PERCENT);
 
-        (uint240 yield_, uint240 yieldFee_) = yieldFeeComponent.getAccruedYield(1_000e6, 800e6, 2e12);
+        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 800e6, 2e12);
 
         assertEq(yield_, 0);
         assertEq(yieldFee_, 600e6); // 1_600e6 - 1_000e6
     }
 
     function test_getAccruedYield() external {
-        (uint240 yield_, uint240 yieldFee_) = yieldFeeComponent.getAccruedYield(1_000e6, 800e6, 2e12);
+        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 800e6, 2e12);
 
         assertEq(yield_, 480e6);
         assertEq(yieldFee_, 120e6); // 600e6 * 0.2
@@ -197,9 +193,9 @@ contract YieldFeeComponentUnitTests is BaseUnitTest {
         yieldFeeRate_ = uint16(bound(yieldFeeRate_, 0, HUNDRED_PERCENT));
 
         vm.prank(yieldFeeManager);
-        yieldFeeComponent.setYieldFeeRate(yieldFeeRate_);
+        yieldFee.setYieldFeeRate(yieldFeeRate_);
 
-        (uint240 yield_, uint240 yieldFee_) = yieldFeeComponent.getAccruedYield(balance_, principal_, currentIndex_);
+        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(balance_, principal_, currentIndex_);
 
         uint240 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, currentIndex_);
         uint240 expectedYield_ = balanceWithYield_ <= balance_ ? 0 : balanceWithYield_ - balance_;

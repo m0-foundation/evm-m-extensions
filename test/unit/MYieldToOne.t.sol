@@ -295,7 +295,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.prank(alice);
         mYieldToOne.wrap(alice, 999);
 
-        vm.expectRevert(abi.encodeWithSelector(IMYieldToOne.InsufficientBalance.selector, alice, 999, 1_000));
+        vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
 
         vm.prank(alice);
         mYieldToOne.unwrap(alice, 1_000);

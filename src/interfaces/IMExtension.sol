@@ -80,6 +80,12 @@ interface IMExtension is IERC20Extended {
 
     /* ============ View/Pure Functions ============ */
 
+    /**
+     * @notice The current index of the M extension.
+     * @dev SHOULD be virtual to allow M extensions to override it.
+     */
+    function currentIndex() external view returns (uint128);
+
     /// @notice The address of the M Token contract.
     function mToken() external view returns (address);
 

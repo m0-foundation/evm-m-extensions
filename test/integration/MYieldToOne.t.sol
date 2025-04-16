@@ -15,6 +15,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"));
 
         _fundAccounts();
+
         _mYieldToOne = new MYieldToOne(
             _NAME,
             _SYMBOL,
@@ -108,7 +109,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         // Check balances of MYieldToOne and Bob after wrapping
         assertEq(_mYieldToOne.balanceOf(_bob), amount);
-        assertEq(_mToken.balanceOf(address(_mYieldToOne)), 10000087);
+        assertEq(_mToken.balanceOf(address(_mYieldToOne)), 10000146);
     }
 
     /* ============ enableEarning ============ */
