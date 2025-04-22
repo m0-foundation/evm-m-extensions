@@ -83,7 +83,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
     }
 
     /// @inheritdoc IMExtension
-    function enableEarning() external {
+    function enableEarning() external virtual {
         if (!_isThisApprovedEarner()) revert NotApprovedEarner(address(this));
         if (isEarningEnabled()) revert EarningIsEnabled();
 
@@ -93,7 +93,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
     }
 
     /// @inheritdoc IMExtension
-    function disableEarning() external {
+    function disableEarning() external virtual {
         if (_isThisApprovedEarner()) revert IsApprovedEarner(address(this));
         if (!isEarningEnabled()) revert EarningIsDisabled();
 
@@ -105,12 +105,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IMExtension
-    function currentIndex() public view virtual returns (uint128) {
-        return _currentMIndex();
-    }
-
-    /// @inheritdoc IMExtension
-    function isEarningEnabled() public view returns (bool) {
+    function isEarningEnabled() public view virtual returns (bool) {
         return IMTokenLike(mToken).isEarning(address(this));
     }
 

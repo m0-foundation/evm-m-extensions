@@ -54,10 +54,16 @@ interface IMExtension is IERC20Extended {
 
     /* ============ Interactive Functions ============ */
 
-    /// @notice Enables earning of extension token if allowed by the TTG Registrar and if it has never been done.
+    /**
+     * @notice Enables earning of extension token if allowed by the TTG Registrar and if it has never been done.
+     * @dev SHOULD be virtual to allow extensions to override it.
+     */
     function enableEarning() external;
 
-    /// @notice Disables earning of extension token if disallowed by the TTG Registrar and if it has never been done.
+    /**
+     * @notice Disables earning of extension token if disallowed by the TTG Registrar and if it has never been done.
+     * @dev SHOULD be virtual to allow extensions to override it.
+     */
     function disableEarning() external;
 
     /**
@@ -103,18 +109,15 @@ interface IMExtension is IERC20Extended {
 
     /* ============ View/Pure Functions ============ */
 
-    /**
-     * @notice The current index of the M extension.
-     * @dev SHOULD be virtual to allow M extensions to override it.
-     */
-    function currentIndex() external view returns (uint128);
-
     /// @notice The address of the M Token contract.
     function mToken() external view returns (address);
 
     /// @notice The address of the TTG Registrar contract.
     function registrar() external view returns (address);
 
-    /// @notice Whether M extension earning is enabled.
+    /**
+     * @notice Whether M extension earning is enabled.
+     * @dev SHOULD be virtual to allow extensions to override it.
+     */
     function isEarningEnabled() external view returns (bool);
 }
