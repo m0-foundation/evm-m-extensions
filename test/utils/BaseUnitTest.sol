@@ -79,7 +79,18 @@ contract BaseUnitTest is Test {
         return (balanceWithYield_, balance_);
     }
 
-    function _getFuzzedIndex(uint128 index_) internal view returns (uint128) {
-        return uint128(bound(index_, EXP_SCALED_ONE, 10 * EXP_SCALED_ONE));
+    function _getFuzzedIndices(
+        uint128 currentMIndex_,
+        uint128 enableMIndex_,
+        uint128 disableIndex_
+    ) internal pure returns (uint128, uint128, uint128) {
+        currentMIndex_ = uint128(bound(currentMIndex_, EXP_SCALED_ONE, 10 * EXP_SCALED_ONE));
+        enableMIndex_ = uint128(bound(enableMIndex_, EXP_SCALED_ONE, currentMIndex_));
+
+        disableIndex_ = uint128(
+            bound(disableIndex_, EXP_SCALED_ONE, (currentMIndex_ * EXP_SCALED_ONE) / enableMIndex_)
+        );
+
+        return (currentMIndex_, enableMIndex_, disableIndex_);
     }
 }

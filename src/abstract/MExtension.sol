@@ -81,12 +81,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IMExtension
-    function currentIndex() public view virtual returns (uint128) {
-        return _currentMIndex();
-    }
-
-    /// @inheritdoc IMExtension
-    function isEarningEnabled() public view returns (bool) {
+    function isEarningEnabled() public view virtual returns (bool) {
         return IMTokenLike(mToken).isEarning(address(this));
     }
 

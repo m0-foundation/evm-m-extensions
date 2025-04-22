@@ -25,6 +25,14 @@ contract MYieldFeeHarness is MYieldFee {
         _accruedYieldFee[yieldFeeRecipient_] = yield_;
     }
 
+    function setEnableMIndex(uint256 enableMIndex_) external {
+        enableMIndex = uint128(enableMIndex_);
+    }
+
+    function setDisableIndex(uint256 disableIndex_) external {
+        disableIndex = uint128(disableIndex_);
+    }
+
     function setTotalSupply(uint256 totalSupply_) external {
         totalSupply = totalSupply_;
     }

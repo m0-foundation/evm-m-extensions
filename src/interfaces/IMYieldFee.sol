@@ -59,6 +59,12 @@ interface IMYieldFee {
      */
     function claimYieldFeeFor(address recipient) external returns (uint256);
 
+    /// @notice The M token's index when earning was most recently enabled.
+    function enableMIndex() external view returns (uint128);
+
+    /// @notice The Yield Fee extension index when earning was most recently disabled.
+    function disableIndex() external view returns (uint128);
+
     /* ============ View/Pure Functions ============ */
 
     /**
@@ -74,6 +80,12 @@ interface IMYieldFee {
      * @return The token balance of `account` including any accrued yield.
      */
     function balanceWithYieldOf(address account) external view returns (uint256);
+
+    /**
+     * @notice The current index of the Yield Fee extension.
+     * @dev SHOULD be virtual to allow other extensions to override it.
+     */
+    function currentIndex() external view returns (uint128);
 
     /**
      * @notice Returns the principal of `account`.
