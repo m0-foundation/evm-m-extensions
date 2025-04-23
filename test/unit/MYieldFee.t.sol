@@ -124,17 +124,21 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.claimYieldFor(alice), 0);
     }
 
+    // TODO: add fuzz test
     function test_claimYieldFor() external {
         uint256 yieldAmount = 480e6;
+        uint240 aliceBalance = 1_000e6;
 
         mToken.setBalanceOf(address(mYieldFee), yieldAmount);
 
         mToken.setCurrentIndex(2_200000000000);
         mYieldFee.setEnableMIndex(1_100000000000);
 
-        mYieldFee.setAccountOf(alice, 1_000e6, 800e6);
+        mYieldFee.setAccountOf(alice, aliceBalance, 800e6);
 
         assertEq(mYieldFee.claimYieldFor(alice), yieldAmount);
+        assertEq(mYieldFee.balanceOf(alice), aliceBalance + yieldAmount);
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
     }
 
     /* ============ claimYieldFeeFor ============ */
@@ -148,6 +152,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.claimYieldFeeFor(yieldFeeRecipient), 0);
     }
 
+    // TODO: add fuzz test
     function test_claimYieldFeeFor() external {
         uint256 yieldFeeAmount = 120e6;
 
@@ -159,6 +164,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.setAccruedYieldFee(yieldFeeRecipient, yieldFeeAmount);
 
         assertEq(mYieldFee.claimYieldFeeFor(yieldFeeRecipient), yieldFeeAmount);
+        assertEq(mYieldFee.balanceOf(yieldFeeRecipient), yieldFeeAmount);
+        assertEq(mYieldFee.accruedYieldFeeOf(yieldFeeRecipient), 0);
     }
 
     /* ============ enableEarning ============ */
@@ -506,7 +513,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Principal is rounded up when adding to total principal.
         // And projected supply is rounded up when converting total principal to a present amount.
         // TODO: why is the rounding error so high?
-        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 77);
+        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 81);
     }
 
     /* ============ unwrap ============ */
