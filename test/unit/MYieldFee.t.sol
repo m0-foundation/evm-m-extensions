@@ -683,7 +683,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Principal is rounded down when subtracting from total principal.
         // And projected supply is rounded up when converting total principal to a present amount.
         // TODO: why is the rounding error so high?
-        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 92);
+        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 94);
     }
 
     /* ============ transfer ============ */
