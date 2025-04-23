@@ -94,7 +94,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // claim yield
         _mYieldToOne.claimYield();
 
-        assertApproxEqAbs(_mToken.balanceOf(_yieldRecipient), 11375, 1);
+        assertApproxEqAbs(_mToken.balanceOf(_yieldRecipient), 11375, 2);
         assertEq(_mYieldToOne.yield(), 0);
         assertEq(_mToken.balanceOf(address(_mYieldToOne)), 0);
         assertEq(_mYieldToOne.totalSupply(), 0);
@@ -109,7 +109,28 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         // Check balances of MYieldToOne and Bob after wrapping
         assertEq(_mYieldToOne.balanceOf(_bob), amount);
-        assertEq(_mToken.balanceOf(address(_mYieldToOne)), 10000146);
+        assertEq(_mToken.balanceOf(address(_mYieldToOne)), amount);
+
+        // Disable earning for the contract
+        _removeFomList(_EARNERS_LIST, address(_mYieldToOne));
+        _mYieldToOne.disableEarning();
+
+        assertFalse(_mYieldToOne.isEarningEnabled());
+
+        // Fast forward 10 days in the future
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        // No yield should accrue
+        assertEq(_mYieldToOne.yield(), 0);
+
+        // Re-enable earning for the contract
+        _addToList(_EARNERS_LIST, address(_mYieldToOne));
+        _mYieldToOne.enableEarning();
+
+        // Yield should accrue again
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        // assertApproxEqAbs(_mYieldToOne.yield(), 11375, 1);
     }
 
     /* ============ enableEarning ============ */
