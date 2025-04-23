@@ -85,6 +85,8 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
         if (recipient_ == address(0)) revert ZeroYieldRecipient();
 
         Account storage accountInfo_ = _accounts[recipient_];
+        uint112 accountPrincipal_ = accountInfo_.principal;
+
         (uint240 yield_, uint240 yieldFee_) = _getAccruedYield(
             accountInfo_.balance,
             accountInfo_.principal,
@@ -101,10 +103,14 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
             emit YieldFeeDistributed(yieldFeeRecipient, yieldFee_);
         }
 
+        unchecked {
+            uint112 yieldPrincipal_ = IndexingMath.getPrincipalAmountRoundedUp(yield_ + yieldFee_, currentIndex());
+            accountInfo_.principal -= yieldPrincipal_ > accountPrincipal_ ? 0 : accountPrincipal_ - yieldPrincipal_;
+        }
+
         emit YieldClaimed(msg.sender, recipient_, yield_);
 
-        // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
-        IMTokenLike(mToken).transfer(recipient_, yield_);
+        _mint(recipient_, yield_);
 
         return yield_;
     }
@@ -117,10 +123,11 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
 
         if (yieldFee_ == 0) return 0;
 
+        _accruedYieldFee[recipient_] -= yieldFee_;
+
         emit YieldFeeClaimed(msg.sender, recipient_, yieldFee_);
 
-        // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
-        IMTokenLike(mToken).transfer(recipient_, yieldFee_);
+        _mint(recipient_, yieldFee_);
 
         return yieldFee_;
     }
