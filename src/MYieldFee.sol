@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.26;
-
+import { console } from "../lib/forge-std/src/console.sol";
 import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 import { IndexingMath } from "../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../lib/common/src/libs/UIntMath.sol";
@@ -24,14 +24,16 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
 
     /**
      * @dev   Struct to represent an account's balance and principal.
-     * @param balance   The present amount of tokens held by the account.
-     * @param principal The earning principal of the account.
+     * @param balance        The present amount of tokens held by the account.
+     * @param principal      The earning principal of the account.
+     * @param lastClaimIndex The last index at which the account claimed yield.
      */
     struct Account {
         // First slot
         uint240 balance;
         // Second slot
         uint112 principal;
+        uint128 lastClaimIndex;
     }
 
     /* ============ Variables ============ */
@@ -47,6 +49,9 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
 
     /// @inheritdoc IMYieldFee
     uint112 public totalPrincipal;
+
+    /// @inheritdoc IMYieldFee
+    uint128 public lastYieldFeeClaimIndex;
 
     /// @dev Mapping of accounts to their respective `Account` info structs.
     mapping(address account => Account accountInfo) internal _accounts;
@@ -76,7 +81,9 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
     )
         MExtension(name_, symbol_, mToken_, registrar_)
         YieldFee(yieldFeeRate_, yieldFeeRecipient_, admin_, yieldFeeManager_)
-    {}
+    {
+        _setLastYieldFeeClaimIndex(yieldFeeIndex());
+    }
 
     /* ============ Interactive Functions ============ */
 
@@ -85,49 +92,44 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
         if (recipient_ == address(0)) revert ZeroYieldRecipient();
 
         Account storage accountInfo_ = _accounts[recipient_];
-        uint112 accountPrincipal_ = accountInfo_.principal;
+        uint128 yieldIndex_ = yieldIndex();
 
-        (uint240 yield_, uint240 yieldFee_) = _getAccruedYield(
+        uint240 yield_ = _getAccruedYield(
             accountInfo_.balance,
             accountInfo_.principal,
-            currentIndex()
+            yieldIndex_,
+            accountInfo_.lastClaimIndex
         );
 
         if (yield_ == 0) return 0;
 
-        if (yieldFee_ != 0) {
-            unchecked {
-                _accruedYieldFee[yieldFeeRecipient] += yieldFee_;
-            }
-
-            emit YieldFeeDistributed(yieldFeeRecipient, yieldFee_);
-        }
-
+        // NOTE: No change in principal, only the balance is updated and the yield captured by updating the lastClaimIndex.
         unchecked {
-            uint112 yieldPrincipal_ = IndexingMath.getPrincipalAmountRoundedUp(yield_ + yieldFee_, currentIndex());
-            accountInfo_.principal -= yieldPrincipal_ > accountPrincipal_ ? 0 : accountPrincipal_ - yieldPrincipal_;
+            accountInfo_.balance += yield_;
+            accountInfo_.lastClaimIndex = yieldIndex_;
         }
 
         emit YieldClaimed(msg.sender, recipient_, yield_);
-
-        _mint(recipient_, yield_);
+        emit LastClaimIndexSet(recipient_, yieldIndex_);
 
         return yield_;
     }
 
     /// @inheritdoc IMYieldFee
-    function claimYieldFeeFor(address recipient_) external returns (uint256) {
-        if (recipient_ == address(0)) revert ZeroYieldFeeRecipient();
-
-        uint256 yieldFee_ = _getAccruedYieldFee(recipient_);
+    function claimYieldFee() external returns (uint256) {
+        uint128 yieldFeeIndex_ = yieldFeeIndex();
+        uint256 yieldFee_ = _accruedYieldFee(yieldFeeIndex_);
 
         if (yieldFee_ == 0) return 0;
 
-        _accruedYieldFee[recipient_] -= yieldFee_;
+        address recipient_ = yieldFeeRecipient;
 
         emit YieldFeeClaimed(msg.sender, recipient_, yieldFee_);
 
         _mint(recipient_, yieldFee_);
+
+        // Update lastYieldFeeClaimIndex to capture the yield that has accumulated since the last claim.
+        _setLastYieldFeeClaimIndex(yieldFeeIndex_);
 
         return yieldFee_;
     }
@@ -158,11 +160,15 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
 
     /// @inheritdoc IMYieldFee
     function accruedYieldOf(address account_) public view returns (uint240) {
-        Account storage accountInfo_ = _accounts[account_];
+        Account memory accountInfo_ = _accounts[account_];
+        console.log("yieldIndex", yieldIndex());
+        return
+            _getAccruedYield(accountInfo_.balance, accountInfo_.principal, yieldIndex(), accountInfo_.lastClaimIndex);
+    }
 
-        (uint240 yield_, ) = _getAccruedYield(accountInfo_.balance, accountInfo_.principal, currentIndex());
-
-        return yield_;
+    /// @inheritdoc IMYieldFee
+    function accruedYieldFee() public view returns (uint256) {
+        return _accruedYieldFee(yieldFeeIndex());
     }
 
     /// @inheritdoc IERC20
@@ -192,6 +198,22 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
         }
     }
 
+    /// @inheritdoc IMYieldFee
+    function yieldIndex() public view returns (uint128) {
+        unchecked {
+            // Current index * effective rate / 10_000
+            // i.e. for a 20% yield fee, the effective rate in basis points is 10_000 - 2_000 = 8_000
+            return UIntMath.safe128((uint256(currentIndex()) * (HUNDRED_PERCENT - yieldFeeRate)) / HUNDRED_PERCENT);
+        }
+    }
+
+    /// @inheritdoc IMYieldFee
+    function yieldFeeIndex() public view returns (uint128) {
+        unchecked {
+            return UIntMath.safe128((uint256(currentIndex()) * (yieldFeeRate)) / HUNDRED_PERCENT);
+        }
+    }
+
     /// @inheritdoc IMExtension
     function isEarningEnabled() public view override returns (bool) {
         return enableMIndex != 0;
@@ -212,7 +234,9 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
     }
 
     /// @inheritdoc IMYieldFee
-    function totalAccruedYield() external view returns (uint240) {
+    function totalAccruedYield() public view returns (uint240) {
+        console.log("projectedSupply", projectedSupply());
+        console.log("totalSupply", totalSupply);
         unchecked {
             return projectedSupply() - UIntMath.safe240(totalSupply);
         }
@@ -220,6 +244,17 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
 
     /* ============ Internal Interactive Functions ============ */
 
+    /**
+     * @dev    Hooks called before wrapping M into M Extension token.
+     * @param  account_   The account from which M is deposited.
+     */
+    function _beforeWrap(address account_, address /* recipient_ */, uint256 /* amount_ */) internal override {}
+
+    /**
+     * @dev   Mints `amount` tokens to `recipient`.
+     * @param recipient_ The address whose account balance will be incremented.
+     * @param amount_    The present amount of tokens to mint.
+     */
     function _mint(address recipient_, uint256 amount_) internal override {
         uint240 safeAmount_ = UIntMath.safe240(amount_);
 
@@ -239,18 +274,26 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
     function _addAmount(address account_, uint240 amount_, uint128 currentIndex_) internal {
         Account storage accountInfo_ = _accounts[account_];
 
-        // NOTE: Tracks two principal amounts: rounded up and rounded down.
-        //       Slightly overestimates the principal of total supply to provide extra safety in `excess` calculations.
-        uint112 principalUp_ = IndexingMath.getPrincipalAmountRoundedUp(amount_, currentIndex_);
-        uint112 principalDown_ = IndexingMath.getPrincipalAmountRoundedDown(amount_, currentIndex_);
+        if (accountInfo_.lastClaimIndex == 0) {
+            uint128 yieldIndex_ = yieldIndex();
+
+            // NOTE: The last claim index is set to the current index when the account is first initialized.
+            //       The yield is tracked per account and based on the difference in indices since they last claimed.
+            accountInfo_.lastClaimIndex = yieldIndex();
+
+            emit LastClaimIndexSet(account_, yieldIndex_);
+        }
+
+        // NOTE: all holders are earners, so there is no excess and all principal balances can be rounded down.
+        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(amount_, currentIndex_);
 
         // NOTE: Can be `unchecked` because the max amount of wrappable M is never greater than `type(uint240).max`.
         unchecked {
             accountInfo_.balance += amount_;
-            accountInfo_.principal = UIntMath.safe112(uint256(accountInfo_.principal) + principalDown_);
+            accountInfo_.principal = UIntMath.safe112(uint256(accountInfo_.principal) + principal_);
         }
 
-        _addTotalSupply(amount_, principalUp_);
+        _addTotalSupply(amount_, principal_);
     }
 
     /**
@@ -278,20 +321,15 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
 
         if (balance_ < amount_) revert InsufficientBalance(account_, balance_, amount_);
 
-        uint112 principal_ = accountInfo_.principal;
-
-        // NOTE: Tracks two principal amounts: rounded up and rounded down.
-        //       Slightly overestimates the principal of total earning supply to provide extra safety in `excess` calculations.
-        uint112 principalUp_ = IndexingMath.getPrincipalAmountRoundedUp(amount_, currentIndex_);
-        uint112 principalDown_ = IndexingMath.getPrincipalAmountRoundedDown(amount_, currentIndex_);
+        // NOTE: all holders are earners, so there is no excess and all principal balances can be rounded down.
+        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(amount_, currentIndex_);
 
         unchecked {
-            accountInfo_.balance = balance_ - amount_;
-            // `min112` prevents `principal` underflow.
-            accountInfo_.principal = principal_ - UIntMath.min112(principalUp_, principal_);
+            accountInfo_.balance -= amount_;
+            accountInfo_.principal -= principal_;
         }
 
-        _subtractTotalSupply(amount_, principalDown_);
+        _subtractTotalSupply(amount_, principal_);
     }
 
     /**
@@ -357,7 +395,31 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
         _transfer(sender_, recipient_, UIntMath.safe240(amount_), currentIndex());
     }
 
+    /**
+     * @dev   Sets the yield fee claim index.
+     * @param index_ The new yield fee claim index.
+     */
+    function _setLastYieldFeeClaimIndex(uint128 index_) internal {
+        lastYieldFeeClaimIndex = index_;
+        emit LastYieldFeeClaimIndexSet(index_);
+    }
+
     /* ============ Internal View/Pure Functions ============ */
+
+    /**
+     * @dev    Returns the current accrued yield fee.
+     * @param  yieldFeeIndex_ The current yield fee index.
+     * @return The accrued yield fee since the last claim.
+     */
+    function _accruedYieldFee(uint128 yieldFeeIndex_) internal view returns (uint256) {
+        console.log("yieldFeeIndex()", yieldFeeIndex_);
+        console.log("lastYieldFeeClaimIndex", lastYieldFeeClaimIndex);
+        console.log("totalPrincipal", totalPrincipal);
+        return
+            yieldFeeRate != 0 && totalAccruedYield() != 0
+                ? IndexingMath.getPresentAmountRoundedDown(totalPrincipal, yieldFeeIndex_ - lastYieldFeeClaimIndex)
+                : 0;
+    }
 
     /**
      * @dev   Reverts if `amount` is equal to 0.
