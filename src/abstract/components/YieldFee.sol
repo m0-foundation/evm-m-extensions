@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.26;
-
+import { console } from "../../../../lib/forge-std/src/console.sol";
 import { IndexingMath } from "../../../lib/common/src/libs/IndexingMath.sol";
 
 import { AccessControl } from "../../../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
@@ -26,9 +26,6 @@ abstract contract YieldFee is AccessControl, IYieldFee {
 
     /// @inheritdoc IYieldFee
     address public yieldFeeRecipient;
-
-    /// @dev Mapping of accrued yield fees for each recipient.
-    mapping(address yieldFeeRecipient => uint256 yield) internal _accruedYieldFee;
 
     /* ============ Constructor ============ */
 
@@ -60,13 +57,6 @@ abstract contract YieldFee is AccessControl, IYieldFee {
     /// @inheritdoc IYieldFee
     function setYieldFeeRecipient(address yieldFeeRecipient_) external onlyRole(_YIELD_FEE_MANAGER_ROLE) {
         _setYieldFeeRecipient(yieldFeeRecipient_);
-    }
-
-    /* ============ View/Pure Functions ============ */
-
-    /// @inheritdoc IYieldFee
-    function accruedYieldFeeOf(address account_) external view returns (uint256) {
-        return _getAccruedYieldFee(account_);
     }
 
     /* ============ Internal Interactive Functions ============ */
@@ -104,41 +94,35 @@ abstract contract YieldFee is AccessControl, IYieldFee {
     /* ============ Internal View/Pure Functions ============ */
 
     /**
-     * @dev    Compute the yield given an account's balance, earning principal, and the current index.
-     * @param  principal_ The earning principal of the account.
-     * @param  currentIndex_ The current index.
-     * @return yield_        The yield accrued since the last interaction.
-     * @return yieldFee_     The yield fee accrued since the last interaction.
+     * @dev    Compute the yield given an account's balance, earning principal and the difference in claim indices.
+     * @param  principal_      The earning principal of the account.
+     * @param  yieldIndex_     The current yield index.
+     * @param  lastClaimIndex_ The yield index at which yield was last claimed.
+     * @return yield_          The yield accrued since the last claim.
      */
     function _getAccruedYield(
         uint240 balance_,
         uint112 principal_,
-        uint128 currentIndex_
-    ) internal view returns (uint240 yield_, uint240 yieldFee_) {
-        uint240 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, currentIndex_);
+        uint128 yieldIndex_,
+        uint128 lastClaimIndex_
+    ) internal view returns (uint240) {
+        // If account's lastClaimIndex is 0, it means the account has not been initialized and there is not yield to claim.
+        if (lastClaimIndex_ == 0) return 0;
+
+        uint128 index_;
 
         unchecked {
-            yield_ = (balanceWithYield_ <= balance_) ? 0 : balanceWithYield_ - balance_;
+            index_ = yieldIndex_ > lastClaimIndex_ ? yieldIndex_ - lastClaimIndex_ : 0;
         }
 
-        if (yield_ == 0) return (yield_, yieldFee_);
+        console.log("yieldIndex_, %s", yieldIndex_);
+        console.log("lastClaimIndex_, %s", lastClaimIndex_);
+        console.log("index_ %s", index_);
 
-        uint16 yieldFeeRate_ = yieldFeeRate;
+        // If no difference in indices, no yield had time to accrue.
+        if (index_ == 0) return 0;
 
-        if (yieldFeeRate_ != 0) {
-            unchecked {
-                yieldFee_ = (yield_ * yieldFeeRate_) / HUNDRED_PERCENT;
-                yield_ -= yieldFee_;
-            }
-        }
-    }
-
-    /**
-     * @notice Returns the accrued yield fee for a given account.
-     * @param  account The address of the account.
-     * @return The accrued yield fee for the account.
-     */
-    function _getAccruedYieldFee(address account) internal view returns (uint256) {
-        return _accruedYieldFee[account];
+        // The accrued yield is computed by multiplying the principal by the difference in indices.
+        return IndexingMath.getPresentAmountRoundedDown(principal_, index_);
     }
 }

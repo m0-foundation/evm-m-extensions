@@ -126,46 +126,63 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     // TODO: add fuzz test
     function test_claimYieldFor() external {
-        uint256 yieldAmount = 480e6;
+        uint256 yieldAmount = 80e6;
         uint240 aliceBalance = 1_000e6;
+        uint128 enableMIndex = 1_100000000000;
 
         mToken.setBalanceOf(address(mYieldFee), yieldAmount);
 
-        mToken.setCurrentIndex(2_200000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        mToken.setCurrentIndex(1_210000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
 
-        mYieldFee.setAccountOf(alice, aliceBalance, 800e6);
+        mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6, enableMIndex);
 
+        vm.expectEmit();
+        emit IMYieldFee.YieldClaimed(alice, alice, yieldAmount);
+
+        vm.prank(alice);
         assertEq(mYieldFee.claimYieldFor(alice), yieldAmount);
+
         assertEq(mYieldFee.balanceOf(alice), aliceBalance + yieldAmount);
         assertEq(mYieldFee.accruedYieldOf(alice), 0);
     }
 
-    /* ============ claimYieldFeeFor ============ */
+    /* ============ claimYieldFee ============ */
 
-    function test_claimYieldFeeFor_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IYieldFee.ZeroYieldFeeRecipient.selector);
-        mYieldFee.claimYieldFeeFor(address(0));
-    }
-
-    function test_claimYieldFeeFor_noYield() external {
-        assertEq(mYieldFee.claimYieldFeeFor(yieldFeeRecipient), 0);
+    function test_claimYieldFee_noYield() external {
+        assertEq(mYieldFee.claimYieldFee(), 0);
     }
 
     // TODO: add fuzz test
-    function test_claimYieldFeeFor() external {
-        uint256 yieldFeeAmount = 120e6;
+    function test_claimYieldFee() external {
+        uint256 yieldFeeAmount = 20e6;
+        uint240 aliceBalance = 1_000e6;
+        uint128 enableMIndex = 1_100000000000;
 
-        mToken.setBalanceOf(address(mYieldFee), yieldFeeAmount);
+        mToken.setCurrentIndex(1_210000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
 
-        mToken.setCurrentIndex(2_200000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        mYieldFee.setTotalPrincipal(1_000e6);
+        mYieldFee.setTotalSupply(1_000e6);
+        mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6, 800000000000);
+        mYieldFee.setLastYieldFeeClaimIndex(200000000000);
 
-        mYieldFee.setAccruedYieldFee(yieldFeeRecipient, yieldFeeAmount);
+        assertEq(mYieldFee.currentIndex(), 1_100000000000);
+        assertEq(mYieldFee.yieldIndex(), 880000000000); // 80% of 1_210000000000
 
-        assertEq(mYieldFee.claimYieldFeeFor(yieldFeeRecipient), yieldFeeAmount);
+        assertEq(mYieldFee.accruedYieldFee(), yieldFeeAmount);
+
+        vm.expectEmit();
+        emit IMYieldFee.YieldFeeClaimed(alice, yieldFeeRecipient, yieldFeeAmount);
+
+        vm.prank(alice);
+        assertEq(mYieldFee.claimYieldFee(), yieldFeeAmount);
+
         assertEq(mYieldFee.balanceOf(yieldFeeRecipient), yieldFeeAmount);
-        assertEq(mYieldFee.accruedYieldFeeOf(yieldFeeRecipient), 0);
+        assertEq(mYieldFee.accruedYieldFee(), 0);
+
+        assertEq(mYieldFee.balanceOf(alice), aliceBalance);
+        assertEq(mYieldFee.accruedYieldOf(alice), 80e6);
     }
 
     /* ============ enableEarning ============ */
@@ -266,17 +283,48 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.currentIndex(), 1_210000000000);
     }
 
-    /* ============ accruedYieldOf ============ */
+    /* ============ accruedYieldFee ============ */
 
-    function test_accruedYieldOf() external {
+    function test_accruedYieldFee_noYield() external {
+        assertEq(mYieldFee.accruedYieldFee(), 0);
+
         mToken.setCurrentIndex(1_210000000000);
         mYieldFee.setEnableMIndex(1_100000000000);
 
-        mYieldFee.setAccountOf(alice, 500, 500); // 550 balance with yield.
+        mYieldFee.setTotalPrincipal(1_000e6);
+        mYieldFee.setTotalSupply(1_000e6);
+
+        assertEq(mYieldFee.accruedYieldFee(), 20e6); // accruedYield: 100e6, yieldFee: 20e6
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRate(0);
+
+        assertEq(mYieldFee.accruedYieldFee(), 0);
+    }
+
+    function test_accruedYieldFee() external {
+        mToken.setCurrentIndex(1_210000000000);
+        mYieldFee.setEnableMIndex(1_100000000000);
+
+        mYieldFee.setTotalPrincipal(1_000e6);
+        mYieldFee.setTotalSupply(1_000e6);
+
+        assertEq(mYieldFee.accruedYieldFee(), 20e6); // accruedYield: 100e6, yieldFee: 20e6
+    }
+
+    /* ============ accruedYieldOf ============ */
+
+    function test_accruedYieldOf() external {
+        uint128 enableMIndex = 1_100000000000;
+
+        mToken.setCurrentIndex(1_210000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
+
+        mYieldFee.setAccountOf(alice, 500, 500, enableMIndex); // 550 balance with yield.
 
         assertEq(mYieldFee.accruedYieldOf(alice), 50 - _getYieldFee(50, YIELD_FEE_RATE));
 
-        mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield.
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex); // 1_100 balance with yield.
 
         assertEq(mYieldFee.accruedYieldOf(alice), 100 - _getYieldFee(100, YIELD_FEE_RATE));
 
@@ -284,7 +332,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertEq(mYieldFee.accruedYieldOf(alice), 210 - _getYieldFee(210, YIELD_FEE_RATE));
 
-        mYieldFee.setAccountOf(alice, 1_000, 1_500); // 1_815 balance with yield.
+        mYieldFee.setAccountOf(alice, 1_000, 1_500, enableMIndex); // 1_815 balance with yield.
 
         assertEq(mYieldFee.accruedYieldOf(alice), 815 - _getYieldFee(815, YIELD_FEE_RATE));
     }
@@ -293,7 +341,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_balanceOf() external {
         uint240 balance = 1_000e6;
-        mYieldFee.setAccountOf(alice, balance, 800e6);
+        mYieldFee.setAccountOf(alice, balance, 800e6, EXP_SCALED_ONE);
 
         assertEq(mYieldFee.balanceOf(alice), balance);
     }
@@ -301,14 +349,16 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ balanceWithYieldOf ============ */
 
     function test_balanceWithYieldOf() external {
-        mToken.setCurrentIndex(1_210000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        uint128 enableMIndex = 1_100000000000;
 
-        mYieldFee.setAccountOf(alice, 500, 500); // 550 balance with yield.
+        mToken.setCurrentIndex(1_210000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
+
+        mYieldFee.setAccountOf(alice, 500, 500, enableMIndex); // 550 balance with yield.
 
         assertEq(mYieldFee.balanceWithYieldOf(alice), 550 - _getYieldFee(50, YIELD_FEE_RATE));
 
-        mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield.
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex); // 1_100 balance with yield.
 
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_100 - _getYieldFee(100, YIELD_FEE_RATE));
 
@@ -316,7 +366,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_210 - _getYieldFee(210, YIELD_FEE_RATE));
 
-        mYieldFee.setAccountOf(alice, 1_000, 1_500); // 1_815 balance with yield.
+        mYieldFee.setAccountOf(alice, 1_000, 1_500, enableMIndex); // 1_815 balance with yield.
 
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_815 - _getYieldFee(815, YIELD_FEE_RATE));
     }
@@ -325,7 +375,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_principalOf() external {
         uint112 principal = 800e6;
-        mYieldFee.setAccountOf(alice, 1_000e6, principal);
+        mYieldFee.setAccountOf(alice, 1_000e6, principal, EXP_SCALED_ONE);
 
         assertEq(mYieldFee.principalOf(alice), principal);
     }
@@ -375,8 +425,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_wrap() external {
+        uint128 enableMIndex = 1_100000000000;
+
         mToken.setCurrentIndex(1_237000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
 
         mToken.setBalanceOf(alice, 1_002);
         mToken.setBalanceOf(address(mYieldFee), 1_000);
@@ -387,7 +439,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Total supply + yield: 1_125
         // Alice balance with yield: 1_100
         // Fee: 25
-        mYieldFee.setAccountOf(alice, 1_000, 1_000);
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex);
 
         assertEq(mYieldFee.principalOf(alice), 1_000);
         assertEq(mYieldFee.balanceOf(alice), 1_000);
@@ -535,7 +587,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function test_unwrap_insufficientBalance() external {
         mToken.setCurrentIndex(1_125000000000);
 
-        mYieldFee.setAccountOf(alice, 999, 909);
+        mYieldFee.setAccountOf(alice, 999, 909, EXP_SCALED_ONE);
 
         vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
 
@@ -544,8 +596,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_unwrap() external {
+        uint128 enableMIndex = 1_100000000000;
+
         mToken.setCurrentIndex(1_237000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
 
         mToken.setBalanceOf(address(mYieldFee), 1_002);
 
@@ -555,7 +609,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Total supply + yield: 1_125
         // Alice balance with yield: 1_100
         // Fee: 25
-        mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield.
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex); // 1_100 balance with yield.
 
         assertEq(mYieldFee.principalOf(alice), 1_000);
         assertEq(mYieldFee.balanceOf(alice), 1_000);
@@ -689,7 +743,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ transfer ============ */
 
     function test_transfer_invalidRecipient() external {
-        mYieldFee.setAccountOf(alice, 1_000, 1_000);
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, EXP_SCALED_ONE);
 
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InvalidRecipient.selector, address(0)));
 
@@ -698,7 +752,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_transfer_insufficientBalance_toSelf() external {
-        mYieldFee.setAccountOf(alice, 999, 999);
+        mYieldFee.setAccountOf(alice, 999, 999, EXP_SCALED_ONE);
 
         vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
 
@@ -707,7 +761,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_transfer_insufficientBalance() external {
-        mYieldFee.setAccountOf(alice, 999, 999);
+        mYieldFee.setAccountOf(alice, 999, 999, EXP_SCALED_ONE);
 
         vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
 
@@ -716,8 +770,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_transfer() external {
+        uint128 enableMIndex = 1_100000000000;
+
         mToken.setCurrentIndex(1_237000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
 
         mYieldFee.setTotalPrincipal(1_500);
         mYieldFee.setTotalSupply(1_500);
@@ -726,13 +782,13 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Balance: 1_000
         // Yield: 124
         // Fee: 25 - 1 = 24 rounded down
-        mYieldFee.setAccountOf(alice, 1_000, 1_000);
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex);
 
         // Bob balance with yield: 550
         // Balance: 500
         // Yield: 62
         // Fee: 12
-        mYieldFee.setAccountOf(bob, 500, 500);
+        mYieldFee.setAccountOf(bob, 500, 500, enableMIndex);
 
         assertEq(mYieldFee.accruedYieldOf(alice), 100);
         assertEq(mYieldFee.accruedYieldOf(bob), 50);
@@ -762,8 +818,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_transfer_toSelf() external {
+        uint128 enableMIndex = 1_100000000000;
+
         mToken.setCurrentIndex(1_237000000000);
-        mYieldFee.setEnableMIndex(1_100000000000);
+        mYieldFee.setEnableMIndex(enableMIndex);
 
         mYieldFee.setTotalPrincipal(1_000);
         mYieldFee.setTotalSupply(1_000);
@@ -771,7 +829,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Total supply + yield: 1_125
         // Alice balance with yield: 1_100
         // Fee: 25
-        mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield.
+        mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex); // 1_100 balance with yield.
 
         assertEq(mYieldFee.balanceOf(alice), 1_000);
         assertEq(mYieldFee.accruedYieldOf(alice), 100);
@@ -912,7 +970,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) internal returns (uint112 principal_) {
         principal_ = IndexingMath.getPrincipalAmountRoundedDown(balanceWithYield_, mYieldFee.currentIndex());
 
-        mYieldFee.setAccountOf(account_, balance_, principal_);
+        mYieldFee.setAccountOf(account_, balance_, principal_, mYieldFee.currentIndex());
         mYieldFee.setTotalPrincipal(mYieldFee.totalPrincipal() + principal_);
         mYieldFee.setTotalSupply(mYieldFee.totalSupply() + balance_);
     }

@@ -136,58 +136,35 @@ contract YieldFeeUnitTests is BaseUnitTest {
         assertEq(yieldFee.yieldFeeRecipient(), newYieldFeeRecipient);
     }
 
-    /* ============ accruedYieldFeeOf ============ */
-
-    function test_accruedYieldFeeOf() external {
-        assertEq(yieldFee.accruedYieldFeeOf(yieldFeeRecipient), 0);
-
-        uint256 accruedYieldFee = 1_000e6;
-
-        yieldFee.setAccruedYieldFee(yieldFeeRecipient, accruedYieldFee);
-
-        assertEq(yieldFee.accruedYieldFeeOf(yieldFeeRecipient), accruedYieldFee);
-    }
-
     /* ============ getAccruedYield ============ */
 
     function test_getAccruedYield_noYield() external {
-        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 1_000e6, 1e12);
-
-        assertEq(yield_, 0);
-        assertEq(yieldFee_, 0);
+        assertEq(yieldFee.getAccruedYield(1_000e6, 1_000e6, EXP_SCALED_ONE, EXP_SCALED_ONE), 0);
     }
 
     function test_getAccruedYield_noFee() external {
         vm.prank(yieldFeeManager);
         yieldFee.setYieldFeeRate(0);
 
-        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 800e6, 2e12);
-
-        assertEq(yield_, 600e6); // 1_600e6 - 1_000e6
-        assertEq(yieldFee_, 0);
+        assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 600e6); // 1_600e6 - 1_000e6
     }
 
     function test_getAccruedYield_maxFee() external {
         vm.prank(yieldFeeManager);
         yieldFee.setYieldFeeRate(HUNDRED_PERCENT);
 
-        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 800e6, 2e12);
-
-        assertEq(yield_, 0);
-        assertEq(yieldFee_, 600e6); // 1_600e6 - 1_000e6
+        assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 0);
     }
 
     function test_getAccruedYield() external {
-        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(1_000e6, 800e6, 2e12);
-
-        assertEq(yield_, 480e6);
-        assertEq(yieldFee_, 120e6); // 600e6 * 0.2
+        assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 480e6);
     }
 
     function testFuzz_getAccruedYield(
         uint240 balance_,
         uint112 principal_,
         uint128 currentIndex_,
+        uint128 lastClaimIndex_,
         uint16 yieldFeeRate_
     ) external {
         yieldFeeRate_ = uint16(bound(yieldFeeRate_, 0, HUNDRED_PERCENT));
@@ -195,13 +172,13 @@ contract YieldFeeUnitTests is BaseUnitTest {
         vm.prank(yieldFeeManager);
         yieldFee.setYieldFeeRate(yieldFeeRate_);
 
-        (uint240 yield_, uint240 yieldFee_) = yieldFee.getAccruedYield(balance_, principal_, currentIndex_);
-
-        uint240 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, currentIndex_);
-        uint240 expectedYield_ = balanceWithYield_ <= balance_ ? 0 : balanceWithYield_ - balance_;
+        uint128 index_ = currentIndex_ > lastClaimIndex_ ? currentIndex_ - lastClaimIndex_ : 0;
+        uint240 expectedYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, index_);
         uint240 expectedYieldFee_ = (expectedYield_ * yieldFeeRate_) / HUNDRED_PERCENT;
 
-        assertEq(yield_, expectedYield_ - expectedYieldFee_);
-        assertEq(yieldFee_, expectedYieldFee_);
+        assertEq(
+            yieldFee.getAccruedYield(balance_, principal_, currentIndex_, lastClaimIndex_),
+            expectedYield_ - expectedYieldFee_
+        );
     }
 }

@@ -16,13 +16,10 @@ contract MYieldFeeHarness is MYieldFee {
         address yieldFeeManager_
     ) MYieldFee(name_, symbol_, mToken_, registrar_, yieldFeeRate_, yieldFeeRecipient_, admin_, yieldFeeManager_) {}
 
-    function setAccountOf(address account_, uint240 balance_, uint112 principal_) external {
+    function setAccountOf(address account_, uint240 balance_, uint112 principal_, uint128 lastClaimIndex_) external {
         _accounts[account_].balance = balance_;
         _accounts[account_].principal = principal_;
-    }
-
-    function setAccruedYieldFee(address yieldFeeRecipient_, uint256 yield_) external {
-        _accruedYieldFee[yieldFeeRecipient_] = yield_;
+        _accounts[account_].lastClaimIndex = lastClaimIndex_;
     }
 
     function setEnableMIndex(uint256 enableMIndex_) external {
@@ -33,6 +30,9 @@ contract MYieldFeeHarness is MYieldFee {
         disableIndex = uint128(disableIndex_);
     }
 
+    function setLastYieldFeeClaimIndex(uint128 lastYieldFeeClaimIndex_) external {
+        lastYieldFeeClaimIndex = lastYieldFeeClaimIndex_;
+    }
     function setTotalSupply(uint256 totalSupply_) external {
         totalSupply = totalSupply_;
     }

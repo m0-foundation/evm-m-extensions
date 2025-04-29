@@ -15,12 +15,9 @@ contract YieldFeeHarness is YieldFee {
     function getAccruedYield(
         uint240 balance_,
         uint112 principal_,
-        uint128 currentIndex_
-    ) external view returns (uint240 yield_, uint240 yieldFee_) {
-        return _getAccruedYield(balance_, principal_, currentIndex_);
-    }
-
-    function setAccruedYieldFee(address yieldFeeRecipient_, uint256 yield_) external {
-        _accruedYieldFee[yieldFeeRecipient_] = yield_;
+        uint128 currentIndex_,
+        uint128 lastClaimIndex_
+    ) external view returns (uint240) {
+        return _getAccruedYield(balance_, principal_, currentIndex_, lastClaimIndex_);
     }
 }
