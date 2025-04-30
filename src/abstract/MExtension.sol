@@ -21,9 +21,9 @@ abstract contract MExtension is IMExtension, ERC20Extended {
 
     /**
      * @dev   Constructs the generic M extension token.
-     * @param name               The name of the token (e.g. "HALO USD").
-     * @param symbol             The symbol of the token (e.g. "HUSD").
-     * @param mToken_            The address of the M Token.
+     * @param name    The name of the token (e.g. "HALO USD").
+     * @param symbol  The symbol of the token (e.g. "HUSD").
+     * @param mToken_ The address of the M Token.
      */
     constructor(string memory name, string memory symbol, address mToken_) ERC20Extended(name, symbol, 6) {
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
@@ -63,7 +63,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
     }
 
     /// @inheritdoc IMExtension
-    function enableEarning() external {
+    function enableEarning() external virtual {
         if (isEarningEnabled()) revert EarningIsEnabled();
 
         emit EarningEnabled(_currentMIndex());
@@ -72,7 +72,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
     }
 
     /// @inheritdoc IMExtension
-    function disableEarning() external {
+    function disableEarning() external virtual {
         if (!isEarningEnabled()) revert EarningIsDisabled();
 
         IMTokenLike(mToken).stopEarning(address(this));

@@ -6,33 +6,29 @@ import { MYieldFee } from "../../src/MYieldFee.sol";
 
 contract MYieldFeeHarness is MYieldFee {
     constructor(
-        string memory name_,
-        string memory symbol_,
-        address mToken_,
-        address registrar_,
-        uint16 yieldFeeRate_,
-        address yieldFeeRecipient_,
-        address admin_,
-        address yieldFeeManager_
-    ) MYieldFee(name_, symbol_, mToken_, registrar_, yieldFeeRate_, yieldFeeRecipient_, admin_, yieldFeeManager_) {}
+        string memory name,
+        string memory symbol,
+        address mToken,
+        address rateModel,
+        uint16 yieldFeeRate,
+        address yieldFeeRecipient,
+        address admin,
+        address yieldFeeManager
+    ) MYieldFee(name, symbol, mToken, rateModel, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager) {}
 
-    function setAccountOf(address account_, uint240 balance_, uint112 principal_, uint128 lastClaimIndex_) external {
-        _accounts[account_].balance = balance_;
-        _accounts[account_].principal = principal_;
-        _accounts[account_].lastClaimIndex = lastClaimIndex_;
+    function setAccountOf(address account, uint240 balance, uint112 principal) external {
+        _accounts[account].balance = balance;
+        _accounts[account].principal = principal;
     }
 
-    function setEnableMIndex(uint256 enableMIndex_) external {
-        enableMIndex = uint128(enableMIndex_);
+    function setEnableLatestMIndex(uint256 enableLatestMIndex_) external {
+        enableLatestMIndex = uint128(enableLatestMIndex_);
     }
 
     function setDisableIndex(uint256 disableIndex_) external {
         disableIndex = uint128(disableIndex_);
     }
 
-    function setLastYieldFeeClaimIndex(uint128 lastYieldFeeClaimIndex_) external {
-        lastYieldFeeClaimIndex = lastYieldFeeClaimIndex_;
-    }
     function setTotalSupply(uint256 totalSupply_) external {
         totalSupply = totalSupply_;
     }

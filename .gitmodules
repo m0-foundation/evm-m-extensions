@@ -5,6 +5,7 @@
 [submodule "lib/common"]
 	path = lib/common
 	url = https://github.com/m0-foundation/common
+	branch = feat/add-safe32
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts

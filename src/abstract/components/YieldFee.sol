@@ -94,35 +94,23 @@ abstract contract YieldFee is AccessControl, IYieldFee {
     /* ============ Internal View/Pure Functions ============ */
 
     /**
-     * @dev    Compute the yield given an account's balance, earning principal and the difference in claim indices.
-     * @param  principal_      The earning principal of the account.
-     * @param  yieldIndex_     The current yield index.
-     * @param  lastClaimIndex_ The yield index at which yield was last claimed.
-     * @return yield_          The yield accrued since the last claim.
+     * @dev    Compute the yield given a balance, principal and index.
+     * @param  balance   The current balance of the account.
+     * @param  principal The principal of the account.
+     * @param  index     The current index.
+     * @return The yield accrued since the last claim.
      */
-    function _getAccruedYield(
-        uint240 balance_,
-        uint112 principal_,
-        uint128 yieldIndex_,
-        uint128 lastClaimIndex_
-    ) internal view returns (uint240) {
-        // If account's lastClaimIndex is 0, it means the account has not been initialized and there is not yield to claim.
-        if (lastClaimIndex_ == 0) return 0;
+    function _getAccruedYield(uint240 balance, uint112 principal, uint128 index) internal pure returns (uint240) {
+        uint240 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal, index);
+        return balanceWithYield_ > balance ? balanceWithYield_ - balance : 0;
+    }
 
-        uint128 index_;
-
-        unchecked {
-            index_ = yieldIndex_ > lastClaimIndex_ ? yieldIndex_ - lastClaimIndex_ : 0;
-        }
-
-        console.log("yieldIndex_, %s", yieldIndex_);
-        console.log("lastClaimIndex_, %s", lastClaimIndex_);
-        console.log("index_ %s", index_);
-
-        // If no difference in indices, no yield had time to accrue.
-        if (index_ == 0) return 0;
-
-        // The accrued yield is computed by multiplying the principal by the difference in indices.
-        return IndexingMath.getPresentAmountRoundedDown(principal_, index_);
+    /**
+     * @dev    Computes the balance with yield given the principal and index.
+     * @param  principal The principal of the account.
+     * @param  index     The current index.
+     */
+    function _getBalanceWithYield(uint112 principal, uint128 index) internal pure returns (uint240) {
+        return IndexingMath.getPresentAmountRoundedDown(principal, index);
     }
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 
@@ -25,6 +25,14 @@ interface IMExtension is IERC20Extended {
 
     /// @notice Emitted when performing an operation that is not allowed when earning is enabled.
     error EarningIsEnabled();
+
+    /**
+     * @notice Emitted when there is insufficient balance to decrement from `account`.
+     * @param  account The account with insufficient balance.
+     * @param  balance The balance of the account.
+     * @param  amount  The amount to decrement.
+     */
+    error InsufficientBalance(address account, uint256 balance, uint256 amount);
 
     /// @notice Emitted in constructor if M Token is 0x0.
     error ZeroMToken();
