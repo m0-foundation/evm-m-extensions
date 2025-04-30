@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 
@@ -40,17 +40,8 @@ interface IMExtension is IERC20Extended {
      */
     error InsufficientBalance(address account, uint256 balance, uint256 amount);
 
-    /// @notice Emitted when calling `stopEarning` for an account approved as earner by the TTG Registrar.
-    error IsApprovedEarner(address account);
-
-    /// @notice Emitted when calling `startEarning` for an account not approved as earner by the TTG Registrar.
-    error NotApprovedEarner(address account);
-
     /// @notice Emitted in constructor if M Token is 0x0.
     error ZeroMToken();
-
-    /// @notice Emitted in constructor if TTG Registrar is 0x0.
-    error ZeroRegistrar();
 
     /* ============ Interactive Functions ============ */
 
@@ -111,9 +102,6 @@ interface IMExtension is IERC20Extended {
 
     /// @notice The address of the M Token contract.
     function mToken() external view returns (address);
-
-    /// @notice The address of the TTG Registrar contract.
-    function registrar() external view returns (address);
 
     /**
      * @notice Whether M extension earning is enabled.

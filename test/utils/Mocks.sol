@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 contract MockM {
     uint128 public currentIndex;
+    uint128 public latestIndex;
+    uint40 public latestUpdateTimestamp;
 
     mapping(address account => uint256 balance) public balanceOf;
     mapping(address account => bool isEarning) public isEarning;
@@ -47,6 +49,14 @@ contract MockM {
         currentIndex = currentIndex_;
     }
 
+    function setLatestIndex(uint128 latestIndex_) external {
+        latestIndex = latestIndex_;
+    }
+
+    function setLatestUpdateTimestamp(uint256 timestamp) external {
+        latestUpdateTimestamp = uint40(timestamp);
+    }
+
     function setIsEarning(address account, bool isEarning_) external {
         isEarning[account] = isEarning_;
     }
@@ -60,16 +70,10 @@ contract MockM {
     }
 }
 
-contract MockRegistrar {
-    mapping(bytes32 key => bytes32 value) public get;
+contract MockRateOracle {
+    uint32 public earnerRate;
 
-    mapping(bytes32 list => mapping(address account => bool contains)) public listContains;
-
-    function set(bytes32 key, bytes32 value) external {
-        get[key] = value;
-    }
-
-    function setListContains(bytes32 list, address account, bool contains) external {
-        listContains[list][account] = contains;
+    function setEarnerRate(uint32 rate) external {
+        earnerRate = rate;
     }
 }

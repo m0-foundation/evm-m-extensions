@@ -18,13 +18,12 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     function setUp() public override {
         super.setUp();
 
-        mYieldToOne = new MYieldToOne(address(mToken), address(registrar), yieldRecipient);
+        mYieldToOne = new MYieldToOne(address(mToken), yieldRecipient);
     }
 
     /* ============ constructor ============ */
     function test_constructor() external view {
         assertEq(mYieldToOne.mToken(), address(mToken));
-        assertEq(mYieldToOne.registrar(), address(registrar));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
         assertEq(mYieldToOne.name(), "HALO USD");
         assertEq(mYieldToOne.symbol(), "HUSD");
@@ -33,16 +32,12 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     function test_constructor_zeroMToken() external {
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        new MYieldToOne(address(0), address(registrar), address(yieldRecipient));
-    }
-    function test_constructor_zeroRegistrar() external {
-        vm.expectRevert(IMExtension.ZeroRegistrar.selector);
-        new MYieldToOne(address(mToken), address(0), address(yieldRecipient));
+        new MYieldToOne(address(0), address(yieldRecipient));
     }
 
     function test_constructor_zeroYieldRecipient() external {
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipient.selector);
-        new MYieldToOne(address(mToken), address(registrar), address(0));
+        new MYieldToOne(address(mToken), address(0));
     }
 
     /* ============ _wrap ============ */
@@ -251,15 +246,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     /* ============ enableEarning ============ */
-    function test_enableEarning_notApprovedEarner() external {
-        vm.expectRevert(abi.encodeWithSelector(IMExtension.NotApprovedEarner.selector, address(mYieldToOne)));
-        mYieldToOne.enableEarning();
-    }
 
     function test_enableEarning_earningEnabled() external {
         mToken.setCurrentIndex(1_100000000000);
 
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
         mYieldToOne.enableEarning();
 
         vm.expectRevert(IMExtension.EarningIsEnabled.selector);
@@ -267,8 +257,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_enableEarning() external {
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
-
         mToken.setCurrentIndex(1_210000000000);
 
         vm.expectEmit();
@@ -285,21 +273,11 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.disableEarning();
     }
 
-    function test_disableEarning_approvedEarner() external {
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
-
-        vm.expectRevert(abi.encodeWithSelector(IMExtension.IsApprovedEarner.selector, address(mYieldToOne)));
-        mYieldToOne.disableEarning();
-    }
-
     function test_disableEarning() external {
         mToken.setCurrentIndex(1_100000000000);
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), true);
         mYieldToOne.enableEarning();
 
         mToken.setCurrentIndex(1_200000000000);
-
-        registrar.setListContains(EARNERS_LIST, address(mYieldToOne), false);
 
         vm.expectEmit();
         emit IMExtension.EarningDisabled(1_200000000000);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 /**
  * @title  Subset of M Token interface required for source contracts.
@@ -89,6 +89,9 @@ interface IMTokenLike {
 
     /// @notice The current index that would be written to storage if `updateIndex` is called.
     function currentIndex() external view returns (uint128);
+
+    /// @notice The current value of earner rate in basis points.
+    function earnerRate() external view returns (uint32);
 
     /**
      * @notice The principal of an earner M token balance.

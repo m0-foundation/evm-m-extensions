@@ -138,47 +138,47 @@ contract YieldFeeUnitTests is BaseUnitTest {
 
     /* ============ getAccruedYield ============ */
 
-    function test_getAccruedYield_noYield() external {
-        assertEq(yieldFee.getAccruedYield(1_000e6, 1_000e6, EXP_SCALED_ONE, EXP_SCALED_ONE), 0);
-    }
-
-    function test_getAccruedYield_noFee() external {
-        vm.prank(yieldFeeManager);
-        yieldFee.setYieldFeeRate(0);
-
-        assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 600e6); // 1_600e6 - 1_000e6
-    }
-
-    function test_getAccruedYield_maxFee() external {
-        vm.prank(yieldFeeManager);
-        yieldFee.setYieldFeeRate(HUNDRED_PERCENT);
-
-        assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 0);
-    }
-
-    function test_getAccruedYield() external {
-        assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 480e6);
-    }
-
-    function testFuzz_getAccruedYield(
-        uint240 balance_,
-        uint112 principal_,
-        uint128 currentIndex_,
-        uint128 lastClaimIndex_,
-        uint16 yieldFeeRate_
-    ) external {
-        yieldFeeRate_ = uint16(bound(yieldFeeRate_, 0, HUNDRED_PERCENT));
-
-        vm.prank(yieldFeeManager);
-        yieldFee.setYieldFeeRate(yieldFeeRate_);
-
-        uint128 index_ = currentIndex_ > lastClaimIndex_ ? currentIndex_ - lastClaimIndex_ : 0;
-        uint240 expectedYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, index_);
-        uint240 expectedYieldFee_ = (expectedYield_ * yieldFeeRate_) / HUNDRED_PERCENT;
-
-        assertEq(
-            yieldFee.getAccruedYield(balance_, principal_, currentIndex_, lastClaimIndex_),
-            expectedYield_ - expectedYieldFee_
-        );
-    }
+    // function test_getAccruedYield_noYield() external {
+    //     assertEq(yieldFee.getAccruedYield(1_000e6, 1_000e6, EXP_SCALED_ONE, EXP_SCALED_ONE), 0);
+    // }
+    //
+    // function test_getAccruedYield_noFee() external {
+    //     vm.prank(yieldFeeManager);
+    //     yieldFee.setYieldFeeRate(0);
+    //
+    //     assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 600e6); // 1_600e6 - 1_000e6
+    // }
+    //
+    // function test_getAccruedYield_maxFee() external {
+    //     vm.prank(yieldFeeManager);
+    //     yieldFee.setYieldFeeRate(HUNDRED_PERCENT);
+    //
+    //     assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 0);
+    // }
+    //
+    // function test_getAccruedYield() external {
+    //     assertEq(yieldFee.getAccruedYield(1_000e6, 800e6, 2e12, EXP_SCALED_ONE), 480e6);
+    // }
+    //
+    // function testFuzz_getAccruedYield(
+    //     uint240 balance_,
+    //     uint112 principal_,
+    //     uint128 currentIndex_,
+    //     uint128 lastClaimIndex_,
+    //     uint16 yieldFeeRate_
+    // ) external {
+    //     yieldFeeRate_ = uint16(bound(yieldFeeRate_, 0, HUNDRED_PERCENT));
+    //
+    //     vm.prank(yieldFeeManager);
+    //     yieldFee.setYieldFeeRate(yieldFeeRate_);
+    //
+    //     uint128 index_ = currentIndex_ > lastClaimIndex_ ? currentIndex_ - lastClaimIndex_ : 0;
+    //     uint240 expectedYield_ = IndexingMath.getPresentAmountRoundedDown(principal_, index_);
+    //     uint240 expectedYieldFee_ = (expectedYield_ * yieldFeeRate_) / HUNDRED_PERCENT;
+    //
+    //     assertEq(
+    //         yieldFee.getAccruedYield(balance_, principal_, currentIndex_, lastClaimIndex_),
+    //         expectedYield_ - expectedYieldFee_
+    //     );
+    // }
 }

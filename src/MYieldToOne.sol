@@ -30,14 +30,9 @@ contract MYieldToOne is IMYieldToOne, MExtension {
     /**
      * @dev   Constructs the M extension token with yield claimable by a single recipient.
      * @param mToken            The address of an M Token.
-     * @param registrar         The address of a registrar.
      * @param yieldRecipient_   The address of an yield destination.
      */
-    constructor(
-        address mToken,
-        address registrar,
-        address yieldRecipient_
-    ) MExtension("HALO USD", "HUSD", mToken, registrar) {
+    constructor(address mToken, address yieldRecipient_) MExtension("HALO USD", "HUSD", mToken) {
         if ((yieldRecipient = yieldRecipient_) == address(0)) revert ZeroYieldRecipient();
     }
 

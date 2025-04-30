@@ -14,7 +14,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        _mYieldToOne = new MYieldToOne(address(_mToken), address(_registrar), _yieldRecipient);
+        _mYieldToOne = new MYieldToOne(address(_mToken), _yieldRecipient);
     }
 
     function test_integration_constants() external view {
@@ -25,7 +25,6 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         // Check the initial state of the contract
         assertEq(_mYieldToOne.mToken(), address(_mToken));
-        assertEq(_mYieldToOne.registrar(), address(_registrar));
         assertEq(_mYieldToOne.yieldRecipient(), _yieldRecipient);
     }
 
