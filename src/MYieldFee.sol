@@ -147,7 +147,7 @@ contract MYieldFee is IMYieldFee, MExtension, YieldFee {
     }
 
     // Expected to be called when `rate` in M token changes
-    function updateIndex() external {
+    function updateIndex() public override {
         latestUpdateTimestamp = block.timestamp;
 
         // NOTE: `currentIndex()` depends on `latestRate`, so only update it after this.
