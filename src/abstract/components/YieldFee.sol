@@ -51,6 +51,7 @@ abstract contract YieldFee is AccessControl, IYieldFee {
 
     /// @inheritdoc IYieldFee
     function setYieldFeeRate(uint16 yieldFeeRate_) external onlyRole(_YIELD_FEE_MANAGER_ROLE) {
+        updateIndex();
         _setYieldFeeRate(yieldFeeRate_);
     }
 
@@ -58,6 +59,8 @@ abstract contract YieldFee is AccessControl, IYieldFee {
     function setYieldFeeRecipient(address yieldFeeRecipient_) external onlyRole(_YIELD_FEE_MANAGER_ROLE) {
         _setYieldFeeRecipient(yieldFeeRecipient_);
     }
+
+    function updateIndex() public virtual;
 
     /* ============ Internal Interactive Functions ============ */
 
