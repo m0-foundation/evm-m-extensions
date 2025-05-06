@@ -51,8 +51,8 @@ abstract contract YieldFee is AccessControl, IYieldFee {
 
     /// @inheritdoc IYieldFee
     function setYieldFeeRate(uint16 yieldFeeRate_) external onlyRole(_YIELD_FEE_MANAGER_ROLE) {
-        updateIndex();
         _setYieldFeeRate(yieldFeeRate_);
+        updateIndex();
     }
 
     /// @inheritdoc IYieldFee
