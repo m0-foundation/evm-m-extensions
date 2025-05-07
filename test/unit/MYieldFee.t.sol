@@ -5,9 +5,10 @@ import { console } from "../../lib/forge-std/src/console.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
 
-import { IMYieldFee } from "../../src/interfaces/IMYieldFee.sol";
+import { IAccessControl } from "../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
-import { IYieldFee } from "../../src/interfaces/IYieldFee.sol";
+import { IMYieldFee } from "../../src/interfaces/IMYieldFee.sol";
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
@@ -25,7 +26,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             "MYieldFee",
             "MYF",
             address(mToken),
-            address(rateOracle),
             YIELD_FEE_RATE,
             yieldFeeRecipient,
             admin,
@@ -37,6 +37,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_constructor() external view {
         assertEq(mYieldFee.HUNDRED_PERCENT(), 10_000);
+        assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
@@ -45,53 +46,20 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_constructor_zeroMToken() external {
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        new MYieldFeeHarness(
-            "MYieldFee",
-            "MYF",
-            address(0),
-            address(rateOracle),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager
-        );
-    }
-
-    function test_constructor_zeroRateOracle() external {
-        vm.expectRevert(IMYieldFee.ZeroRateOracle.selector);
-        new MYieldFeeHarness(
-            "MYieldFee",
-            "MYF",
-            address(mToken),
-            address(0),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager
-        );
+        new MYieldFeeHarness("MYieldFee", "MYF", address(0), YIELD_FEE_RATE, yieldFeeRecipient, admin, yieldFeeManager);
     }
 
     function test_constructor_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IYieldFee.ZeroYieldFeeRecipient.selector);
-        new MYieldFeeHarness(
-            "MYieldFee",
-            "MYF",
-            address(mToken),
-            address(rateOracle),
-            YIELD_FEE_RATE,
-            address(0),
-            admin,
-            yieldFeeManager
-        );
+        vm.expectRevert(IMYieldFee.ZeroYieldFeeRecipient.selector);
+        new MYieldFeeHarness("MYieldFee", "MYF", address(mToken), YIELD_FEE_RATE, address(0), admin, yieldFeeManager);
     }
 
     function test_constructor_zeroAdmin() external {
-        vm.expectRevert(IYieldFee.ZeroAdmin.selector);
+        vm.expectRevert(IMYieldFee.ZeroAdmin.selector);
         new MYieldFeeHarness(
             "MYieldFee",
             "MYF",
             address(mToken),
-            address(rateOracle),
             YIELD_FEE_RATE,
             yieldFeeRecipient,
             address(0),
@@ -100,17 +68,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_constructor_zeroYieldFeeManager() external {
-        vm.expectRevert(IYieldFee.ZeroYieldFeeManager.selector);
-        new MYieldFeeHarness(
-            "MYieldFee",
-            "MYF",
-            address(mToken),
-            address(rateOracle),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            address(0)
-        );
+        vm.expectRevert(IMYieldFee.ZeroYieldFeeManager.selector);
+        new MYieldFeeHarness("MYieldFee", "MYF", address(mToken), YIELD_FEE_RATE, yieldFeeRecipient, admin, address(0));
     }
 
     /* ============ claimYieldFor ============ */
@@ -124,21 +83,18 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.claimYieldFor(alice), 0);
     }
 
-    // // TODO: add fuzz test
+    // TODO: add fuzz test
     function test_claimYieldFor() external {
         uint240 yieldAmount = 79_230399;
         uint240 aliceBalance = 1_000e6;
 
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
-
-        vm.warp(startTimestamp + 30_057_038);
-        assertEq(mYieldFee.currentIndex(), 1_079230399224);
-
         mToken.setBalanceOf(address(mYieldFee), yieldAmount);
         mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+
+        // 10% index growth
+        vm.warp(startTimestamp + 30_057_038);
+        assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
         vm.expectEmit();
         emit IMYieldFee.YieldClaimed(alice, alice, yieldAmount);
@@ -179,11 +135,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function test_claimYieldFee() external {
         uint256 yieldFeeAmount = 20_769601;
 
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -229,28 +183,25 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ enableEarning ============ */
 
     function test_enableEarning_earningIsEnabled() external {
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
         vm.expectRevert(abi.encodeWithSelector(IMExtension.EarningIsEnabled.selector));
         mYieldFee.enableEarning();
     }
 
     function test_enableEarning() external {
-        mToken.setLatestIndex(1_100000000000);
-
-        // forge starts at 1 by default
-        vm.warp(0);
-
-        assertEq(mYieldFee.enableLatestMIndex(), 0);
-        assertEq(mYieldFee.currentIndex(), 1000000000000);
+        assertEq(mYieldFee.currentIndex(), EXP_SCALED_ONE);
+        assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
+        assertEq(mYieldFee.earnerRate(), 0);
 
         vm.expectEmit();
-        emit IMExtension.EarningEnabled(1_100000000000);
+        emit IMExtension.EarningEnabled(EXP_SCALED_ONE);
 
         mYieldFee.enableEarning();
 
-        assertEq(mYieldFee.enableLatestMIndex(), 1_100000000000);
-        assertEq(mYieldFee.currentIndex(), 1_000000000000);
+        assertEq(mYieldFee.currentIndex(), EXP_SCALED_ONE);
+        assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
+        assertEq(mYieldFee.earnerRate(), mYiedFeeEarnerRate);
 
         vm.warp(30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
@@ -264,80 +215,126 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_disableEarning() external {
-        mToken.setLatestIndex(1_210000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+        mYieldFee.setLatestIndex(1_100000000000);
 
-        vm.warp(0);
-
-        assertEq(mYieldFee.enableLatestMIndex(), 1_100000000000);
-        assertEq(mYieldFee.disableIndex(), 0);
         assertEq(mYieldFee.currentIndex(), 1_100000000000);
+        assertEq(mYieldFee.latestIndex(), 1_100000000000);
+        assertEq(mYieldFee.earnerRate(), mYiedFeeEarnerRate);
 
         vm.warp(30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
 
         vm.expectEmit();
-        emit IMExtension.EarningDisabled(1_187153439146);
+        emit IMYieldFee.EarningDisabled(1_187153439146);
 
         mYieldFee.disableEarning();
 
-        assertEq(mYieldFee.enableLatestMIndex(), 0);
-        assertEq(mYieldFee.disableIndex(), 1_187153439146);
+        assertFalse(mYieldFee.isEarningEnabled());
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
+        assertEq(mYieldFee.latestIndex(), 1_187153439146);
+        assertEq(mYieldFee.earnerRate(), 0);
+
+        vm.warp(30_057_038 * 2);
+
+        // Index should not change
+        assertEq(mYieldFee.currentIndex(), 1_187153439146);
+    }
+
+    /* ============ setYieldFeeRate ============ */
+
+    function test_setYieldFeeRate_onlyYieldFeeManager() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                alice,
+                YIELD_FEE_MANAGER_ROLE
+            )
+        );
+
+        vm.prank(alice);
+        mYieldFee.setYieldFeeRate(0);
+    }
+
+    function test_setYieldFeeRate_yieldFeeRateTooHigh() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(IMYieldFee.YieldFeeRateTooHigh.selector, HUNDRED_PERCENT + 1, HUNDRED_PERCENT)
+        );
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRate(HUNDRED_PERCENT + 1);
+    }
+
+    function test_setYieldFeeRate_noUpdate() external {
+        assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRate(YIELD_FEE_RATE);
+
+        assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
+    }
+
+    function test_setYieldFeeRate() external {
+        // Reset rate
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRate(0);
+
+        vm.expectEmit();
+        emit IMYieldFee.YieldFeeRateSet(YIELD_FEE_RATE);
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRate(YIELD_FEE_RATE);
+
+        assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
+    }
+
+    /* ============ setYieldFeeRecipient ============ */
+
+    function test_setYieldFeeRecipient_onlyYieldFeeManager() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                alice,
+                YIELD_FEE_MANAGER_ROLE
+            )
+        );
+
+        vm.prank(alice);
+        mYieldFee.setYieldFeeRecipient(alice);
+    }
+
+    function test_setYieldFeeRecipient_zeroYieldFeeRecipient() external {
+        vm.expectRevert(IMYieldFee.ZeroYieldFeeRecipient.selector);
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRecipient(address(0));
+    }
+
+    function test_setYieldFeeRecipient_noUpdate() external {
+        assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRecipient(yieldFeeRecipient);
+
+        assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
+    }
+
+    function test_setYieldFeeRecipient() external {
+        address newYieldFeeRecipient = makeAddr("newYieldFeeRecipient");
+
+        vm.expectEmit();
+        emit IMYieldFee.YieldFeeRecipientSet(newYieldFeeRecipient);
+
+        vm.prank(yieldFeeManager);
+        mYieldFee.setYieldFeeRecipient(newYieldFeeRecipient);
+
+        assertEq(mYieldFee.yieldFeeRecipient(), newYieldFeeRecipient);
     }
 
     /* ============ currentIndex ============ */
 
-    function test_currentIndex_enable_disable() external {
-        vm.warp(0);
-
-        assertEq(mYieldFee.currentIndex(), EXP_SCALED_ONE);
-
-        mToken.setLatestIndex(1_331000000000);
-
-        assertEq(mYieldFee.currentIndex(), EXP_SCALED_ONE);
-
-        mYieldFee.setDisableIndex(1_050000000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_050000000000);
-
-        mYieldFee.setDisableIndex(1_100000000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_100000000000);
-
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_331000000000);
-
-        mYieldFee.setEnableLatestMIndex(1_155000000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_267619047619);
-
-        mYieldFee.setEnableLatestMIndex(1_210000000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_210000000000);
-
-        mYieldFee.setEnableLatestMIndex(1_270500000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_152380952380);
-
-        mYieldFee.setEnableLatestMIndex(1_331000000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_100000000000);
-
-        mToken.setLatestIndex(1_464100000000);
-
-        assertEq(mYieldFee.currentIndex(), 1_210000000000);
-    }
-
     function test_currentIndex() external {
-        uint128 mLatestIndex = 1_100000000000;
-        uint128 enableLatestMIndex = 1_100000000000;
-        uint40 mLatestUpdateTimestamp = uint40(startTimestamp);
-
-        mToken.setLatestIndex(mLatestIndex);
-        mYieldFee.setEnableLatestMIndex(enableLatestMIndex);
-        mToken.setLatestUpdateTimestamp(mLatestUpdateTimestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
         uint256 expectedIndex = EXP_SCALED_ONE;
         assertEq(mYieldFee.currentIndex(), expectedIndex);
@@ -345,80 +342,41 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         uint256 nextTimestamp = vm.getBlockTimestamp() + 365 days;
         vm.warp(nextTimestamp);
 
-        expectedCurrentIndex = _getCurrentIndex(
-            mLatestIndex,
-            enableLatestMIndex,
-            EXP_SCALED_ONE,
-            EARNER_RATE,
-            YIELD_FEE_RATE,
-            mLatestUpdateTimestamp
-        );
+        expectedCurrentIndex = _getCurrentIndex(EXP_SCALED_ONE, mYiedFeeEarnerRate, startTimestamp);
 
         assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
+        assertEq(mYieldFee.updateIndex(), expectedCurrentIndex);
 
-        mLatestIndex = 1_210000000000;
-        mLatestUpdateTimestamp = uint40(nextTimestamp);
-
-        mToken.setLatestIndex(mLatestIndex);
-        mToken.setLatestUpdateTimestamp(mLatestUpdateTimestamp);
+        uint40 previousTimestamp = uint40(nextTimestamp);
 
         nextTimestamp = vm.getBlockTimestamp() + 365 days * 2;
         vm.warp(nextTimestamp);
 
-        expectedCurrentIndex = _getCurrentIndex(
-            mLatestIndex,
-            enableLatestMIndex,
-            EXP_SCALED_ONE,
-            EARNER_RATE,
-            YIELD_FEE_RATE,
-            mLatestUpdateTimestamp
-        );
+        expectedCurrentIndex = _getCurrentIndex(expectedCurrentIndex, mYiedFeeEarnerRate, previousTimestamp);
 
         assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
 
-        mLatestIndex = 1_331000000000;
-        mLatestUpdateTimestamp = uint40(nextTimestamp);
-
-        mToken.setLatestIndex(mLatestIndex);
-        mToken.setLatestUpdateTimestamp(mLatestUpdateTimestamp);
-
         // Half the earner rate
-        rateOracle.setEarnerRate(EARNER_RATE / 2);
+        mToken.setEarnerRate(M_EARNER_RATE / 2);
+        mYiedFeeEarnerRate = _getEarnerRate(M_EARNER_RATE / 2, YIELD_FEE_RATE);
+
+        assertEq(mYieldFee.updateIndex(), expectedCurrentIndex);
+        assertEq(mYieldFee.earnerRate(), mYiedFeeEarnerRate);
+
+        previousTimestamp = uint40(nextTimestamp);
 
         nextTimestamp = vm.getBlockTimestamp() + 365 days * 3;
         vm.warp(nextTimestamp);
 
-        expectedCurrentIndex = _getCurrentIndex(
-            mLatestIndex,
-            enableLatestMIndex,
-            EXP_SCALED_ONE,
-            EARNER_RATE / 2,
-            YIELD_FEE_RATE,
-            mLatestUpdateTimestamp
-        );
+        expectedCurrentIndex = _getCurrentIndex(expectedCurrentIndex, mYiedFeeEarnerRate, previousTimestamp);
 
         assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
-
-        mLatestIndex = 1_397550000000;
-        mLatestUpdateTimestamp = uint40(nextTimestamp);
-
-        mToken.setLatestIndex(mLatestIndex);
-        mToken.setLatestUpdateTimestamp(mLatestUpdateTimestamp);
-
-        expectedCurrentIndex = _getCurrentIndex(
-            mLatestIndex,
-            enableLatestMIndex,
-            EXP_SCALED_ONE,
-            EARNER_RATE / 2,
-            YIELD_FEE_RATE,
-            mLatestUpdateTimestamp
-        );
-
-        assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
+        assertEq(mYieldFee.updateIndex(), expectedCurrentIndex);
 
         // Disable earning
-        mYieldFee.setDisableIndex(expectedCurrentIndex);
-        mYieldFee.setEnableLatestMIndex(0);
+        mYieldFee.disableEarning();
+
+        previousTimestamp = uint40(nextTimestamp);
 
         nextTimestamp = vm.getBlockTimestamp() + 365 days * 4;
         vm.warp(nextTimestamp);
@@ -426,55 +384,35 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Index should not change
         assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
 
-        mLatestIndex = 1_467427500000;
-        mLatestUpdateTimestamp = uint40(nextTimestamp);
-
-        mToken.setLatestIndex(mLatestIndex);
-        mToken.setLatestUpdateTimestamp(mLatestUpdateTimestamp);
-
         // Re-enable earning
-        mYieldFee.setEnableLatestMIndex(mLatestIndex);
+        mToken.setEarnerRate(M_EARNER_RATE);
+        mYieldFee.enableEarning();
+
+        mYiedFeeEarnerRate = _getEarnerRate(M_EARNER_RATE, YIELD_FEE_RATE);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+
+        assertEq(mYieldFee.updateIndex(), expectedCurrentIndex);
 
         // Index was just re-enabled, so value should still be the same
         assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
 
+        previousTimestamp = uint40(nextTimestamp);
+
         nextTimestamp = vm.getBlockTimestamp() + 365 days * 5;
         vm.warp(nextTimestamp);
 
-        expectedCurrentIndex = _getCurrentIndex(
-            mLatestIndex,
-            enableLatestMIndex,
-            EXP_SCALED_ONE,
-            EARNER_RATE / 2,
-            YIELD_FEE_RATE,
-            mLatestUpdateTimestamp
-        );
-
-        mLatestIndex = 1_540798875000;
-        mLatestUpdateTimestamp = uint40(nextTimestamp);
-
-        mToken.setLatestIndex(mLatestIndex);
-        mToken.setLatestUpdateTimestamp(mLatestUpdateTimestamp);
-
-        expectedCurrentIndex = _getCurrentIndex(
-            mLatestIndex,
-            enableLatestMIndex,
-            EXP_SCALED_ONE,
-            EARNER_RATE / 2,
-            YIELD_FEE_RATE,
-            mLatestUpdateTimestamp
-        );
+        expectedCurrentIndex = _getCurrentIndex(expectedCurrentIndex, mYiedFeeEarnerRate, previousTimestamp);
+        assertEq(mYieldFee.currentIndex(), expectedCurrentIndex);
+        assertEq(mYieldFee.updateIndex(), expectedCurrentIndex);
     }
 
     /* ============ accruedYieldOf ============ */
 
     // TODO: add fuzz test
     function test_accruedYieldOf() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -508,11 +446,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ balanceWithYieldOf ============ */
 
     function test_balanceWithYieldOf() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -550,18 +486,15 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         uint256 totalSupply = 1_000e6;
 
         mToken.setBalanceOf(address(mYieldFee), totalSupply);
-
         assertEq(mYieldFee.projectedSupply(), totalSupply);
     }
 
     /* ============ totalAccruedYield ============ */
 
     function test_totalAccruedYield() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -594,11 +527,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     // TODO: add fuzz test
     function test_totalAccruedYieldFee() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -661,11 +592,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_wrap() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -739,249 +668,249 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_099 + 1 + 2);
     }
 
-    //     function testFuzz_wrap(
-    //         bool earningEnabled_,
-    //         uint240 balanceWithYield_,
-    //         uint240 balance_,
-    //         uint240 wrapAmount_,
-    //         uint128 currentMIndex_,
-    //         uint128 enableMIndex_,
-    //         uint128 disableIndex_
-    //     ) external {
-    //         (currentMIndex_, enableMIndex_, disableIndex_) = _getFuzzedIndices(
-    //             currentMIndex_,
-    //             enableMIndex_,
-    //             disableIndex_
-    //         );
+    // //     function testFuzz_wrap(
+    // //         bool earningEnabled_,
+    // //         uint240 balanceWithYield_,
+    // //         uint240 balance_,
+    // //         uint240 wrapAmount_,
+    // //         uint128 currentMIndex_,
+    // //         uint128 enableMIndex_,
+    // //         uint128 disableIndex_
+    // //     ) external {
+    // //         (currentMIndex_, enableMIndex_, disableIndex_) = _getFuzzedIndices(
+    // //             currentMIndex_,
+    // //             enableMIndex_,
+    // //             disableIndex_
+    // //         );
+    // //
+    // //         uint128 currentIndex = mYieldFee.currentIndex();
+    // //
+    // //         _setupIndices(earningEnabled_, currentMIndex_, enableMIndex_, disableIndex_);
+    // //         (balanceWithYield_, balance_) = _getFuzzedBalances(
+    // //             currentIndex,
+    // //             balanceWithYield_,
+    // //             balance_,
+    // //             _getMaxAmount(currentIndex)
+    // //         );
+    // //
+    // //         uint112 alicePrincipal = _setupAccount(alice, balanceWithYield_, balance_);
+    // //
+    // //         wrapAmount_ = uint240(bound(wrapAmount_, 0, _getMaxAmount(currentIndex) - balanceWithYield_));
+    // //
+    // //         mToken.setBalanceOf(alice, wrapAmount_);
+    // //
+    // //         if (wrapAmount_ == 0) {
+    // //             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
+    // //         } else {
+    // //             vm.expectEmit();
+    // //             emit IERC20.Transfer(address(0), alice, wrapAmount_);
+    // //         }
+    // //
+    // //         vm.startPrank(alice);
+    // //         mYieldFee.wrap(alice, wrapAmount_);
+    // //
+    // //         if (wrapAmount_ == 0) return;
+    // //
+    // //         uint240 aliceBalance = balance_ + wrapAmount_;
+    // //         alicePrincipal += IndexingMath.getPrincipalAmountRoundedDown(wrapAmount_, currentIndex);
+    // //
+    // //         uint240 aliceBalanceWithYield = IndexingMath.getPresentAmountRoundedDown(alicePrincipal, currentIndex);
+    // //         uint240 aliceYield = !earningEnabled_ || (aliceBalanceWithYield <= aliceBalance)
+    // //             ? 0
+    // //             : aliceBalanceWithYield - aliceBalance;
+    // //
+    // //         uint16 yieldFeeRate = mYieldFee.yieldFeeRate();
+    // //         uint240 yieldFee = aliceYield == 0 ? 0 : (aliceYield * yieldFeeRate) / HUNDRED_PERCENT;
+    // //
+    // //         assertEq(mYieldFee.balanceOf(alice), aliceBalance);
+    // //         assertEq(mYieldFee.balanceOf(alice), mYieldFee.totalSupply());
+    // //
+    // //         assertApproxEqAbs(mYieldFee.principalOf(alice), mYieldFee.totalPrincipal(), 1); // May round down on wrap.
+    // //
+    // //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + aliceYield - yieldFee);
+    // //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + mYieldFee.accruedYieldOf(alice));
+    // //
+    // //         // Principal is rounded up when adding to total principal.
+    // //         // And projected supply is rounded up when converting total principal to a present amount.
+    // //         // TODO: why is the rounding error so high?
+    // //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 81);
+    // //     }
     //
-    //         uint128 currentIndex = mYieldFee.currentIndex();
+    // /* ============ unwrap ============ */
     //
-    //         _setupIndices(earningEnabled_, currentMIndex_, enableMIndex_, disableIndex_);
-    //         (balanceWithYield_, balance_) = _getFuzzedBalances(
-    //             currentIndex,
-    //             balanceWithYield_,
-    //             balance_,
-    //             _getMaxAmount(currentIndex)
-    //         );
+    // function test_unwrap_invalidAmount() external {
+    //     vm.expectRevert(UIntMath.InvalidUInt240.selector);
     //
-    //         uint112 alicePrincipal = _setupAccount(alice, balanceWithYield_, balance_);
+    //     vm.prank(alice);
+    //     mYieldFee.unwrap(alice, uint256(type(uint240).max) + 1);
+    // }
     //
-    //         wrapAmount_ = uint240(bound(wrapAmount_, 0, _getMaxAmount(currentIndex) - balanceWithYield_));
+    // function test_unwrap_insufficientAmount() external {
+    //     vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
     //
-    //         mToken.setBalanceOf(alice, wrapAmount_);
+    //     vm.prank(alice);
+    //     mYieldFee.unwrap(alice, 0);
+    // }
     //
-    //         if (wrapAmount_ == 0) {
-    //             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
-    //         } else {
-    //             vm.expectEmit();
-    //             emit IERC20.Transfer(address(0), alice, wrapAmount_);
-    //         }
+    // function test_unwrap_insufficientBalance() external {
+    //     mToken.setCurrentIndex(1_125000000000);
     //
-    //         vm.startPrank(alice);
-    //         mYieldFee.wrap(alice, wrapAmount_);
+    //     mYieldFee.setAccountOf(alice, 999, 909);
     //
-    //         if (wrapAmount_ == 0) return;
+    //     vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
     //
-    //         uint240 aliceBalance = balance_ + wrapAmount_;
-    //         alicePrincipal += IndexingMath.getPrincipalAmountRoundedDown(wrapAmount_, currentIndex);
+    //     vm.prank(alice);
+    //     mYieldFee.unwrap(alice, 1_000);
+    // }
     //
-    //         uint240 aliceBalanceWithYield = IndexingMath.getPresentAmountRoundedDown(alicePrincipal, currentIndex);
-    //         uint240 aliceYield = !earningEnabled_ || (aliceBalanceWithYield <= aliceBalance)
-    //             ? 0
-    //             : aliceBalanceWithYield - aliceBalance;
+    // function test_unwrap() external {
+    //     // 10% index growth
+    //     mToken.setLatestIndex(1_100000000000);
+    //     mYieldFee.setEnableLatestMIndex(1_100000000000);
+    //     mToken.setLatestUpdateTimestamp(block.timestamp);
     //
-    //         uint16 yieldFeeRate = mYieldFee.yieldFeeRate();
-    //         uint240 yieldFee = aliceYield == 0 ? 0 : (aliceYield * yieldFeeRate) / HUNDRED_PERCENT;
+    //     vm.warp(startTimestamp + 30_057_038);
+    //     assertEq(mYieldFee.currentIndex(), 1_079230399224);
     //
-    //         assertEq(mYieldFee.balanceOf(alice), aliceBalance);
-    //         assertEq(mYieldFee.balanceOf(alice), mYieldFee.totalSupply());
+    //     mToken.setBalanceOf(address(mYieldFee), 1_100);
     //
-    //         assertApproxEqAbs(mYieldFee.principalOf(alice), mYieldFee.totalPrincipal(), 1); // May round down on wrap.
+    //     mYieldFee.setTotalPrincipal(1_000);
+    //     mYieldFee.setTotalSupply(1_000);
     //
-    //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + aliceYield - yieldFee);
-    //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + mYieldFee.accruedYieldOf(alice));
+    //     // Total supply + yield: 1_100
+    //     // Alice balance with yield: 1_079
+    //     // Fee: 21
+    //     mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield without fee
     //
-    //         // Principal is rounded up when adding to total principal.
-    //         // And projected supply is rounded up when converting total principal to a present amount.
-    //         // TODO: why is the rounding error so high?
-    //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 81);
-    //     }
-
-    /* ============ unwrap ============ */
-
-    function test_unwrap_invalidAmount() external {
-        vm.expectRevert(UIntMath.InvalidUInt240.selector);
-
-        vm.prank(alice);
-        mYieldFee.unwrap(alice, uint256(type(uint240).max) + 1);
-    }
-
-    function test_unwrap_insufficientAmount() external {
-        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
-
-        vm.prank(alice);
-        mYieldFee.unwrap(alice, 0);
-    }
-
-    function test_unwrap_insufficientBalance() external {
-        mToken.setCurrentIndex(1_125000000000);
-
-        mYieldFee.setAccountOf(alice, 999, 909);
-
-        vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
-
-        vm.prank(alice);
-        mYieldFee.unwrap(alice, 1_000);
-    }
-
-    function test_unwrap() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
-
-        vm.warp(startTimestamp + 30_057_038);
-        assertEq(mYieldFee.currentIndex(), 1_079230399224);
-
-        mToken.setBalanceOf(address(mYieldFee), 1_100);
-
-        mYieldFee.setTotalPrincipal(1_000);
-        mYieldFee.setTotalSupply(1_000);
-
-        // Total supply + yield: 1_100
-        // Alice balance with yield: 1_079
-        // Fee: 21
-        mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield without fee
-
-        assertEq(mYieldFee.principalOf(alice), 1_000);
-        assertEq(mYieldFee.balanceOf(alice), 1_000);
-        assertEq(mYieldFee.accruedYieldOf(alice), 79);
-        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79);
-        assertEq(mYieldFee.totalPrincipal(), 1_000);
-        assertEq(mYieldFee.totalSupply(), 1_000);
-        assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
-        assertEq(mYieldFee.projectedSupply(), 1_100);
-
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 1);
-
-        vm.prank(alice);
-        mYieldFee.unwrap(alice, 1);
-
-        assertEq(mYieldFee.principalOf(alice), 1_000 - 1);
-        assertEq(mYieldFee.balanceOf(alice), 1_000 - 1);
-        assertEq(mYieldFee.accruedYieldOf(alice), 79);
-        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000); // No change due to principal round up on unwrap
-        assertEq(mYieldFee.totalSupply(), 1_000 - 1);
-        assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
-        assertEq(mYieldFee.projectedSupply(), 1_100 - 1);
-
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 499);
-
-        vm.prank(alice);
-        mYieldFee.unwrap(alice, 499);
-
-        assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463);
-        assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499);
-        assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 + 2);
-        assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499);
-        assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
-        assertEq(mYieldFee.projectedSupply(), 1_100 - 499 - 1);
-
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 500);
-
-        vm.prank(alice);
-        mYieldFee.unwrap(alice, 500);
-
-        assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463 - 464); // 72
-        assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499 - 500); // 0
-        assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 - 464 + 3);
-        assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499 - 500); // 0
-        assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
-        assertEq(mYieldFee.projectedSupply(), 1_100 - 499 - 500 - 1); // 100
-
-        assertEq(mToken.balanceOf(alice), 1000);
-        assertEq(mToken.balanceOf(address(mYieldFee)), 100);
-    }
-
-    //     function testFuzz_unwrap(
-    //         bool earningEnabled_,
-    //         uint240 balanceWithYield_,
-    //         uint240 balance_,
-    //         uint240 unwrapAmount_,
-    //         uint128 currentMIndex_,
-    //         uint128 enableMIndex_,
-    //         uint128 disableIndex_
-    //     ) external {
-    //         (currentMIndex_, enableMIndex_, disableIndex_) = _getFuzzedIndices(
-    //             currentMIndex_,
-    //             enableMIndex_,
-    //             disableIndex_
-    //         );
+    //     assertEq(mYieldFee.principalOf(alice), 1_000);
+    //     assertEq(mYieldFee.balanceOf(alice), 1_000);
+    //     assertEq(mYieldFee.accruedYieldOf(alice), 79);
+    //     assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79);
+    //     assertEq(mYieldFee.totalPrincipal(), 1_000);
+    //     assertEq(mYieldFee.totalSupply(), 1_000);
+    //     assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
+    //     assertEq(mYieldFee.projectedSupply(), 1_100);
     //
-    //         _setupIndices(earningEnabled_, currentMIndex_, enableMIndex_, disableIndex_);
+    //     vm.expectEmit();
+    //     emit IERC20.Transfer(alice, address(0), 1);
     //
-    //         (balanceWithYield_, balance_) = _getFuzzedBalances(
-    //             currentMIndex_,
-    //             balanceWithYield_,
-    //             balance_,
-    //             _getMaxAmount(mYieldFee.currentIndex())
-    //         );
+    //     vm.prank(alice);
+    //     mYieldFee.unwrap(alice, 1);
     //
-    //         uint112 alicePrincipal = _setupAccount(alice, balanceWithYield_, balance_);
+    //     assertEq(mYieldFee.principalOf(alice), 1_000 - 1);
+    //     assertEq(mYieldFee.balanceOf(alice), 1_000 - 1);
+    //     assertEq(mYieldFee.accruedYieldOf(alice), 79);
+    //     assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79 - 1);
+    //     assertEq(mYieldFee.totalPrincipal(), 1_000); // No change due to principal round up on unwrap
+    //     assertEq(mYieldFee.totalSupply(), 1_000 - 1);
+    //     assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
+    //     assertEq(mYieldFee.projectedSupply(), 1_100 - 1);
     //
-    //         mToken.setBalanceOf(address(mYieldFee), balance_);
+    //     vm.expectEmit();
+    //     emit IERC20.Transfer(alice, address(0), 499);
     //
-    //         unwrapAmount_ = uint240(bound(unwrapAmount_, 0, _getMaxAmount(mYieldFee.currentIndex()) - balanceWithYield_));
+    //     vm.prank(alice);
+    //     mYieldFee.unwrap(alice, 499);
     //
-    //         if (unwrapAmount_ == 0) {
-    //             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
-    //         } else if (unwrapAmount_ > balance_) {
-    //             vm.expectRevert(
-    //                 abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, balance_, unwrapAmount_)
-    //             );
-    //         } else {
-    //             vm.expectEmit();
-    //             emit IERC20.Transfer(alice, address(0), unwrapAmount_);
-    //         }
+    //     assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463);
+    //     assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499);
+    //     assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1);
+    //     assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 + 2);
+    //     assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499);
+    //     assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
+    //     assertEq(mYieldFee.projectedSupply(), 1_100 - 499 - 1);
     //
-    //         vm.startPrank(alice);
-    //         mYieldFee.unwrap(alice, unwrapAmount_);
+    //     vm.expectEmit();
+    //     emit IERC20.Transfer(alice, address(0), 500);
     //
-    //         if ((unwrapAmount_ == 0) || (unwrapAmount_ > balance_)) return;
+    //     vm.prank(alice);
+    //     mYieldFee.unwrap(alice, 500);
     //
-    //         uint240 aliceBalance = balance_ - unwrapAmount_;
-    //         uint112 unwrapPrincipalUp = IndexingMath.getPrincipalAmountRoundedUp(unwrapAmount_, mYieldFee.currentIndex());
-    //         alicePrincipal = unwrapPrincipalUp > alicePrincipal ? 0 : alicePrincipal - unwrapPrincipalUp;
+    //     assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463 - 464); // 72
+    //     assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499 - 500); // 0
+    //     assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1 - 1);
+    //     assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 - 464 + 3);
+    //     assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499 - 500); // 0
+    //     assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
+    //     assertEq(mYieldFee.projectedSupply(), 1_100 - 499 - 500 - 1); // 100
     //
-    //         uint240 aliceBalanceWithYield = IndexingMath.getPresentAmountRoundedDown(
-    //             alicePrincipal,
-    //             mYieldFee.currentIndex()
-    //         );
+    //     assertEq(mToken.balanceOf(alice), 1000);
+    //     assertEq(mToken.balanceOf(address(mYieldFee)), 100);
+    // }
     //
-    //         uint240 aliceYield = (aliceBalanceWithYield <= aliceBalance) ? 0 : aliceBalanceWithYield - aliceBalance;
-    //
-    //         uint16 yieldFeeRate = mYieldFee.yieldFeeRate();
-    //         uint240 yieldFee = aliceYield == 0 ? 0 : (aliceYield * yieldFeeRate) / HUNDRED_PERCENT;
-    //
-    //         assertEq(mYieldFee.balanceOf(alice), aliceBalance);
-    //         assertEq(mYieldFee.balanceOf(alice), mYieldFee.totalSupply());
-    //
-    //         assertApproxEqAbs(mYieldFee.principalOf(alice), mYieldFee.totalPrincipal(), 1); // May round up on unwrap.
-    //
-    //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + aliceYield - yieldFee);
-    //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + mYieldFee.accruedYieldOf(alice));
-    //
-    //         // Principal is rounded down when subtracting from total principal.
-    //         // And projected supply is rounded up when converting total principal to a present amount.
-    //         // TODO: why is the rounding error so high?
-    //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 94);
-    //     }
+    // //     function testFuzz_unwrap(
+    // //         bool earningEnabled_,
+    // //         uint240 balanceWithYield_,
+    // //         uint240 balance_,
+    // //         uint240 unwrapAmount_,
+    // //         uint128 currentMIndex_,
+    // //         uint128 enableMIndex_,
+    // //         uint128 disableIndex_
+    // //     ) external {
+    // //         (currentMIndex_, enableMIndex_, disableIndex_) = _getFuzzedIndices(
+    // //             currentMIndex_,
+    // //             enableMIndex_,
+    // //             disableIndex_
+    // //         );
+    // //
+    // //         _setupIndices(earningEnabled_, currentMIndex_, enableMIndex_, disableIndex_);
+    // //
+    // //         (balanceWithYield_, balance_) = _getFuzzedBalances(
+    // //             currentMIndex_,
+    // //             balanceWithYield_,
+    // //             balance_,
+    // //             _getMaxAmount(mYieldFee.currentIndex())
+    // //         );
+    // //
+    // //         uint112 alicePrincipal = _setupAccount(alice, balanceWithYield_, balance_);
+    // //
+    // //         mToken.setBalanceOf(address(mYieldFee), balance_);
+    // //
+    // //         unwrapAmount_ = uint240(bound(unwrapAmount_, 0, _getMaxAmount(mYieldFee.currentIndex()) - balanceWithYield_));
+    // //
+    // //         if (unwrapAmount_ == 0) {
+    // //             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
+    // //         } else if (unwrapAmount_ > balance_) {
+    // //             vm.expectRevert(
+    // //                 abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, balance_, unwrapAmount_)
+    // //             );
+    // //         } else {
+    // //             vm.expectEmit();
+    // //             emit IERC20.Transfer(alice, address(0), unwrapAmount_);
+    // //         }
+    // //
+    // //         vm.startPrank(alice);
+    // //         mYieldFee.unwrap(alice, unwrapAmount_);
+    // //
+    // //         if ((unwrapAmount_ == 0) || (unwrapAmount_ > balance_)) return;
+    // //
+    // //         uint240 aliceBalance = balance_ - unwrapAmount_;
+    // //         uint112 unwrapPrincipalUp = IndexingMath.getPrincipalAmountRoundedUp(unwrapAmount_, mYieldFee.currentIndex());
+    // //         alicePrincipal = unwrapPrincipalUp > alicePrincipal ? 0 : alicePrincipal - unwrapPrincipalUp;
+    // //
+    // //         uint240 aliceBalanceWithYield = IndexingMath.getPresentAmountRoundedDown(
+    // //             alicePrincipal,
+    // //             mYieldFee.currentIndex()
+    // //         );
+    // //
+    // //         uint240 aliceYield = (aliceBalanceWithYield <= aliceBalance) ? 0 : aliceBalanceWithYield - aliceBalance;
+    // //
+    // //         uint16 yieldFeeRate = mYieldFee.yieldFeeRate();
+    // //         uint240 yieldFee = aliceYield == 0 ? 0 : (aliceYield * yieldFeeRate) / HUNDRED_PERCENT;
+    // //
+    // //         assertEq(mYieldFee.balanceOf(alice), aliceBalance);
+    // //         assertEq(mYieldFee.balanceOf(alice), mYieldFee.totalSupply());
+    // //
+    // //         assertApproxEqAbs(mYieldFee.principalOf(alice), mYieldFee.totalPrincipal(), 1); // May round up on unwrap.
+    // //
+    // //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + aliceYield - yieldFee);
+    // //         assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + mYieldFee.accruedYieldOf(alice));
+    // //
+    // //         // Principal is rounded down when subtracting from total principal.
+    // //         // And projected supply is rounded up when converting total principal to a present amount.
+    // //         // TODO: why is the rounding error so high?
+    // //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 94);
+    // //     }
 
     /* ============ transfer ============ */
 
@@ -1014,11 +943,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     // TODO: add integration test
     function test_transfer() external {
-        // 10% index growth
-        mToken.setLatestIndex(1_100000000000);
-        mYieldFee.setEnableLatestMIndex(1_100000000000);
-        mToken.setLatestUpdateTimestamp(block.timestamp);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
+        // 10% index growth
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -1063,39 +990,41 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYield(), 79 + 39 + 1);
     }
 
-    //     function test_transfer_toSelf() external {
-    //         uint128 enableMIndex = 1_100000000000;
-    //
-    //         mToken.setCurrentIndex(1_237000000000);
-    //         mYieldFee.setEnableMIndex(enableMIndex);
-    //
-    //         mYieldFee.setTotalPrincipal(1_000);
-    //         mYieldFee.setTotalSupply(1_000);
-    //
-    //         // Total supply + yield: 1_125
-    //         // Alice balance with yield: 1_100
-    //         // Fee: 25
-    //         mYieldFee.setAccountOf(alice, 1_000, 1_000, enableMIndex); // 1_100 balance with yield.
-    //
-    //         assertEq(mYieldFee.balanceOf(alice), 1_000);
-    //         assertEq(mYieldFee.accruedYieldOf(alice), 100);
-    //
-    //         vm.expectEmit();
-    //         emit IERC20.Transfer(alice, alice, 500);
-    //
-    //         vm.prank(alice);
-    //         mYieldFee.transfer(alice, 500);
-    //
-    //         assertEq(mYieldFee.principalOf(alice), 1_000);
-    //         assertEq(mYieldFee.balanceOf(alice), 1_000);
-    //         assertEq(mYieldFee.accruedYieldOf(alice), 100);
-    //
-    //         assertEq(mYieldFee.totalPrincipal(), 1_000);
-    //         assertEq(mYieldFee.totalSupply(), 1_000);
-    //         assertEq(mYieldFee.totalAccruedYield(), 125);
-    //         assertEq(mYieldFee.projectedSupply(), 1_125);
-    //     }
-    //
+    function test_transfer_toSelf() external {
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+
+        // 10% index growth
+        vm.warp(startTimestamp + 30_057_038);
+        assertEq(mYieldFee.currentIndex(), 1_079230399224);
+
+        mYieldFee.setTotalPrincipal(1_000);
+        mYieldFee.setTotalSupply(1_000);
+        mToken.setBalanceOf(address(mYieldFee), 1_125);
+
+        // Total supply + yield: 1_125
+        // Alice balance with yield: 1_100
+        // Fee: 21
+        mYieldFee.setAccountOf(alice, 1_000, 1_000);
+
+        assertEq(mYieldFee.balanceOf(alice), 1_000);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, alice, 500);
+
+        vm.prank(alice);
+        mYieldFee.transfer(alice, 500);
+
+        assertEq(mYieldFee.principalOf(alice), 1_000);
+        assertEq(mYieldFee.balanceOf(alice), 1_000);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79);
+
+        assertEq(mYieldFee.totalPrincipal(), 1_000);
+        assertEq(mYieldFee.totalSupply(), 1_000);
+        assertEq(mYieldFee.totalAccruedYield(), 79);
+        assertEq(mYieldFee.projectedSupply(), 1_125);
+    }
+
     //     function testFuzz_transfer(
     //         bool earningEnabled_,
     //         uint240 aliceBalanceWithYield_,

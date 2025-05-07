@@ -102,6 +102,9 @@ interface IMTokenLike {
     /// @notice The current index that would be written to storage if `updateIndex` is called.
     function currentIndex() external view returns (uint128);
 
+    /// @notice The current value of earner rate in basis points.
+    function earnerRate() external view returns (uint32);
+
     /// @notice Returns the EIP712 domain separator used in the encoding of a signed digest.
     function DOMAIN_SEPARATOR() external view returns (bytes32);
 

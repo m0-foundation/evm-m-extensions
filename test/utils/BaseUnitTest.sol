@@ -15,23 +15,25 @@ contract BaseUnitTest is Test {
     uint16 public constant YIELD_FEE_RATE = 2000; // 20%
 
     bytes32 public constant EARNERS_LIST = "earners";
-    uint32 public constant EARNER_RATE = ContinuousIndexingMath.BPS_SCALED_ONE / 10; // 10% APY
+    uint32 public constant M_EARNER_RATE = ContinuousIndexingMath.BPS_SCALED_ONE / 10; // 10% APY
 
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
     bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
 
     MockM public mToken;
-    MockRateOracle public rateOracle;
 
-    uint256 public startTimestamp = vm.getBlockTimestamp();
+    uint40 public startTimestamp = 0;
     uint128 public expectedCurrentIndex;
+    uint32 public mYiedFeeEarnerRate;
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
+    address public yieldRecipientManager = makeAddr("yieldRecipientManager");
     address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
     address public yieldFeeManager = makeAddr("yieldFeeManager");
 
@@ -46,15 +48,17 @@ contract BaseUnitTest is Test {
     address[] public accounts;
 
     function setUp() public virtual {
-        mToken = new MockM();
-        rateOracle = new MockRateOracle();
+        vm.warp(startTimestamp);
 
-        rateOracle.setEarnerRate(EARNER_RATE);
+        mToken = new MockM();
+
+        mToken.setEarnerRate(M_EARNER_RATE);
 
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, charlie, david];
 
         expectedCurrentIndex = 1_100000068703;
+        mYiedFeeEarnerRate = _getEarnerRate(M_EARNER_RATE, YIELD_FEE_RATE);
     }
 
     /* ============ Utils ============ */
@@ -69,25 +73,24 @@ contract BaseUnitTest is Test {
     }
 
     function _getCurrentIndex(
-        uint128 mLatestIndex,
-        uint128 enableLatestMIndex,
-        uint128 disableIndex,
-        uint32 earnerRate,
-        uint32 yieldFeeRate,
-        uint40 mLatestUpdateTimestamp
+        uint128 latestIndex,
+        uint32 latestRate,
+        uint40 latestUpdateTimestamp
     ) internal view returns (uint128) {
         return
             UIntMath.bound128(
                 ContinuousIndexingMath.multiplyIndicesDown(
-                    (UIntMath.safe128(uint256(disableIndex) * mLatestIndex) / enableLatestMIndex),
+                    latestIndex,
                     ContinuousIndexingMath.getContinuousIndex(
-                        ContinuousIndexingMath.convertFromBasisPoints(
-                            UIntMath.safe32((uint256(earnerRate) * (HUNDRED_PERCENT - yieldFeeRate)) / HUNDRED_PERCENT)
-                        ),
-                        uint32(block.timestamp - mLatestUpdateTimestamp)
+                        ContinuousIndexingMath.convertFromBasisPoints(latestRate),
+                        uint32(block.timestamp - latestUpdateTimestamp)
                     )
                 )
             );
+    }
+
+    function _getEarnerRate(uint32 mEarnerRate, uint32 yieldFeeRate) internal pure returns (uint32) {
+        return UIntMath.safe32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
     }
 
     function _getMaxAmount(uint128 index_) internal pure returns (uint240) {

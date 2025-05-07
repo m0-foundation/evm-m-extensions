@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 
 contract MockM {
     uint128 public currentIndex;
+    uint32 public earnerRate;
     uint128 public latestIndex;
     uint40 public latestUpdateTimestamp;
 
@@ -42,6 +43,10 @@ contract MockM {
 
     function setCurrentIndex(uint128 currentIndex_) external {
         currentIndex = currentIndex_;
+    }
+
+    function setEarnerRate(uint256 earnerRate_) external {
+        earnerRate = uint32(earnerRate_);
     }
 
     function setLatestIndex(uint128 latestIndex_) external {
