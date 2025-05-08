@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.26;
-import { console } from "../../lib/forge-std/src/console.sol";
+
 import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 
 import { AccessControl } from "../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
@@ -14,7 +14,6 @@ import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMYieldFee } from "./interfaces/IMYieldFee.sol";
-import { IRateOracle } from "./interfaces/IRateOracle.sol";
 
 import { MExtension } from "./abstract/MExtension.sol";
 
@@ -116,7 +115,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         if (yield_ == 0) return 0;
 
-        // NOTE: No change in principal, only the balance is updated and the yield captured by updating the lastClaimIndex.
+        // NOTE: No change in principal, only the balance is updated to include the newly claimed yield.
         unchecked {
             accountInfo_.balance += yield_;
         }
@@ -337,16 +336,20 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         if (balance_ < amount) revert InsufficientBalance(account, balance_, amount);
 
+        uint112 accountPrincipal_ = accountInfo_.principal;
         uint112 totalPrincipal_ = totalPrincipal;
         uint240 totalSupply_ = UIntMath.safe240(totalSupply);
 
         // NOTE: Tracks two principal amounts: rounded up and rounded down.
         //       Slightly overestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
         unchecked {
+            // NOTE: `min112` prevents account's principal underflow.
             accountInfo_.balance -= amount;
-            accountInfo_.principal -= IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_);
+            accountInfo_.principal =
+                accountPrincipal_ -
+                UIntMath.min112(IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_), accountPrincipal_);
 
-            // `min240` and `min112` prevent `totalSupply` and `totalPrincipal` underflow respectively.
+            // NOTE: `min240` and `min112` prevent `totalSupply` and `totalPrincipal` underflow respectively.
             totalSupply = totalSupply_ - UIntMath.min240(amount, totalSupply_);
             totalPrincipal =
                 totalPrincipal_ -

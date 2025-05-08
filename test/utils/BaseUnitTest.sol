@@ -93,26 +93,26 @@ contract BaseUnitTest is Test {
         return UIntMath.safe32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
     }
 
-    function _getMaxAmount(uint128 index_) internal pure returns (uint240) {
-        return (uint240(type(uint112).max) * index_) / EXP_SCALED_ONE;
+    function _getMaxAmount(uint128 index) internal pure returns (uint240) {
+        return (uint240(type(uint112).max) * index) / EXP_SCALED_ONE;
     }
 
-    function _getYieldFee(uint240 yield_, uint16 yieldFeeRate_) internal pure returns (uint240) {
-        return yield_ == 0 ? 0 : (yield_ * yieldFeeRate_) / HUNDRED_PERCENT;
+    function _getYieldFee(uint240 yield, uint16 yieldFeeRate) internal pure returns (uint240) {
+        return yield == 0 ? 0 : (yield * yieldFeeRate) / HUNDRED_PERCENT;
     }
 
     /* ============ Fuzz Utils ============ */
 
     function _getFuzzedBalances(
-        uint128 index_,
-        uint240 balanceWithYield_,
-        uint240 balance_,
-        uint240 maxAmount_
+        uint128 index,
+        uint240 balanceWithYield,
+        uint240 balance,
+        uint240 maxAmount
     ) internal pure returns (uint240, uint240) {
-        balanceWithYield_ = uint240(bound(balanceWithYield_, 0, maxAmount_));
-        balance_ = uint240(bound(balance_, (balanceWithYield_ * EXP_SCALED_ONE) / index_, balanceWithYield_));
+        balanceWithYield = uint240(bound(balanceWithYield, 0, maxAmount));
+        balance = uint240(bound(balance, (balanceWithYield * EXP_SCALED_ONE) / index, balanceWithYield));
 
-        return (balanceWithYield_, balance_);
+        return (balanceWithYield, balance);
     }
 
     function _getFuzzedIndices(
