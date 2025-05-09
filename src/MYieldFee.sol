@@ -7,7 +7,7 @@ import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 import { AccessControl } from "../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 
 import { ContinuousIndexingMath } from "../lib/common/src/libs/ContinuousIndexingMath.sol";
-import { IndexingMath } from "../lib/common/src/libs/IndexingMath.sol";
+import { IndexingMath } from "./lib/IndexingMath.sol";
 import { UIntMath } from "../lib/common/src/libs/UIntMath.sol";
 
 import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
@@ -357,14 +357,12 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
     /* ============ Internal View/Pure Functions ============ */
 
-    function _rate() internal view returns (uint32) {
+    function _rate() internal view virtual returns (uint32) {
         // NOTE: the behavior of M is known, so we can safely retrieve the earner rate.
-        unchecked {
-            return
-                // UIntMath.safe32(
-                uint32((uint256(HUNDRED_PERCENT - yieldFeeRate) * IMTokenLike(mToken).earnerRate()) / HUNDRED_PERCENT);
-            // );
-        }
+        return
+            UIntMath.safe32(
+                (uint256(HUNDRED_PERCENT - yieldFeeRate) * IMTokenLike(mToken).earnerRate()) / HUNDRED_PERCENT
+            );
     }
 
     /**
