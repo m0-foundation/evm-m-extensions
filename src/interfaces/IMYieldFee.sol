@@ -74,6 +74,7 @@ interface IMYieldFee {
 
     /// @notice Emitted in constructor if the admin is 0x0.
     error ZeroAdmin();
+
     /// @notice Emitted in constructor if Rate Oracle is 0x0.
     error ZeroRateOracle();
 
@@ -124,12 +125,15 @@ interface IMYieldFee {
     /// @notice Returns 100% in basis points.
     function HUNDRED_PERCENT() external returns (uint16);
 
+    /// @notice Returns the yield fee manager role hash.
+    function YIELD_FEE_MANAGER_ROLE() external returns (bytes32);
+
     /**
      * @notice Returns the yield accrued for `account`, which is claimable.
      * @param  account The account being queried.
      * @return The amount of yield that is claimable.
      */
-    function accruedYieldOf(address account) external view returns (uint240);
+    function accruedYieldOf(address account) external view returns (uint256);
 
     /**
      * @notice Returns the token balance of `account` including any accrued yield.
@@ -137,9 +141,6 @@ interface IMYieldFee {
      * @return The token balance of `account` including any accrued yield.
      */
     function balanceWithYieldOf(address account) external view returns (uint256);
-
-    /// @notice The current value of earner rate in basis points.
-    function earnerRate() external view returns (uint32);
 
     /**
      * @notice Returns the principal of `account`.
@@ -149,13 +150,13 @@ interface IMYieldFee {
     function principalOf(address account) external view returns (uint112);
 
     /// @notice The projected total supply if all accrued yield and yield fee were claimed at this moment.
-    function projectedSupply() external view returns (uint240);
+    function projectedTotalSupply() external view returns (uint256);
 
     /// @notice The current total accrued yield claimable by holders.
-    function totalAccruedYield() external view returns (uint240);
+    function totalAccruedYield() external view returns (uint256);
 
     /// @notice The current total accrued yield fee claimable by the yield fee recipient.
-    function totalAccruedYieldFee() external view returns (uint240);
+    function totalAccruedYieldFee() external view returns (uint256);
 
     /// @notice The total principal to help compute `totalAccruedYield()` and yield fee.
     function totalPrincipal() external view returns (uint112);

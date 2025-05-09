@@ -90,8 +90,8 @@ contract BaseUnitTest is Helpers, Test {
             );
     }
 
-    function _getMaxAmount(uint128 index) internal pure returns (uint240) {
-        return (uint240(type(uint112).max) * index) / EXP_SCALED_ONE;
+    function _getMaxAmount(uint128 index_) internal pure returns (uint240) {
+        return (uint240(type(uint112).max) * index_) / EXP_SCALED_ONE;
     }
 
     /* ============ Fuzz Utils ============ */

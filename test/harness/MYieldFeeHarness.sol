@@ -15,21 +15,17 @@ contract MYieldFeeHarness is MYieldFee {
         address yieldFeeManager
     ) MYieldFee(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager) {}
 
-    function getRate() external view returns (uint32) {
-        return _rate();
-    }
-
-    function setAccountOf(address account, uint240 balance, uint112 principal) external {
-        _accounts[account].balance = balance;
-        _accounts[account].principal = principal;
+    function setAccountOf(address account, uint256 balance, uint112 principal) external {
+        balanceOf[account] = balance;
+        principalOf[account] = principal;
     }
 
     function setLatestIndex(uint256 latestIndex_) external {
         latestIndex = uint128(latestIndex_);
     }
 
-    function setLatestRate(uint256 latestRate) external {
-        _latestRate = uint32(latestRate);
+    function setLatestRate(uint256 latestRate_) external {
+        latestRate = uint32(latestRate_);
     }
 
     function setLatestUpdateTimestamp(uint256 latestUpdateTimestamp_) external {

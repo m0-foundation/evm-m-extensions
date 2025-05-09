@@ -34,4 +34,7 @@ interface IContinuousIndexing {
 
     /// @notice The latest timestamp when the index was updated.
     function latestUpdateTimestamp() external view returns (uint40);
+
+    /// @notice The latest rate when the index was updated.
+    function latestRate() external view returns (uint32);
 }
