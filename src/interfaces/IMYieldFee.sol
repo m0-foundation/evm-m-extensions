@@ -136,6 +136,12 @@ interface IMYieldFee {
     function accruedYieldOf(address account) external view returns (uint256);
 
     /**
+     * @notice Returns the current value of the earner rate in basis points.
+     *         This value does not account for the compounding interest.
+     */
+    function earnerRate() external view returns (uint32);
+
+    /**
      * @notice Returns the token balance of `account` including any accrued yield.
      * @param  account The address of some account.
      * @return The token balance of `account` including any accrued yield.

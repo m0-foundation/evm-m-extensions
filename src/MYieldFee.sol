@@ -153,8 +153,8 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
     /// @inheritdoc IContinuousIndexing
     function updateIndex() public virtual returns (uint128 currentIndex_) {
-        // Read the latest M token rate adjusted by fee rate split
-        uint32 rate_ = _rate();
+        // NOTE: Read the current M token rate adjusted by fee rate split.
+        uint32 rate_ = earnerRate();
 
         if (latestUpdateTimestamp == block.timestamp && latestRate == rate_) return latestIndex;
 
@@ -212,6 +212,15 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
                     )
                 );
         }
+    }
+
+    /// @inheritdoc IMYieldFee
+    function earnerRate() public view virtual returns (uint32) {
+        // NOTE: The behavior of M is known, so we can safely retrieve the earner rate.
+        return
+            UIntMath.safe32(
+                (uint256(HUNDRED_PERCENT - yieldFeeRate) * IMTokenLike(mToken).earnerRate()) / HUNDRED_PERCENT
+            );
     }
 
     /// @inheritdoc IMExtension
@@ -356,14 +365,6 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
     }
 
     /* ============ Internal View/Pure Functions ============ */
-
-    function _rate() internal view virtual returns (uint32) {
-        // NOTE: the behavior of M is known, so we can safely retrieve the earner rate.
-        return
-            UIntMath.safe32(
-                (uint256(HUNDRED_PERCENT - yieldFeeRate) * IMTokenLike(mToken).earnerRate()) / HUNDRED_PERCENT
-            );
-    }
 
     /**
      * @dev    Compute the yield given a balance, principal and index.
