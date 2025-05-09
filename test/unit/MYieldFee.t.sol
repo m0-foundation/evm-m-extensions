@@ -192,7 +192,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function test_enableEarning() external {
         assertEq(mYieldFee.currentIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
-        assertEq(mYieldFee.earnerRate(), 0);
+        assertEq(mYieldFee.latestRate(), 0);
 
         vm.expectEmit();
         emit IMExtension.EarningEnabled(EXP_SCALED_ONE);
@@ -201,7 +201,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertEq(mYieldFee.currentIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
-        assertEq(mYieldFee.earnerRate(), mYiedFeeEarnerRate);
+        assertEq(mYieldFee.latestRate(), mYiedFeeEarnerRate);
 
         vm.warp(30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
@@ -220,7 +220,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertEq(mYieldFee.currentIndex(), 1_100000000000);
         assertEq(mYieldFee.latestIndex(), 1_100000000000);
-        assertEq(mYieldFee.earnerRate(), mYiedFeeEarnerRate);
+        assertEq(mYieldFee.latestRate(), mYiedFeeEarnerRate);
 
         vm.warp(30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
@@ -233,7 +233,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertFalse(mYieldFee.isEarningEnabled());
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
         assertEq(mYieldFee.latestIndex(), 1_187153439146);
-        assertEq(mYieldFee.earnerRate(), 0);
+        assertEq(mYieldFee.latestRate(), 0);
 
         vm.warp(30_057_038 * 2);
 
@@ -361,7 +361,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYiedFeeEarnerRate = _getEarnerRate(M_EARNER_RATE / 2, YIELD_FEE_RATE);
 
         assertEq(mYieldFee.updateIndex(), expectedCurrentIndex);
-        assertEq(mYieldFee.earnerRate(), mYiedFeeEarnerRate);
+        assertEq(mYieldFee.latestRate(), mYiedFeeEarnerRate);
 
         previousTimestamp = uint40(nextTimestamp);
 
@@ -479,14 +479,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.principalOf(alice), principal);
     }
 
-    /* ============ projectedSupply ============ */
+    /* ============ projectedTotalSupply ============ */
 
     // TODO: add integration test
-    function test_projectedSupply() external {
+    function test_projectedTotalSupply() external {
         uint256 totalSupply = 1_000e6;
 
         mToken.setBalanceOf(address(mYieldFee), totalSupply);
-        assertEq(mYieldFee.projectedSupply(), totalSupply);
+        assertEq(mYieldFee.projectedTotalSupply(), totalSupply);
     }
 
     /* ============ totalAccruedYield ============ */
@@ -616,7 +616,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalPrincipal(), 1_000);
         assertEq(mYieldFee.totalSupply(), 1_000);
         assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
-        assertEq(mYieldFee.projectedSupply(), 1_100);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_100);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 999);
@@ -632,7 +632,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalPrincipal(), 1_000 + 925 + 1); // Added principal is rounded up
         assertEq(mYieldFee.totalSupply(), 1_000 + 999);
         assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedSupply(), 2_099);
+        assertEq(mYieldFee.projectedTotalSupply(), 2_099);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 1);
@@ -647,7 +647,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalPrincipal(), 1_000 + 925 + 1 + 1);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999 + 1);
         assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedSupply(), 2_099 + 1); // rounds up
+        assertEq(mYieldFee.projectedTotalSupply(), 2_099 + 1); // rounds up
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 2);
@@ -662,7 +662,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalPrincipal(), 1_000 + 925 + 1 + 1 + 2);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999 + 1 + 2);
         assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedSupply(), 2_099 + 1 + 2);
+        assertEq(mYieldFee.projectedTotalSupply(), 2_099 + 1 + 2);
 
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_099 + 1 + 2);
@@ -733,7 +733,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     // //         // Principal is rounded up when adding to total principal.
     // //         // And projected supply is rounded up when converting total principal to a present amount.
     // //         // TODO: why is the rounding error so high?
-    // //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 81);
+    // //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedTotalSupply(), 81);
     // //     }
     //
     // /* ============ unwrap ============ */
@@ -789,7 +789,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     //     assertEq(mYieldFee.totalPrincipal(), 1_000);
     //     assertEq(mYieldFee.totalSupply(), 1_000);
     //     assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
-    //     assertEq(mYieldFee.projectedSupply(), 1_100);
+    //     assertEq(mYieldFee.projectedTotalSupply(), 1_100);
     //
     //     vm.expectEmit();
     //     emit IERC20.Transfer(alice, address(0), 1);
@@ -804,7 +804,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     //     assertEq(mYieldFee.totalPrincipal(), 1_000); // No change due to principal round up on unwrap
     //     assertEq(mYieldFee.totalSupply(), 1_000 - 1);
     //     assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
-    //     assertEq(mYieldFee.projectedSupply(), 1_100 - 1);
+    //     assertEq(mYieldFee.projectedTotalSupply(), 1_100 - 1);
     //
     //     vm.expectEmit();
     //     emit IERC20.Transfer(alice, address(0), 499);
@@ -818,7 +818,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     //     assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 + 2);
     //     assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499);
     //     assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
-    //     assertEq(mYieldFee.projectedSupply(), 1_100 - 499 - 1);
+    //     assertEq(mYieldFee.projectedTotalSupply(), 1_100 - 499 - 1);
     //
     //     vm.expectEmit();
     //     emit IERC20.Transfer(alice, address(0), 500);
@@ -832,7 +832,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     //     assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 - 464 + 3);
     //     assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499 - 500); // 0
     //     assertEq(mYieldFee.totalAccruedYield(), 79 + 1);
-    //     assertEq(mYieldFee.projectedSupply(), 1_100 - 499 - 500 - 1); // 100
+    //     assertEq(mYieldFee.projectedTotalSupply(), 1_100 - 499 - 500 - 1); // 100
     //
     //     assertEq(mToken.balanceOf(alice), 1000);
     //     assertEq(mToken.balanceOf(address(mYieldFee)), 100);
@@ -909,7 +909,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     // //         // Principal is rounded down when subtracting from total principal.
     // //         // And projected supply is rounded up when converting total principal to a present amount.
     // //         // TODO: why is the rounding error so high?
-    // //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedSupply(), 94);
+    // //         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedTotalSupply(), 94);
     // //     }
 
     /* ============ transfer ============ */
@@ -1022,7 +1022,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalPrincipal(), 1_000);
         assertEq(mYieldFee.totalSupply(), 1_000);
         assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedSupply(), 1_125);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_125);
     }
 
     //     function testFuzz_transfer(
@@ -1127,7 +1127,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     //
     //         // TODO: why is there a rounding issue?
     //         assertApproxEqAbs(
-    //             mYieldFee.projectedSupply(),
+    //             mYieldFee.projectedTotalSupply(),
     //             mYieldFee.balanceWithYieldOf(alice) +
     //                 _getYieldFee(aliceYield, mYieldFee.yieldFeeRate()) +
     //                 mYieldFee.balanceWithYieldOf(bob) +

@@ -14,8 +14,6 @@ import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMYieldFee } from "./interfaces/IMYieldFee.sol";
-import { IRateOracle } from "./interfaces/IRateOracle.sol";
-
 import { MExtension } from "./abstract/MExtension.sol";
 
 /**
@@ -25,27 +23,13 @@ import { MExtension } from "./abstract/MExtension.sol";
  * @author M0 Labs
  */
 contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension {
-    /* ============ Structs ============ */
-
-    /**
-     * @dev   Struct to represent an account's balance and principal.
-     * @param balance   The present amount of tokens held by the account.
-     * @param principal The earning principal of the account.
-     */
-    struct Account {
-        // First slot
-        uint240 balance;
-        // Second slot
-        uint112 principal;
-    }
-
     /* ============ Variables ============ */
 
     /// @inheritdoc IMYieldFee
     uint16 public constant HUNDRED_PERCENT = 10_000;
 
-    /// @dev The role that can manage the yield fee rate and recipient.
-    bytes32 internal constant _YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+    /// @inheritdoc IMYieldFee
+    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
 
     /// @inheritdoc IERC20
     uint256 public totalSupply;
@@ -65,11 +49,14 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
     /// @inheritdoc IContinuousIndexing
     uint40 public latestUpdateTimestamp;
 
-    /// @dev The latest updated rate.
-    uint32 internal _latestRate;
+    /// @inheritdoc IContinuousIndexing
+    uint32 public latestRate;
 
-    /// @dev Mapping of accounts to their respective `Account` info structs.
-    mapping(address account => Account accountInfo) internal _accounts;
+    /// @inheritdoc IERC20
+    mapping(address account => uint256 balance) public balanceOf;
+
+    /// @inheritdoc IMYieldFee
+    mapping(address account => uint112 principal) public principalOf;
 
     /* ============ Constructor ============ */
 
@@ -96,7 +83,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         if (yieldFeeManager == address(0)) revert ZeroYieldFeeManager();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(_YIELD_FEE_MANAGER_ROLE, yieldFeeManager);
+        _grantRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager);
 
         _setYieldFeeRate(yieldFeeRate_);
         _setYieldFeeRecipient(yieldFeeRecipient_);
@@ -110,15 +97,13 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
     function claimYieldFor(address recipient) external returns (uint256) {
         if (recipient == address(0)) revert ZeroYieldRecipient();
 
-        Account storage accountInfo_ = _accounts[recipient];
-
-        uint240 yield_ = accruedYieldOf(recipient);
+        uint256 yield_ = accruedYieldOf(recipient);
 
         if (yield_ == 0) return 0;
 
-        // NOTE: No change in principal, only the balance is updated and the yield captured by updating the lastClaimIndex.
+        // NOTE: No change in principal, only the balance is updated.
         unchecked {
-            accountInfo_.balance += yield_;
+            balanceOf[recipient] += yield_;
         }
 
         emit YieldClaimed(msg.sender, recipient, yield_);
@@ -145,12 +130,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
     function enableEarning() external override {
         if (isEarningEnabled()) revert EarningIsEnabled();
 
-        // NOTE: initialize timestamp before updating the index to not accrue yield for the non earning period.
-        latestUpdateTimestamp = uint40(block.timestamp);
-
-        // NOTE: initialize the index.
-        //       Will be `EXP_SCALED_ONE` if earning is enabled for the first time.
-        //       Will be equal to `latestIndex` (i.e. the latest stored index) otherwise.
+        // NOTE: update the index to store the latest state, current index won't accrue since `latestRate` is 0.
         emit EarningEnabled(updateIndex());
 
         IMTokenLike(mToken).startEarning();
@@ -163,60 +143,52 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         // NOTE: update the index to store the latest state.
         emit EarningDisabled(updateIndex());
 
-        // NOTE: `_latestRate` is set to 0 to indicate that earning is disabled.
-        delete _latestRate;
+        // NOTE: `latestRate` is set to 0 to indicate that earning is disabled.
+        delete latestRate;
 
         IMTokenLike(mToken).stopEarning(address(this));
     }
 
     /// @inheritdoc IContinuousIndexing
     function updateIndex() public virtual returns (uint128 currentIndex_) {
-        // NOTE: `_rate()` can depend indirectly on `latestIndex` and `latestUpdateTimestamp`, if the RateModel
-        //       depends on earning balances/supply, which depends on `currentIndex()`, so only update them after this.
+        // Read the latest M token rate adjusted by fee rate split
         uint32 rate_ = _rate();
 
-        if (latestUpdateTimestamp == block.timestamp && _latestRate == rate_) return latestIndex;
+        if (latestUpdateTimestamp == block.timestamp && latestRate == rate_) return latestIndex;
 
         // NOTE: `currentIndex()` depends on `_latestRate`, so only update it after this.
         latestIndex = currentIndex_ = currentIndex();
-        _latestRate = rate_;
+        latestRate = rate_;
         latestUpdateTimestamp = uint40(block.timestamp);
 
         emit IndexUpdated(currentIndex_, rate_);
     }
 
     /// @inheritdoc IMYieldFee
-    function setYieldFeeRate(uint16 yieldFeeRate_) external onlyRole(_YIELD_FEE_MANAGER_ROLE) {
+    function setYieldFeeRate(uint16 yieldFeeRate_) external onlyRole(YIELD_FEE_MANAGER_ROLE) {
         _setYieldFeeRate(yieldFeeRate_);
 
-        // NOTE: Update the index to store the new rate.
-        updateIndex();
+        // NOTE: Update the index to store the new adjusted rate.
+        if (isEarningEnabled()) updateIndex();
     }
 
     /// @inheritdoc IMYieldFee
-    function setYieldFeeRecipient(address yieldFeeRecipient_) external onlyRole(_YIELD_FEE_MANAGER_ROLE) {
+    function setYieldFeeRecipient(address yieldFeeRecipient_) external onlyRole(YIELD_FEE_MANAGER_ROLE) {
+        // TODO: consider claiming yield fee for the previous recipient
         _setYieldFeeRecipient(yieldFeeRecipient_);
     }
 
     /* ============ External/Public view functions ============ */
 
     /// @inheritdoc IMYieldFee
-    function accruedYieldOf(address account) public view returns (uint240) {
-        Account memory accountInfo_ = _accounts[account];
-        return _getAccruedYield(accountInfo_.balance, accountInfo_.principal, currentIndex());
-    }
-
-    /// @inheritdoc IERC20
-    function balanceOf(address account) public view returns (uint256) {
-        return _accounts[account].balance;
+    function accruedYieldOf(address account) public view returns (uint256) {
+        return _getAccruedYield(balanceOf[account], principalOf[account], currentIndex());
     }
 
     /// @inheritdoc IMYieldFee
     function balanceWithYieldOf(address account) external view returns (uint256) {
-        // NOTE: Claiming yield does not necessarily result in the account's new balance equaling the value returned
-        //       by `balanceWithYieldOf`, as the yield may be directed to a recipient different from the `account`.
         unchecked {
-            return balanceOf(account) + accruedYieldOf(account);
+            return balanceOf[account] + accruedYieldOf(account);
         }
     }
 
@@ -232,7 +204,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
                     ContinuousIndexingMath.multiplyIndicesDown(
                         latestIndex,
                         ContinuousIndexingMath.getContinuousIndex(
-                            ContinuousIndexingMath.convertFromBasisPoints(_latestRate),
+                            ContinuousIndexingMath.convertFromBasisPoints(latestRate),
                             uint32(block.timestamp - latestUpdateTimestamp)
                         )
                     )
@@ -240,43 +212,27 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         }
     }
 
-    /// @inheritdoc IMYieldFee
-    function earnerRate() external view returns (uint32) {
-        return _latestRate;
-    }
-
     /// @inheritdoc IMExtension
     function isEarningEnabled() public view override returns (bool) {
-        return _latestRate != 0;
+        return latestRate != 0;
+    }
+
+    function projectedTotalSupply() public view returns (uint256) {
+        return IndexingMath.getPresentAmountRoundedUp(totalPrincipal, currentIndex());
     }
 
     /// @inheritdoc IMYieldFee
-    function principalOf(address account) external view returns (uint112) {
-        return _accounts[account].principal;
+    function totalAccruedYield() public view returns (uint256) {
+        return _getAccruedYield(totalSupply, totalPrincipal, currentIndex());
     }
 
     /// @inheritdoc IMYieldFee
-    function projectedSupply() public view returns (uint240) {
-        // NOTE: all holders are earners and MYieldFee is redeemable 1:1 for M,
-        //       so the projected supply is the M balance of MYieldFee.
-        //       M Token balance are limited to `uint240`.
-        return uint240(IERC20(mToken).balanceOf(address(this)));
-    }
-
-    /// @inheritdoc IMYieldFee
-    function totalAccruedYield() public view returns (uint240) {
-        unchecked {
-            return _getAccruedYield(UIntMath.safe240(totalSupply), totalPrincipal, currentIndex());
-        }
-    }
-
-    /// @inheritdoc IMYieldFee
-    function totalAccruedYieldFee() public view returns (uint240) {
-        uint240 projectedSupply_ = projectedSupply();
-        uint240 projectedHoldersSupply_ = UIntMath.safe240(totalSupply) + totalAccruedYield();
+    function totalAccruedYieldFee() public view returns (uint256) {
+        uint256 mBalance_ = _mBalanceOf(address(this));
+        uint256 projectedTotalSupply_ = projectedTotalSupply();
 
         unchecked {
-            return projectedSupply_ > projectedHoldersSupply_ ? projectedSupply_ - projectedHoldersSupply_ : 0;
+            return mBalance_ > projectedTotalSupply_ ? mBalance_ - projectedTotalSupply_ : 0;
         }
     }
 
@@ -288,70 +244,23 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
      * @param amount    The present amount of tokens to mint.
      */
     function _mint(address recipient, uint256 amount) internal override {
-        uint240 safeAmount_ = UIntMath.safe240(amount);
-
-        _revertIfInsufficientAmount(safeAmount_);
+        _revertIfInsufficientAmount(amount);
         _revertIfInvalidRecipient(recipient);
 
-        _addAmount(recipient, safeAmount_, currentIndex());
+        // TODO: fix tomorrow
+        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), currentIndex());
 
-        emit Transfer(address(0), recipient, safeAmount_);
-
-        if (isEarningEnabled()) updateIndex();
-    }
-
-    /**
-     * @dev   Increments the token balance of `account` by `amount`.
-     * @param account      The address whose account balance will be incremented.
-     * @param amount       The present amount of tokens to increment by.
-     * @param currentIndex_ The current index to use to compute the principal amount.
-     */
-    function _addAmount(address account, uint240 amount, uint128 currentIndex_) internal {
-        Account storage accountInfo_ = _accounts[account];
-
-        // NOTE: Tracks two principal amounts: rounded up and rounded down.
-        //       Slightly overestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
-        //       Can be `unchecked` because the max amount of wrappable M is never greater than `type(uint240).max`.
+        // NOTE: Can be `unchecked` because the max amount of M is never greater than `type(uint240).max`.
+        // NOTE: Can be `unchecked` because UIntMath.safe112 is used for principal addition safety
         unchecked {
-            accountInfo_.balance += amount;
-            accountInfo_.principal = UIntMath.safe112(
-                uint256(accountInfo_.principal) + IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_)
-            );
-
+            balanceOf[recipient] += amount;
             totalSupply += amount;
-            totalPrincipal = UIntMath.safe112(
-                uint256(totalPrincipal) + IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_)
-            );
+
+            principalOf[recipient] = UIntMath.safe112(uint256(principalOf[recipient]) + principal_);
+            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principal_);
         }
-    }
 
-    /**
-     * @dev   Decrements the token balance of `account` by `amount`.
-     * @param account      The address whose account balance will be decremented.
-     * @param amount       The present amount of tokens to decrement by.
-     * @param currentIndex_ The current index to use to compute the principal amount.
-     */
-    function _subtractAmount(address account, uint240 amount, uint128 currentIndex_) internal {
-        Account storage accountInfo_ = _accounts[account];
-        uint240 balance_ = accountInfo_.balance;
-
-        if (balance_ < amount) revert InsufficientBalance(account, balance_, amount);
-
-        uint112 totalPrincipal_ = totalPrincipal;
-        uint240 totalSupply_ = UIntMath.safe240(totalSupply);
-
-        // NOTE: Tracks two principal amounts: rounded up and rounded down.
-        //       Slightly overestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
-        unchecked {
-            accountInfo_.balance -= amount;
-            accountInfo_.principal -= IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_);
-
-            // `min240` and `min112` prevent `totalSupply` and `totalPrincipal` underflow respectively.
-            totalSupply = totalSupply_ - UIntMath.min240(amount, totalSupply_);
-            totalPrincipal =
-                totalPrincipal_ -
-                UIntMath.min112(IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_), totalPrincipal_);
-        }
+        emit Transfer(address(0), recipient, amount);
     }
 
     /**
@@ -360,38 +269,25 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
      * @param amount  The present amount of tokens to burn.
      */
     function _burn(address account, uint256 amount) internal override {
-        uint240 safeAmount_ = UIntMath.safe240(amount);
-        _revertIfInsufficientAmount(safeAmount_);
+        _revertIfInsufficientAmount(amount);
 
-        _subtractAmount(account, safeAmount_, currentIndex());
+        uint256 balance_ = balanceOf[account];
 
-        emit Transfer(account, address(0), safeAmount_);
+        _revertIfInsufficientBalance(account, balance_, amount);
 
-        if (isEarningEnabled()) updateIndex();
-    }
+        uint112 principal_ = (balance_ == amount)
+            ? principalOf[account]
+            : IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), currentIndex()); // fix tomorrow
 
-    /**
-     * @dev   Transfers `amount` tokens from `sender` to `recipient` given some current index.
-     * @param sender        The sender's address.
-     * @param recipient     The recipient's address.
-     * @param amount        The amount to be transferred.
-     * @param currentIndex_ The current index.
-     */
-    function _transfer(address sender, address recipient, uint240 amount, uint128 currentIndex_) internal {
-        _revertIfInvalidRecipient(recipient);
+        unchecked {
+            balanceOf[account] = balance_ - amount;
+            totalSupply -= amount;
 
-        emit Transfer(sender, recipient, amount);
+            principalOf[account] -= principal_;
+            totalPrincipal -= principal_;
+        }
 
-        if (amount == 0) return;
-
-        Account storage senderInfo_ = _accounts[sender];
-
-        if (senderInfo_.balance < amount) revert InsufficientBalance(sender, senderInfo_.balance, amount);
-
-        if (sender == recipient) return;
-
-        _subtractAmount(sender, amount, currentIndex_);
-        _addAmount(recipient, amount, currentIndex_);
+        emit Transfer(account, address(0), amount);
     }
 
     /**
@@ -401,9 +297,30 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
      * @param amount    The amount to be transferred.
      */
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        _transfer(sender, recipient, UIntMath.safe240(amount), currentIndex());
+        _revertIfInvalidRecipient(recipient);
 
-        if (isEarningEnabled()) updateIndex();
+        emit Transfer(sender, recipient, amount);
+
+        if (amount == 0) return;
+
+        uint256 balance_ = balanceOf[sender];
+
+        _revertIfInsufficientBalance(sender, balance_, amount);
+
+        if (sender == recipient) return;
+
+        uint112 principal_ = (balance_ == amount)
+            ? principalOf[sender]
+            : IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), currentIndex()); // fix tomorrow
+
+        // NOTE: Can be `unchecked` because UIntMath.safe112 is used for principal addition safety
+        unchecked {
+            balanceOf[sender] = balance_ - amount;
+            balanceOf[recipient] += amount;
+
+            principalOf[sender] -= principal_;
+            principalOf[recipient] = UIntMath.safe112(uint256(principalOf[recipient]) + principal_);
+        }
     }
 
     /**
@@ -438,6 +355,16 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
     /* ============ Internal View/Pure Functions ============ */
 
+    function _rate() internal view returns (uint32) {
+        // NOTE: the behavior of M is known, so we can safely retrieve the earner rate.
+        unchecked {
+            return
+                // UIntMath.safe32(
+                uint32((uint256(HUNDRED_PERCENT - yieldFeeRate) * IMTokenLike(mToken).earnerRate()) / HUNDRED_PERCENT);
+            // );
+        }
+    }
+
     /**
      * @dev    Compute the yield given a balance, principal and index.
      * @param  balance   The current balance of the account.
@@ -445,22 +372,15 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
      * @param  index     The current index.
      * @return The yield accrued since the last claim.
      */
-    function _getAccruedYield(uint240 balance, uint112 principal, uint128 index) internal pure returns (uint240) {
-        uint240 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal, index);
-        return balanceWithYield_ > balance ? balanceWithYield_ - balance : 0;
+    function _getAccruedYield(uint256 balance, uint112 principal, uint128 index) internal pure returns (uint256) {
+        uint256 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal, index);
+        unchecked {
+            return balanceWithYield_ > balance ? balanceWithYield_ - balance : 0;
+        }
     }
 
-    /**
-     * @dev    Gets the current earner rate from M Token and applies the yield fee rate.
-     *         SHOULD be virtual to allow inheriting extensions to override it.
-     * @return The current MYieldFee earner rate.
-     */
-    function _rate() internal view virtual returns (uint32) {
-        // NOTE: the behavior of M is known, so we can safely retrieve the earner rate.
-        return
-            UIntMath.safe32(
-                (uint256(HUNDRED_PERCENT - yieldFeeRate) * IMTokenLike(mToken).earnerRate()) / HUNDRED_PERCENT
-            );
+    function _mBalanceOf(address account) public view returns (uint256) {
+        return IERC20(mToken).balanceOf(account);
     }
 
     /**
@@ -478,4 +398,58 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
     function _revertIfInvalidRecipient(address account) internal pure {
         if (account == address(0)) revert InvalidRecipient(account);
     }
+
+    /**
+     * @dev   Reverts if `account` balance is below `balance`.
+     * @param account Address of an account.
+     * @param balance Balance of an account.
+     * @param amount Amount to transfer or burn.
+     */
+    function _revertIfInsufficientBalance(address account, uint256 balance, uint256 amount) internal pure {
+        if (balance < amount) revert InsufficientBalance(account, balance, amount);
+    }
+
+    // /**
+    //  * @dev    Returns the present amount (rounded down) given the principal amount and an index.
+    //  * @param  principal The principal amount.
+    //  * @param  index     An index.
+    //  * @return The present amount rounded down.
+    //  */
+    // function _getPresentAmountRoundedDown(uint112 principal, uint128 index) internal pure returns (uint256) {
+    //     unchecked {
+    //         return (uint256(principal) * index) / EXP_SCALED_ONE;
+    //     }
+    // }
+
+    // /**
+    //  * @dev    Returns the present amount (rounded up) given the principal amount and an index.
+    //  * @param  principal The principal amount.
+    //  * @param  index     An index.
+    //  * @return The present amount rounded up.
+    //  */
+    // function _getPresentAmountRoundedUp(uint112 principal, uint128 index) internal pure returns (uint256) {
+    //     unchecked {
+    //         return ((principal * index) + (EXP_SCALED_ONE - 1)) / EXP_SCALED_ONE;
+    //     }
+    // }
+
+    // /**
+    //  * @dev    Returns the principal amount given the present amount, using the current index.
+    //  * @param  amount The present amount.
+    //  * @param  index  An index.
+    //  * @return The principal amount rounded down.
+    //  */
+    // function _getPrincipalAmountRoundedDown(uint256 amount, uint128 index) internal pure returns (uint112) {
+    //     return divide240By128Down(presentAmount, index);
+    // }
+
+    // /**
+    //  * @dev    Returns the principal amount given the present amount, using the current index.
+    //  * @param  amount The present amount.
+    //  * @param  index  An index.
+    //  * @return The principal amount rounded up.
+    //  */
+    // function _getPrincipalAmountRoundedUp(uint256 amount, uint128 index) internal pure returns (uint112) {
+    //     return divide240By128Up(presentAmount, index);
+    // }
 }

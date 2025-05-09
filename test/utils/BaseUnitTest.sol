@@ -90,7 +90,7 @@ contract BaseUnitTest is Test {
     }
 
     function _getEarnerRate(uint32 mEarnerRate, uint32 yieldFeeRate) internal pure returns (uint32) {
-        return UIntMath.safe32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
+        return uint32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
     }
 
     function _getMaxAmount(uint128 index_) internal pure returns (uint240) {
