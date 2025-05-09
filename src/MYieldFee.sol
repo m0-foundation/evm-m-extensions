@@ -405,48 +405,4 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
     function _revertIfInsufficientBalance(address account, uint256 balance, uint256 amount) internal pure {
         if (balance < amount) revert InsufficientBalance(account, balance, amount);
     }
-
-    // /**
-    //  * @dev    Returns the present amount (rounded down) given the principal amount and an index.
-    //  * @param  principal The principal amount.
-    //  * @param  index     An index.
-    //  * @return The present amount rounded down.
-    //  */
-    // function _getPresentAmountRoundedDown(uint112 principal, uint128 index) internal pure returns (uint256) {
-    //     unchecked {
-    //         return (uint256(principal) * index) / EXP_SCALED_ONE;
-    //     }
-    // }
-
-    // /**
-    //  * @dev    Returns the present amount (rounded up) given the principal amount and an index.
-    //  * @param  principal The principal amount.
-    //  * @param  index     An index.
-    //  * @return The present amount rounded up.
-    //  */
-    // function _getPresentAmountRoundedUp(uint112 principal, uint128 index) internal pure returns (uint256) {
-    //     unchecked {
-    //         return ((principal * index) + (EXP_SCALED_ONE - 1)) / EXP_SCALED_ONE;
-    //     }
-    // }
-
-    // /**
-    //  * @dev    Returns the principal amount given the present amount, using the current index.
-    //  * @param  amount The present amount.
-    //  * @param  index  An index.
-    //  * @return The principal amount rounded down.
-    //  */
-    // function _getPrincipalAmountRoundedDown(uint256 amount, uint128 index) internal pure returns (uint112) {
-    //     return divide240By128Down(presentAmount, index);
-    // }
-
-    // /**
-    //  * @dev    Returns the principal amount given the present amount, using the current index.
-    //  * @param  amount The present amount.
-    //  * @param  index  An index.
-    //  * @return The principal amount rounded up.
-    //  */
-    // function _getPrincipalAmountRoundedUp(uint256 amount, uint128 index) internal pure returns (uint112) {
-    //     return divide240By128Up(presentAmount, index);
-    // }
 }
