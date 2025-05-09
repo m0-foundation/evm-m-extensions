@@ -118,6 +118,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         // NOTE: No change in principal, only the balance is updated to include the newly claimed yield.
         unchecked {
             accountInfo_.balance += yield_;
+            totalSupply += yield_;
         }
 
         emit YieldClaimed(msg.sender, recipient, yield_);

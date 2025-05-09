@@ -8,10 +8,11 @@ import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousInde
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
 
-import { MockM, MockRateOracle } from "../utils/Mocks.sol";
+import { MockM } from "../utils/Mocks.sol";
 
-contract BaseUnitTest is Test {
-    uint16 public constant HUNDRED_PERCENT = 10_000;
+import { Helpers } from "./Helpers.sol";
+
+contract BaseUnitTest is Helpers, Test {
     uint16 public constant YIELD_FEE_RATE = 2000; // 20%
 
     bytes32 public constant EARNERS_LIST = "earners";
@@ -89,16 +90,8 @@ contract BaseUnitTest is Test {
             );
     }
 
-    function _getEarnerRate(uint32 mEarnerRate, uint32 yieldFeeRate) internal pure returns (uint32) {
-        return UIntMath.safe32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
-    }
-
     function _getMaxAmount(uint128 index) internal pure returns (uint240) {
         return (uint240(type(uint112).max) * index) / EXP_SCALED_ONE;
-    }
-
-    function _getYieldFee(uint240 yield, uint16 yieldFeeRate) internal pure returns (uint240) {
-        return yield == 0 ? 0 : (yield * yieldFeeRate) / HUNDRED_PERCENT;
     }
 
     /* ============ Fuzz Utils ============ */

@@ -11,158 +11,160 @@ import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
-    function setUp() external {
+    function setUp() public override {
+        super.setUp();
+
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"));
 
         _fundAccounts();
 
-        _mYieldToOne = new MYieldToOne(
-            _NAME,
-            _SYMBOL,
-            address(_mToken),
-            _yieldRecipient,
-            _defaultAdmin,
-            _blacklistManager,
-            _yieldRecipientManager
+        mYieldToOne = new MYieldToOne(
+            NAME,
+            SYMBOL,
+            address(mToken),
+            yieldRecipient,
+            admin,
+            blacklistManager,
+            yieldRecipientManager
         );
     }
 
     function test_integration_constants() external view {
         // Check the contract's name, symbol, and decimals
-        assertEq(_mYieldToOne.name(), _NAME);
-        assertEq(_mYieldToOne.symbol(), _SYMBOL);
-        assertEq(_mYieldToOne.decimals(), 6);
+        assertEq(mYieldToOne.name(), NAME);
+        assertEq(mYieldToOne.symbol(), SYMBOL);
+        assertEq(mYieldToOne.decimals(), 6);
 
         // Check the initial state of the contract
-        assertEq(_mYieldToOne.mToken(), address(_mToken));
-        assertEq(_mYieldToOne.yieldRecipient(), _yieldRecipient);
+        assertEq(mYieldToOne.mToken(), address(mToken));
+        assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
     }
 
     function test_yieldAccumulationAndClaim() external {
         uint256 amount = 10e6;
 
         // Enable earning for the contract
-        _addToList(_EARNERS_LIST, address(_mYieldToOne));
-        _mYieldToOne.enableEarning();
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
 
         // Check the initial earning state
-        assertEq(_mToken.isEarning(address(_mYieldToOne)), true);
+        assertEq(mToken.isEarning(address(mYieldToOne)), true);
 
         vm.warp(vm.getBlockTimestamp() + 1 days);
 
         // wrap from non-earner account
-        _wrap(_alice, _alice, amount);
+        _wrap(address(mYieldToOne), alice, alice, amount);
 
         // Check balances of MYieldToOne and Alice after wrapping
-        assertEq(_mYieldToOne.balanceOf(_alice), amount); // user receives exact amount
-        assertApproxEqAbs(_mToken.balanceOf(address(_mYieldToOne)), amount, 2); // rounds down
+        assertEq(mYieldToOne.balanceOf(alice), amount); // user receives exact amount
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), amount, 2); // rounds down
 
         // Fast forward 10 days in the future to generate yield
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // yield accrual
-        assertApproxEqAbs(_mYieldToOne.yield(), 11375, 1); // may round up
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 1); // may round up
 
         // transfers do not affect yield
-        vm.prank(_alice);
-        _mYieldToOne.transfer(_bob, amount / 2);
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, amount / 2);
 
-        assertEq(_mYieldToOne.balanceOf(_bob), amount / 2);
-        assertEq(_mYieldToOne.balanceOf(_alice), amount / 2);
+        assertEq(mYieldToOne.balanceOf(bob), amount / 2);
+        assertEq(mYieldToOne.balanceOf(alice), amount / 2);
 
         // yield accrual
-        assertApproxEqAbs(_mYieldToOne.yield(), 11375, 1);
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 1);
 
         // unwraps
-        _unwrap(_alice, _alice, amount / 2);
+        _unwrap(address(mYieldToOne), alice, alice, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
-        assertApproxEqAbs(_mYieldToOne.yield(), 11375, 2);
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2);
 
-        _unwrap(_bob, _bob, amount / 2);
+        _unwrap(address(mYieldToOne), bob, bob, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
-        assertApproxEqAbs(_mYieldToOne.yield(), 11375, 1);
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 1);
 
-        assertEq(_mYieldToOne.balanceOf(_bob), 0);
-        assertEq(_mYieldToOne.balanceOf(_alice), 0);
-        assertEq(_mToken.balanceOf(_bob), amount + amount / 2);
-        assertEq(_mToken.balanceOf(_alice), amount / 2);
+        assertEq(mYieldToOne.balanceOf(bob), 0);
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(mToken.balanceOf(bob), amount + amount / 2);
+        assertEq(mToken.balanceOf(alice), amount / 2);
 
-        assertEq(_mToken.balanceOf(_yieldRecipient), 0);
+        assertEq(mToken.balanceOf(yieldRecipient), 0);
 
         // claim yield
-        _mYieldToOne.claimYield();
+        mYieldToOne.claimYield();
 
-        assertApproxEqAbs(_mToken.balanceOf(_yieldRecipient), 11375, 2);
-        assertEq(_mYieldToOne.yield(), 0);
-        assertEq(_mToken.balanceOf(address(_mYieldToOne)), 0);
-        assertEq(_mYieldToOne.totalSupply(), 0);
+        assertApproxEqAbs(mToken.balanceOf(yieldRecipient), 11375, 2);
+        assertEq(mYieldToOne.yield(), 0);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 0);
+        assertEq(mYieldToOne.totalSupply(), 0);
 
         // wrap from earner account
-        _addToList(_EARNERS_LIST, _bob);
+        _addToList(EARNERS_LIST, bob);
 
-        vm.prank(_bob);
-        _mToken.startEarning();
+        vm.prank(bob);
+        mToken.startEarning();
 
-        _wrap(_bob, _bob, amount);
+        _wrap(address(mYieldToOne), bob, bob, amount);
 
         // Check balances of MYieldToOne and Bob after wrapping
-        assertEq(_mYieldToOne.balanceOf(_bob), amount);
-        assertEq(_mToken.balanceOf(address(_mYieldToOne)), amount);
+        assertEq(mYieldToOne.balanceOf(bob), amount);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), amount);
 
         // Disable earning for the contract
-        _removeFomList(_EARNERS_LIST, address(_mYieldToOne));
-        _mYieldToOne.disableEarning();
+        _removeFomList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.disableEarning();
 
-        assertFalse(_mYieldToOne.isEarningEnabled());
+        assertFalse(mYieldToOne.isEarningEnabled());
 
         // Fast forward 10 days in the future
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // No yield should accrue
-        assertEq(_mYieldToOne.yield(), 0);
+        assertEq(mYieldToOne.yield(), 0);
 
         // Re-enable earning for the contract
-        _addToList(_EARNERS_LIST, address(_mYieldToOne));
-        _mYieldToOne.enableEarning();
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
 
         // Yield should accrue again
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
-        // assertApproxEqAbs(_mYieldToOne.yield(), 11375, 1);
+        // assertApproxEqAbs(mYieldToOne.yield(), 11375, 1);
     }
 
     /* ============ enableEarning ============ */
 
     function test_enableEarning_notApprovedEarner() external {
         vm.expectRevert(abi.encodeWithSelector(IMTokenLike.NotApprovedEarner.selector));
-        _mYieldToOne.enableEarning();
+        mYieldToOne.enableEarning();
     }
 
     /* ============ disableEarning ============ */
 
     function test_disableEarning_approvedEarner() external {
-        _addToList(_EARNERS_LIST, address(_mYieldToOne));
-        _mYieldToOne.enableEarning();
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
 
         vm.expectRevert(abi.encodeWithSelector(IMTokenLike.IsApprovedEarner.selector));
-        _mYieldToOne.disableEarning();
+        mYieldToOne.disableEarning();
     }
 
     /* ============ _wrap ============ */
 
     function test_wrapWithPermits() external {
-        assertEq(_mToken.balanceOf(_alice), 10e6);
+        assertEq(mToken.balanceOf(alice), 10e6);
 
-        _wrapWithPermitVRS(_alice, _aliceKey, _alice, 5e6, 0, block.timestamp);
+        _wrapWithPermitVRS(alice, aliceKey, alice, 5e6, 0, block.timestamp);
 
-        assertEq(_mYieldToOne.balanceOf(_alice), 5e6);
-        assertEq(_mToken.balanceOf(_alice), 5e6);
+        assertEq(mYieldToOne.balanceOf(alice), 5e6);
+        assertEq(mToken.balanceOf(alice), 5e6);
 
-        _wrapWithPermitVRS(_alice, _aliceKey, _alice, 5e6, 1, block.timestamp);
+        _wrapWithPermitVRS(alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
-        assertEq(_mYieldToOne.balanceOf(_alice), 10e6);
-        assertEq(_mToken.balanceOf(_alice), 0);
+        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mToken.balanceOf(alice), 0);
     }
 }

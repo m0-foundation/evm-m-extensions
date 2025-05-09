@@ -4,66 +4,91 @@ pragma solidity 0.8.26;
 
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
-import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
+import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
+
+import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
+import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
 
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
+import { MYieldFee } from "../../src/MYieldFee.sol";
 
-contract BaseIntegrationTest is Test {
-    address internal constant _standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
-    address internal constant _registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
+import { Helpers } from "./Helpers.sol";
 
-    bytes32 internal constant _EARNERS_LIST = "earners";
-    bytes32 internal constant _CLAIM_OVERRIDE_recipientPREFIX = "wm_claim_override_recipient";
+contract BaseIntegrationTest is Helpers, Test {
+    address public constant standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
+    address public constant registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
-    IMTokenLike internal constant _mToken = IMTokenLike(0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b);
+    IMTokenLike public constant mToken = IMTokenLike(0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b);
+
+    uint16 public constant YIELD_FEE_RATE = 2000; // 20%
+
+    bytes32 internal constant EARNERS_LIST = "earners";
+    uint32 public constant M_EARNER_RATE = ContinuousIndexingMath.BPS_SCALED_ONE / 10; // 10% APY
+
+    uint56 public constant EXP_SCALED_ONE = 1e12;
 
     // Large M holder on Ethereum Mainnet
-    address internal constant _mSource = 0x3f0376da3Ae4313E7a5F1dA184BAFC716252d759;
+    address public constant mSource = 0x3f0376da3Ae4313E7a5F1dA184BAFC716252d759;
 
-    address internal _yieldRecipient = makeAddr("yieldRecipient");
-    address internal _defaultAdmin = makeAddr("defaultAdmin");
-    address internal _blacklistManager = makeAddr("blacklistManager");
-    address internal _yieldRecipientManager = makeAddr("yieldRecipientManager");
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
 
-    address internal _alice = makeAddr("alice");
-    address internal _bob = makeAddr("bob");
-    address internal _carol = makeAddr("carol");
+    address public admin = makeAddr("admin");
+    address public blacklistManager = makeAddr("blacklistManager");
+    address public yieldRecipient = makeAddr("yieldRecipient");
+    address public yieldRecipientManager = makeAddr("yieldRecipientManager");
+    address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
+    address public yieldFeeManager = makeAddr("yieldFeeManager");
 
-    uint256 internal _aliceKey = _makeKey("alice");
+    address public alice;
+    uint256 public aliceKey;
 
-    address[] internal _accounts = [_alice, _bob, _carol];
+    address public bob = makeAddr("bob");
+    address public carol = makeAddr("carol");
+    address public charlie = makeAddr("charlie");
+    address public david = makeAddr("david");
 
-    MYieldToOne internal _mYieldToOne;
+    address[] public accounts = [alice, bob, carol];
 
-    string internal constant _NAME = "HALO USD";
-    string internal constant _SYMBOL = "HALO USD";
+    MYieldToOne public mYieldToOne;
+    MYieldFee public mYieldFee;
+
+    string public constant NAME = "M USD Extension";
+    string public constant SYMBOL = "MUSDE";
+
+    function setUp() public virtual {
+        (alice, aliceKey) = makeAddrAndKey("alice");
+        accounts = [alice, bob, charlie, david];
+    }
 
     function _addToList(bytes32 list, address account) internal {
-        vm.prank(_standardGovernor);
-        IRegistrarLike(_registrar).addToList(list, account);
+        vm.prank(standardGovernor);
+        IRegistrarLike(registrar).addToList(list, account);
     }
 
     function _removeFomList(bytes32 list, address account) internal {
-        vm.prank(_standardGovernor);
-        IRegistrarLike(_registrar).removeFromList(list, account);
+        vm.prank(standardGovernor);
+        IRegistrarLike(registrar).removeFromList(list, account);
     }
 
     function _giveM(address account, uint256 amount) internal {
-        vm.prank(_mSource);
-        _mToken.transfer(account, amount);
+        vm.prank(mSource);
+        mToken.transfer(account, amount);
     }
 
     function _giveEth(address account, uint256 amount) internal {
         vm.deal(account, amount);
     }
 
-    function _wrap(address account, address recipient, uint256 amount) internal {
+    function _wrap(address mExtension, address account, address recipient, uint256 amount) internal {
         vm.prank(account);
-        _mToken.approve(address(_mYieldToOne), amount);
+        mToken.approve(address(mExtension), amount);
 
         vm.prank(account);
-        _mYieldToOne.wrap(recipient, amount);
+        IMExtension(mExtension).wrap(recipient, amount);
     }
 
     function _wrapWithPermitVRS(
@@ -77,23 +102,23 @@ contract BaseIntegrationTest is Test {
         (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(account, signerPrivateKey, amount, nonce, deadline);
 
         vm.prank(account);
-        _mYieldToOne.wrapWithPermit(recipient, amount, deadline, v_, r_, s_);
+        mYieldToOne.wrapWithPermit(recipient, amount, deadline, v_, r_, s_);
     }
 
-    function _unwrap(address account, address recipient, uint256 amount) internal {
+    function _unwrap(address mExtension, address account, address recipient, uint256 amount) internal {
         vm.prank(account);
-        _mYieldToOne.unwrap(recipient, amount);
+        IMExtension(mExtension).unwrap(recipient, amount);
     }
 
     function _set(bytes32 key, bytes32 value) internal {
-        vm.prank(_standardGovernor);
-        IRegistrarLike(_registrar).setKey(key, value);
+        vm.prank(standardGovernor);
+        IRegistrarLike(registrar).setKey(key, value);
     }
 
     function _fundAccounts() internal {
-        for (uint256 i = 0; i < _accounts.length; ++i) {
-            _giveM(_accounts[i], 10e6);
-            _giveEth(_accounts[i], 0.1 ether);
+        for (uint256 i = 0; i < accounts.length; ++i) {
+            _giveM(accounts[i], 10e6);
+            _giveEth(accounts[i], 0.1 ether);
         }
     }
 
@@ -116,16 +141,9 @@ contract BaseIntegrationTest is Test {
                 keccak256(
                     abi.encodePacked(
                         "\x19\x01",
-                        _mToken.DOMAIN_SEPARATOR(),
+                        mToken.DOMAIN_SEPARATOR(),
                         keccak256(
-                            abi.encode(
-                                _mToken.PERMIT_TYPEHASH(),
-                                account,
-                                address(_mYieldToOne),
-                                amount,
-                                nonce,
-                                deadline
-                            )
+                            abi.encode(mToken.PERMIT_TYPEHASH(), account, address(mYieldToOne), amount, nonce, deadline)
                         )
                     )
                 )
