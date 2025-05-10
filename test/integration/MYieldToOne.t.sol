@@ -157,12 +157,12 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     function test_wrapWithPermits() external {
         assertEq(mToken.balanceOf(alice), 10e6);
 
-        _wrapWithPermitVRS(alice, aliceKey, alice, 5e6, 0, block.timestamp);
+        _wrapWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
 
         assertEq(mYieldToOne.balanceOf(alice), 5e6);
         assertEq(mToken.balanceOf(alice), 5e6);
 
-        _wrapWithPermitVRS(alice, aliceKey, alice, 5e6, 1, block.timestamp);
+        _wrapWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
         assertEq(mYieldToOne.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);

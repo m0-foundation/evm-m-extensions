@@ -135,10 +135,7 @@ interface IMYieldFee {
      */
     function accruedYieldOf(address account) external view returns (uint256);
 
-    /**
-     * @notice Returns the current value of the earner rate in basis points.
-     *         This value does not account for the compounding interest.
-     */
+    /// @notice Returns the current value of the earner rate in basis points.
     function earnerRate() external view returns (uint32);
 
     /**
@@ -155,7 +152,7 @@ interface IMYieldFee {
      */
     function principalOf(address account) external view returns (uint112);
 
-    /// @notice The projected total supply if all accrued yield and yield fee were claimed at this moment.
+    /// @notice The projected total supply if all accrued yield was claimed at this moment.
     function projectedTotalSupply() external view returns (uint256);
 
     /// @notice The current total accrued yield claimable by holders.

@@ -92,6 +92,7 @@ contract BaseIntegrationTest is Helpers, Test {
     }
 
     function _wrapWithPermitVRS(
+        address mExtension,
         address account,
         uint256 signerPrivateKey,
         address recipient,
@@ -99,10 +100,10 @@ contract BaseIntegrationTest is Helpers, Test {
         uint256 nonce,
         uint256 deadline
     ) internal {
-        (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(account, signerPrivateKey, amount, nonce, deadline);
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(mExtension, account, signerPrivateKey, amount, nonce, deadline);
 
         vm.prank(account);
-        mYieldToOne.wrapWithPermit(recipient, amount, deadline, v_, r_, s_);
+        IMExtension(mExtension).wrapWithPermit(recipient, amount, deadline, v_, r_, s_);
     }
 
     function _unwrap(address mExtension, address account, address recipient, uint256 amount) internal {
@@ -129,6 +130,7 @@ contract BaseIntegrationTest is Helpers, Test {
     }
 
     function _getPermit(
+        address mExtension,
         address account,
         uint256 signerPrivateKey,
         uint256 amount,
@@ -142,9 +144,7 @@ contract BaseIntegrationTest is Helpers, Test {
                     abi.encodePacked(
                         "\x19\x01",
                         mToken.DOMAIN_SEPARATOR(),
-                        keccak256(
-                            abi.encode(mToken.PERMIT_TYPEHASH(), account, address(mYieldToOne), amount, nonce, deadline)
-                        )
+                        keccak256(abi.encode(mToken.PERMIT_TYPEHASH(), account, mExtension, amount, nonce, deadline))
                     )
                 )
             );

@@ -228,6 +228,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         return latestRate != 0;
     }
 
+    /// @inheritdoc IMYieldFee
     function projectedTotalSupply() public view returns (uint256) {
         return IndexingMath.getPresentAmountRoundedUp(totalPrincipal, currentIndex());
     }
@@ -239,7 +240,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
     /// @inheritdoc IMYieldFee
     function totalAccruedYieldFee() public view returns (uint256) {
-        uint256 mBalance_ = _mBalanceOf(address(this));
+        uint256 mBalance_ = IERC20(mToken).balanceOf(address(this));
         uint256 projectedTotalSupply_ = projectedTotalSupply();
 
         unchecked {
@@ -258,17 +259,23 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         _revertIfInsufficientAmount(amount);
         _revertIfInvalidRecipient(recipient);
 
-        // TODO: fix tomorrow
-        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), currentIndex());
+        uint128 currentIndex_ = currentIndex();
 
-        // NOTE: Can be `unchecked` because the max amount of M is never greater than `type(uint240).max`.
-        // NOTE: Can be `unchecked` because UIntMath.safe112 is used for principal addition safety
+        // NOTE: Tracks two principal amounts: rounded up and rounded down.
+        //       Slightly overestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
+        //       Can be `unchecked` because the max amount of  M is never greater than `type(uint240).max`.
+        //       Can be `unchecked` because UIntMath.safe112 is used for principal addition safety
         unchecked {
             balanceOf[recipient] += amount;
             totalSupply += amount;
 
-            principalOf[recipient] = UIntMath.safe112(uint256(principalOf[recipient]) + principal_);
-            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principal_);
+            principalOf[recipient] = UIntMath.safe112(
+                uint256(principalOf[recipient]) + IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_)
+            );
+
+            totalPrincipal = UIntMath.safe112(
+                uint256(totalPrincipal) + IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_)
+            );
         }
 
         emit Transfer(address(0), recipient, amount);
@@ -286,16 +293,28 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         _revertIfInsufficientBalance(account, balance_, amount);
 
-        uint112 principal_ = (balance_ == amount)
-            ? principalOf[account]
-            : IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), currentIndex()); // fix tomorrow
+        uint112 accountPrincipal_ = principalOf[account];
+        uint128 currentIndex_ = currentIndex();
+        uint112 totalPrincipal_ = totalPrincipal;
+        uint256 totalSupply_ = totalSupply;
 
+        // NOTE: Tracks two principal amounts: rounded up and rounded down.
+        //       Slightly underestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
         unchecked {
-            balanceOf[account] = balance_ - amount;
-            totalSupply -= amount;
+            balanceOf[account] -= amount;
 
-            principalOf[account] -= principal_;
-            totalPrincipal -= principal_;
+            // NOTE: `min256` prevents `totalSupply` underflow.
+            totalSupply = totalSupply_ - UIntMath.min256(amount, totalSupply_);
+
+            // NOTE: `min112` prevents account's principal underflow.
+            principalOf[account] =
+                accountPrincipal_ -
+                UIntMath.min112(IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_), accountPrincipal_);
+
+            // NOTE: `min112` prevents `totalPrincipal` underflow.
+            totalPrincipal =
+                totalPrincipal_ -
+                UIntMath.min112(IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_), totalPrincipal_);
         }
 
         emit Transfer(account, address(0), amount);
@@ -378,10 +397,6 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         unchecked {
             return balanceWithYield_ > balance ? balanceWithYield_ - balance : 0;
         }
-    }
-
-    function _mBalanceOf(address account) public view returns (uint256) {
-        return IERC20(mToken).balanceOf(account);
     }
 
     /**

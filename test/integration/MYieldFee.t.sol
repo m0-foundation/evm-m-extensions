@@ -66,10 +66,10 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // yield accrual
-        uint240 totalYield = 11375;
-        uint240 yieldFee = _getYieldFee(totalYield, YIELD_FEE_RATE);
+        uint256 totalYield = 11375;
+        uint256 yieldFee = _getYieldFee(totalYield, YIELD_FEE_RATE);
 
-        assertEq(mYieldFee.totalAccruedYield(), totalYield - yieldFee - 1); // TODO: Rounds down?
+        assertEq(mYieldFee.totalAccruedYield(), totalYield - yieldFee);
         assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 1); // May round up
 
         // transfers do not affect yield (except for rounding error)
@@ -87,16 +87,14 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         _unwrap(address(mYieldFee), alice, alice, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
-        // TODO: total accrued yield should not be 0
-        // assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 2); // May round up
-        // assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 3); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round up
+        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 3); // May round down
 
         _unwrap(address(mYieldFee), bob, bob, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
-        // TODO: total accrued yield should not be 0
-        // assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 3); // May round up
-        // assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 4); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 2); // May round up
+        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 5); // May round down
 
         assertEq(mYieldFee.balanceOf(bob), 0);
         assertEq(mYieldFee.balanceOf(alice), 0);
@@ -107,7 +105,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         // claim yield
         uint256 aliceYield = mYieldFee.claimYieldFor(alice);
-        yieldFee = uint240(mYieldFee.claimYieldFee());
+        yieldFee = mYieldFee.claimYieldFee();
         mYieldFee.claimYieldFor(bob);
 
         assertEq(mYieldFee.balanceOf(alice), aliceYield);
@@ -118,90 +116,90 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.totalSupply(), aliceYield + yieldFee);
 
         // Due to principal round down for account and totalPrincipal round up
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), 0, 4);
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), 0, 5);
         assertEq(mYieldFee.totalAccruedYieldFee(), 0);
 
-        // TODO: fails because total accrued yield is 0
         // Alice and yield fee recipient unwraps
-        // _unwrap(address(mYieldFee), alice, alice, aliceYield);
-        // _unwrap(address(mYieldFee), yieldFeeRecipient, yieldFeeRecipient, yieldFee);
-        //
-        // assertEq(mYieldFee.accruedYieldOf(alice), 0);
-        // assertEq(mYieldFee.balanceOf(alice), 0);
-        // assertEq(mToken.balanceOf(alice), amount / 2 + aliceYield);
-        //
-        // assertEq(mYieldFee.accruedYieldOf(yieldFeeRecipient), 0);
-        // assertEq(mYieldFee.balanceOf(yieldFeeRecipient), 0);
-        // assertEq(mToken.balanceOf(yieldFeeRecipient), yieldFee);
+        _unwrap(address(mYieldFee), alice, alice, aliceYield);
+        _unwrap(address(mYieldFee), yieldFeeRecipient, yieldFeeRecipient, yieldFee);
+
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+        assertEq(mYieldFee.balanceOf(alice), 0);
+        assertEq(mToken.balanceOf(alice), amount / 2 + aliceYield);
+
+        assertEq(mYieldFee.accruedYieldOf(yieldFeeRecipient), 0);
+        assertEq(mYieldFee.balanceOf(yieldFeeRecipient), 0);
+        assertEq(mToken.balanceOf(yieldFeeRecipient), yieldFee);
 
         // Some excess due to rounding may be left in the extension
         // TODO: could be avoided by transferring M instead of the extension token to the yield recipient
-        // assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), 4, 1);
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), 4, 1);
 
-        //     // wrap from earner account
-        // _addToList(EARNERS_LIST, bob);
-        //
-        //     vm.prank(bob);
-        //     mToken.startEarning();
-        //
-        //     _wrap(bob, bob, amount);
-        //
-        //     // Check balances of MYieldFee and Bob after wrapping
-        //     assertEq(mYieldFee.balanceOf(bob), amount);
-        //     assertEq(mToken.balanceOf(address(mYieldFee)), amount);
-        //
-        //     // Disable earning for the contract
-        // _removeFomList(EARNERS_LIST, address(mYieldFee));
-        //     mYieldFee.disableEarning();
-        //
-        //     assertFalse(mYieldFee.isEarningEnabled());
-        //
-        //     // Fast forward 10 days in the future
-        //     vm.warp(vm.getBlockTimestamp() + 10 days);
-        //
-        //     // No yield should accrue
-        //     assertEq(mYieldFee.yield(), 0);
-        //
-        //     // Re-enable earning for the contract
-        // _addToList(EARNERS_LIST, address(mYieldFee));
-        //     mYieldFee.enableEarning();
-        //
-        //     // Yield should accrue again
-        //     vm.warp(vm.getBlockTimestamp() + 10 days);
-        //
-        // assertApproxEqAbs(mYieldFee.yield(), 11375, 1);
+        // wrap from earner account
+        _addToList(EARNERS_LIST, bob);
+
+        vm.prank(bob);
+        mToken.startEarning();
+
+        _wrap(address(mYieldFee), bob, bob, amount);
+
+        // Check balances of MYieldFee and Bob after wrapping
+        assertEq(mYieldFee.balanceOf(bob), amount);
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 4); // Account for the excess
+
+        // Disable earning for the contract
+        _removeFomList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.disableEarning();
+
+        assertFalse(mYieldFee.isEarningEnabled());
+
+        // Fast forward 10 days in the future
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        // No yield should accrue
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), 0, 4); // Account for the excess
+
+        // Re-enable earning for the contract
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        // Yield should accrue again
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount + totalYield, 4); // Account for the excess
     }
 
-    // /* ============ enableEarning ============ */
-    //
-    // function test_enableEarning_notApprovedEarner() external {
-    //     vm.expectRevert(abi.encodeWithSelector(IMTokenLike.NotApprovedEarner.selector));
-    //     mYieldFee.enableEarning();
-    // }
-    //
-    // /* ============ disableEarning ============ */
-    //
-    // function test_disableEarning_approvedEarner() external {
-    // _addToList(EARNERS_LIST, address(mYieldFee));
-    //     mYieldFee.enableEarning();
-    //
-    //     vm.expectRevert(abi.encodeWithSelector(IMTokenLike.IsApprovedEarner.selector));
-    //     mYieldFee.disableEarning();
-    // }
-    //
-    // /* ============ _wrap ============ */
-    //
-    // function test_wrapWithPermits() external {
-    //     assertEq(mToken.balanceOf(alice), 10e6);
-    //
-    //     _wrapWithPermitVRS(alice, aliceKey, alice, 5e6, 0, block.timestamp);
-    //
-    //     assertEq(mYieldFee.balanceOf(alice), 5e6);
-    //     assertEq(mToken.balanceOf(alice), 5e6);
-    //
-    //     _wrapWithPermitVRS(alice, aliceKey, alice, 5e6, 1, block.timestamp);
-    //
-    //     assertEq(mYieldFee.balanceOf(alice), 10e6);
-    //     assertEq(mToken.balanceOf(alice), 0);
-    // }
+    /* ============ enableEarning ============ */
+
+    function test_enableEarning_notApprovedEarner() external {
+        vm.expectRevert(abi.encodeWithSelector(IMTokenLike.NotApprovedEarner.selector));
+        mYieldFee.enableEarning();
+    }
+
+    /* ============ disableEarning ============ */
+
+    function test_disableEarning_approvedEarner() external {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        vm.expectRevert(abi.encodeWithSelector(IMTokenLike.IsApprovedEarner.selector));
+        mYieldFee.disableEarning();
+    }
+
+    /* ============ _wrap ============ */
+
+    function test_wrapWithPermits() external {
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        _wrapWithPermitVRS(address(mYieldFee), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+
+        assertEq(mYieldFee.balanceOf(alice), 5e6);
+        assertEq(mToken.balanceOf(alice), 5e6);
+
+        _wrapWithPermitVRS(address(mYieldFee), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+
+        assertEq(mYieldFee.balanceOf(alice), 10e6);
+        assertEq(mToken.balanceOf(alice), 0);
+    }
 }

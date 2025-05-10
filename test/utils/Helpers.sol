@@ -11,7 +11,7 @@ contract Helpers {
         return UIntMath.safe32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
     }
 
-    function _getYieldFee(uint240 yield, uint16 yieldFeeRate) internal pure returns (uint240) {
+    function _getYieldFee(uint256 yield, uint16 yieldFeeRate) internal pure returns (uint256) {
         return yield == 0 ? 0 : (yield * yieldFeeRate) / HUNDRED_PERCENT;
     }
 }
