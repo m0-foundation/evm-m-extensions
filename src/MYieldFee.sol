@@ -259,23 +259,16 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         _revertIfInsufficientAmount(amount);
         _revertIfInvalidRecipient(recipient);
 
-        uint128 currentIndex_ = currentIndex();
+        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex());
 
-        // NOTE: Tracks two principal amounts: rounded up and rounded down.
-        //       Slightly overestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
-        //       Can be `unchecked` because the max amount of  M is never greater than `type(uint240).max`.
-        //       Can be `unchecked` because UIntMath.safe112 is used for principal addition safety
+        // NOTE: Can be `unchecked` because the max amount of  M is never greater than `type(uint240).max`.
+        //       Can be `unchecked` because UIntMath.safe112 is used for principal addition safety for `totalPrincipal`
         unchecked {
             balanceOf[recipient] += amount;
             totalSupply += amount;
 
-            principalOf[recipient] = UIntMath.safe112(
-                uint256(principalOf[recipient]) + IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_)
-            );
-
-            totalPrincipal = UIntMath.safe112(
-                uint256(totalPrincipal) + IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_)
-            );
+            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principal_);
+            principalOf[recipient] += principal_;
         }
 
         emit Transfer(address(0), recipient, amount);
@@ -293,28 +286,17 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         _revertIfInsufficientBalance(account, balance_, amount);
 
-        uint112 accountPrincipal_ = principalOf[account];
-        uint128 currentIndex_ = currentIndex();
-        uint112 totalPrincipal_ = totalPrincipal;
-        uint256 totalSupply_ = totalSupply;
+        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex());
+        if (principal_ > principalOf[account]) {
+            principal_ = principalOf[account];
+        }
 
-        // NOTE: Tracks two principal amounts: rounded up and rounded down.
-        //       Slightly underestimates the principal of total supply to provide extra safety in `totalAccruedYieldFee` calculations.
         unchecked {
             balanceOf[account] -= amount;
+            totalSupply -= amount;
 
-            // NOTE: `min256` prevents `totalSupply` underflow.
-            totalSupply = totalSupply_ - UIntMath.min256(amount, totalSupply_);
-
-            // NOTE: `min112` prevents account's principal underflow.
-            principalOf[account] =
-                accountPrincipal_ -
-                UIntMath.min112(IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_), accountPrincipal_);
-
-            // NOTE: `min112` prevents `totalPrincipal` underflow.
-            totalPrincipal =
-                totalPrincipal_ -
-                UIntMath.min112(IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_), totalPrincipal_);
+            principalOf[account] -= principal_;
+            totalPrincipal -= principal_;
         }
 
         emit Transfer(account, address(0), amount);
@@ -339,17 +321,14 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         if (sender == recipient) return;
 
-        uint112 principal_ = (balance_ == amount)
-            ? principalOf[sender]
-            : IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), currentIndex()); // fix tomorrow
+        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), currentIndex());
 
-        // NOTE: Can be `unchecked` because UIntMath.safe112 is used for principal addition safety
         unchecked {
             balanceOf[sender] = balance_ - amount;
             balanceOf[recipient] += amount;
 
             principalOf[sender] -= principal_;
-            principalOf[recipient] = UIntMath.safe112(uint256(principalOf[recipient]) + principal_);
+            principalOf[recipient] += principal_;
         }
     }
 
