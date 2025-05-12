@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: UNLICENSED
+
+pragma solidity 0.8.26;
+
+import { IContinuousIndexing } from "../../src/interfaces/IContinuousIndexing.sol";
+import { IRateOracle } from "../../src/interfaces/IRateOracle.sol";
+import { ISpokeMYieldFee } from "../../src/interfaces/ISpokeMYieldFee.sol";
+
+import { SpokeMYieldFeeHarness } from "../harness/SpokeMYieldFeeHarness.sol";
+import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
+
+contract SpokeMYieldFeeUnitTests is BaseUnitTest {
+    SpokeMYieldFeeHarness public mYieldFee;
+
+    function setUp() public override {
+        super.setUp();
+
+        mYieldFee = new SpokeMYieldFeeHarness(
+            "SpokeMYieldFee",
+            "SMYF",
+            address(mToken),
+            YIELD_FEE_RATE,
+            yieldFeeRecipient,
+            admin,
+            yieldFeeManager,
+            address(rateOracle)
+        );
+    }
+
+    /* ============ constructor ============ */
+
+    function test_constructor() external view {
+        assertEq(mYieldFee.HUNDRED_PERCENT(), 10_000);
+        assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
+        assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
+        assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
+        assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(mYieldFee.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
+        assertEq(mYieldFee.rateOracle(), address(rateOracle));
+    }
+
+    function test_constructor_zeroRateOracle() external {
+        vm.expectRevert(ISpokeMYieldFee.ZeroRateOracle.selector);
+        new SpokeMYieldFeeHarness(
+            "SpokeMYieldFee",
+            "MYF",
+            address(mToken),
+            YIELD_FEE_RATE,
+            yieldFeeRecipient,
+            admin,
+            yieldFeeManager,
+            address(0)
+        );
+    }
+
+    /* ============ _currentBlockTimestamp ============ */
+
+    function test_currentBlockTimestamp() external {
+        uint40 timestamp = uint40(22470340);
+
+        vm.mockCall(
+            address(mToken),
+            abi.encodeWithSelector(IContinuousIndexing.latestUpdateTimestamp.selector),
+            abi.encode(timestamp)
+        );
+
+        assertEq(mYieldFee.currentBlockTimestamp(), timestamp);
+    }
+
+    /* ============ _currentEarnerRate ============ */
+
+    function test_currentEarnerRate() external {
+        uint32 earnerRate = 415;
+
+        vm.mockCall(
+            address(rateOracle),
+            abi.encodeWithSelector(IRateOracle.earnerRate.selector),
+            abi.encode(earnerRate)
+        );
+
+        assertEq(mYieldFee.currentEarnerRate(), earnerRate);
+    }
+}

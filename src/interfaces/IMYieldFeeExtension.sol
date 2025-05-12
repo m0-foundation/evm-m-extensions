@@ -3,10 +3,10 @@
 pragma solidity 0.8.26;
 
 /**
- * @title Interface for Yield Fee M extension.
- * @author M^0 Labs
+ * @title  Interface for Yield Fee M extension.
+ * @author M0 Labs
  */
-interface IMYieldFee {
+interface IMYieldFeeExtension {
     /* ============ Events ============ */
 
     /**
@@ -74,9 +74,6 @@ interface IMYieldFee {
 
     /// @notice Emitted in constructor if the admin is 0x0.
     error ZeroAdmin();
-
-    /// @notice Emitted in constructor if Rate Oracle is 0x0.
-    error ZeroRateOracle();
 
     /// @notice Emitted in constructor if the yield fee manager is 0x0.
     error ZeroYieldFeeManager();

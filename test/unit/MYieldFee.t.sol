@@ -9,7 +9,7 @@ import { IAccessControl } from "../../lib/openzeppelin-contracts/contracts/acces
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
-import { IMYieldFee } from "../../src/interfaces/IMYieldFee.sol";
+import { IMYieldFeeExtension } from "../../src/interfaces/IMYieldFeeExtension.sol";
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
@@ -51,12 +51,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_constructor_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IMYieldFee.ZeroYieldFeeRecipient.selector);
+        vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeRecipient.selector);
         new MYieldFeeHarness("MYieldFee", "MYF", address(mToken), YIELD_FEE_RATE, address(0), admin, yieldFeeManager);
     }
 
     function test_constructor_zeroAdmin() external {
-        vm.expectRevert(IMYieldFee.ZeroAdmin.selector);
+        vm.expectRevert(IMYieldFeeExtension.ZeroAdmin.selector);
         new MYieldFeeHarness(
             "MYieldFee",
             "MYF",
@@ -69,14 +69,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_constructor_zeroYieldFeeManager() external {
-        vm.expectRevert(IMYieldFee.ZeroYieldFeeManager.selector);
+        vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeManager.selector);
         new MYieldFeeHarness("MYieldFee", "MYF", address(mToken), YIELD_FEE_RATE, yieldFeeRecipient, admin, address(0));
     }
 
     /* ============ claimYieldFor ============ */
 
     function test_claimYieldFor_zeroYieldRecipient() external {
-        vm.expectRevert(IMYieldFee.ZeroYieldRecipient.selector);
+        vm.expectRevert(IMYieldFeeExtension.ZeroYieldRecipient.selector);
         mYieldFee.claimYieldFor(address(0));
     }
 
@@ -97,7 +97,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
         vm.expectEmit();
-        emit IMYieldFee.YieldClaimed(alice, alice, yieldAmount);
+        emit IMYieldFeeExtension.YieldClaimed(alice, alice, yieldAmount);
 
         vm.prank(alice);
         assertEq(mYieldFee.claimYieldFor(alice), yieldAmount);
@@ -114,7 +114,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         yieldAmount = 85_507855;
 
         vm.expectEmit();
-        emit IMYieldFee.YieldClaimed(alice, alice, yieldAmount);
+        emit IMYieldFeeExtension.YieldClaimed(alice, alice, yieldAmount);
 
         vm.prank(alice);
         assertEq(mYieldFee.claimYieldFor(alice), yieldAmount);
@@ -149,7 +149,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         if (yieldAmount != 0) {
             vm.expectEmit();
-            emit IMYieldFee.YieldClaimed(alice, alice, yieldAmount);
+            emit IMYieldFeeExtension.YieldClaimed(alice, alice, yieldAmount);
         }
 
         uint256 aliceBanceBefore = mYieldFee.balanceOf(alice);
@@ -185,7 +185,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYieldFee(), yieldFeeAmount);
 
         vm.expectEmit();
-        emit IMYieldFee.YieldFeeClaimed(alice, yieldFeeRecipient, yieldFeeAmount);
+        emit IMYieldFeeExtension.YieldFeeClaimed(alice, yieldFeeRecipient, yieldFeeAmount);
 
         vm.prank(alice);
         assertEq(mYieldFee.claimYieldFee(), yieldFeeAmount);
@@ -206,7 +206,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYieldFee(), secondYieldFeeAmount);
 
         vm.expectEmit();
-        emit IMYieldFee.YieldFeeClaimed(alice, yieldFeeRecipient, secondYieldFeeAmount);
+        emit IMYieldFeeExtension.YieldFeeClaimed(alice, yieldFeeRecipient, secondYieldFeeAmount);
 
         vm.prank(alice);
         assertEq(mYieldFee.claimYieldFee(), secondYieldFeeAmount);
@@ -251,7 +251,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         if (yieldFeeAmount != 0) {
             vm.expectEmit();
-            emit IMYieldFee.YieldFeeClaimed(alice, yieldFeeRecipient, yieldFeeAmount);
+            emit IMYieldFeeExtension.YieldFeeClaimed(alice, yieldFeeRecipient, yieldFeeAmount);
 
             vm.expectEmit();
             emit IERC20.Transfer(address(0), yieldFeeRecipient, yieldFeeAmount);
@@ -314,7 +314,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
 
         vm.expectEmit();
-        emit IMYieldFee.EarningDisabled(1_187153439146);
+        emit IMYieldFeeExtension.EarningDisabled(1_187153439146);
 
         mYieldFee.disableEarning();
 
@@ -346,7 +346,11 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_setYieldFeeRate_yieldFeeRateTooHigh() external {
         vm.expectRevert(
-            abi.encodeWithSelector(IMYieldFee.YieldFeeRateTooHigh.selector, HUNDRED_PERCENT + 1, HUNDRED_PERCENT)
+            abi.encodeWithSelector(
+                IMYieldFeeExtension.YieldFeeRateTooHigh.selector,
+                HUNDRED_PERCENT + 1,
+                HUNDRED_PERCENT
+            )
         );
 
         vm.prank(yieldFeeManager);
@@ -368,7 +372,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.setYieldFeeRate(0);
 
         vm.expectEmit();
-        emit IMYieldFee.YieldFeeRateSet(YIELD_FEE_RATE);
+        emit IMYieldFeeExtension.YieldFeeRateSet(YIELD_FEE_RATE);
 
         vm.prank(yieldFeeManager);
         mYieldFee.setYieldFeeRate(YIELD_FEE_RATE);
@@ -392,7 +396,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_setYieldFeeRecipient_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IMYieldFee.ZeroYieldFeeRecipient.selector);
+        vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeRecipient.selector);
 
         vm.prank(yieldFeeManager);
         mYieldFee.setYieldFeeRecipient(address(0));
@@ -411,7 +415,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         address newYieldFeeRecipient = makeAddr("newYieldFeeRecipient");
 
         vm.expectEmit();
-        emit IMYieldFee.YieldFeeRecipientSet(newYieldFeeRecipient);
+        emit IMYieldFeeExtension.YieldFeeRecipientSet(newYieldFeeRecipient);
 
         vm.prank(yieldFeeManager);
         mYieldFee.setYieldFeeRecipient(newYieldFeeRecipient);
@@ -544,6 +548,36 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // expectedIndex was saved as the latest index and nextTimestamp is the latest saved timestamp
         expectedIndex = _getCurrentIndex(expectedIndex, latestRate, nextTimestamp);
         assertEq(mYieldFee.currentIndex(), expectedIndex);
+    }
+
+    /* ============ earnerRate ============ */
+
+    function test_earnerRate() external {
+        uint32 mEarnerRate = 415;
+
+        vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
+
+        assertEq(mYieldFee.earnerRate(), _getEarnerRate(mEarnerRate, YIELD_FEE_RATE));
+    }
+
+    /* ============ _currentBlockTimestamp ============ */
+
+    function test_currentBlockTimestamp() external {
+        uint40 timestamp = uint40(22470340);
+
+        vm.warp(timestamp);
+
+        assertEq(mYieldFee.currentBlockTimestamp(), timestamp);
+    }
+
+    /* ============ _currentEarnerRate ============ */
+
+    function test_currentEarnerRate() external {
+        uint32 earnerRate = 415;
+
+        vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(earnerRate));
+
+        assertEq(mYieldFee.currentEarnerRate(), earnerRate);
     }
 
     /* ============ accruedYieldOf ============ */
