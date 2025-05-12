@@ -268,6 +268,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
             totalSupply += amount;
 
             totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principal_);
+            // No need for `UIntMath.safe112`, principalOf[recipient] cannot be greater than `totalPrincipal`.
             principalOf[recipient] += principal_;
         }
 
@@ -286,16 +287,18 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         _revertIfInsufficientBalance(account, balance_, amount);
 
-        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex());
-        if (principal_ > principalOf[account]) {
-            principal_ = principalOf[account];
-        }
+        // Slightly overestimate the principal amount to be burned and use safe value to avoid underflow in unchecked block
+        uint112 fromPrincipal_ = principalOf[account];
+        uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
 
+        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used.
+        //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
+        //       `principalOf[account]` cannot be greater than `totalPrincipal`.
         unchecked {
             balanceOf[account] -= amount;
             totalSupply -= amount;
 
-            principalOf[account] -= principal_;
+            principalOf[account] = fromPrincipal_ - principal_;
             totalPrincipal -= principal_;
         }
 
@@ -321,13 +324,17 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         if (sender == recipient) return;
 
-        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), currentIndex());
+        // Slightly overestimate the principal amount to be moved on transfer
+        uint112 fromPrincipal_ = principalOf[sender];
+        uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
 
+        // NOTE: Can be `unchecked` because we check for insufficient sender balance above.
+        //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
         unchecked {
             balanceOf[sender] = balance_ - amount;
             balanceOf[recipient] += amount;
 
-            principalOf[sender] -= principal_;
+            principalOf[sender] = fromPrincipal_ - principal_;
             principalOf[recipient] += principal_;
         }
     }
