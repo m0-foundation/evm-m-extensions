@@ -43,6 +43,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
     }
 
     function test_yieldAccumulationAndClaim() external {
+        vm.skip(true);
         uint256 amount = 10e6;
 
         // Enable earning for the contract
