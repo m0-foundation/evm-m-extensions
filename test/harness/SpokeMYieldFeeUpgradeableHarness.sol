@@ -2,10 +2,15 @@
 
 pragma solidity 0.8.26;
 
-import { SpokeMYieldFee } from "../../src/SpokeMYieldFee.sol";
+import { SpokeMYieldFeeUpgradeable } from "../../src/SpokeMYieldFeeUpgradeable.sol";
 
-contract SpokeMYieldFeeHarness is SpokeMYieldFee {
-    constructor(
+contract SpokeMYieldFeeUpgradeableHarness is SpokeMYieldFeeUpgradeable {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory name,
         string memory symbol,
         address mToken,
@@ -14,7 +19,9 @@ contract SpokeMYieldFeeHarness is SpokeMYieldFee {
         address admin,
         address yieldFeeManager,
         address rateOracle
-    ) SpokeMYieldFee(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager, rateOracle) {}
+    ) public override initializer {
+        super.initialize(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager, rateOracle);
+    }
 
     function currentBlockTimestamp() external view returns (uint40) {
         return _currentBlockTimestamp();

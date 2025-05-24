@@ -2,32 +2,46 @@
 
 pragma solidity 0.8.26;
 
-import { IAccessControl } from "../../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import {
+    IAccessControl
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
+import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { IBlacklistable } from "../../../src/interfaces/IBlacklistable.sol";
 
-import { BlacklistableHarness } from "../../harness/BlacklistableHarness.sol";
+import { BlacklistableUpgradeableHarness } from "../../harness/BlacklistableUpgradeableHarness.sol";
 
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
-contract BlacklistableUnitTests is BaseUnitTest {
-    BlacklistableHarness public blacklistable;
+contract BlacklistableUpgradeableUnitTests is BaseUnitTest {
+    BlacklistableUpgradeableHarness public blacklistable;
 
     function setUp() public override {
         super.setUp();
 
-        blacklistable = new BlacklistableHarness(blacklistManager);
+        blacklistable = BlacklistableUpgradeableHarness(
+            Upgrades.deployUUPSProxy(
+                "BlacklistableUpgradeableHarness.sol:BlacklistableUpgradeableHarness",
+                abi.encodeWithSelector(BlacklistableUpgradeableHarness.initialize.selector, blacklistManager)
+            )
+        );
     }
 
-    /* ============ constructor ============ */
+    /* ============ initialize ============ */
 
-    function test_constructor() external view {
+    function test_initialize() external view {
         assertTrue(IAccessControl(address(blacklistable)).hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
     }
 
-    function test_constructor_zeroBlacklistManager() external {
+    function test_initialize_zeroBlacklistManager() external {
+        address implementation = address(new BlacklistableUpgradeableHarness());
+
         vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
-        new BlacklistableHarness(address(0));
+        UnsafeUpgrades.deployUUPSProxy(
+            implementation,
+            abi.encodeWithSelector(BlacklistableUpgradeableHarness.initialize.selector, address(0))
+        );
     }
 
     /* ============ blacklist ============ */

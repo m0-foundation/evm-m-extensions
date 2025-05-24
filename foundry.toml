@@ -2,12 +2,17 @@
 evm_version = "cancun"
 gas_reports = ["*"]
 gas_reports_ignore = []
-fork_block_number = 21_345_650
+fork_block_number = 22_482_175
 ignored_error_codes = []
 optimizer = true
 optimizer_runs = 999999
 solc_version = "0.8.26"
 verbosity = 3
+# Used to deploy UUPS proxies
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
 
 [profile.production]
 build_info = true

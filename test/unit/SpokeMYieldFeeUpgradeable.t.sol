@@ -2,34 +2,42 @@
 
 pragma solidity 0.8.26;
 
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IContinuousIndexing } from "../../src/interfaces/IContinuousIndexing.sol";
 import { IRateOracle } from "../../src/interfaces/IRateOracle.sol";
 import { ISpokeMYieldFee } from "../../src/interfaces/ISpokeMYieldFee.sol";
 
-import { SpokeMYieldFeeHarness } from "../harness/SpokeMYieldFeeHarness.sol";
+import { SpokeMYieldFeeUpgradeableHarness } from "../harness/SpokeMYieldFeeUpgradeableHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
-contract SpokeMYieldFeeUnitTests is BaseUnitTest {
-    SpokeMYieldFeeHarness public mYieldFee;
+contract SpokeMYieldFeeUpgradeableUnitTests is BaseUnitTest {
+    SpokeMYieldFeeUpgradeableHarness public mYieldFee;
 
     function setUp() public override {
         super.setUp();
 
-        mYieldFee = new SpokeMYieldFeeHarness(
-            "SpokeMYieldFee",
-            "SMYF",
-            address(mToken),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager,
-            address(rateOracle)
+        mYieldFee = SpokeMYieldFeeUpgradeableHarness(
+            Upgrades.deployUUPSProxy(
+                "SpokeMYieldFeeUpgradeableHarness.sol:SpokeMYieldFeeUpgradeableHarness",
+                abi.encodeWithSelector(
+                    SpokeMYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager,
+                    address(rateOracle)
+                )
+            )
         );
     }
 
-    /* ============ constructor ============ */
+    /* ============ initialize ============ */
 
-    function test_constructor() external view {
+    function test_initialize() external view {
         assertEq(mYieldFee.HUNDRED_PERCENT(), 10_000);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
@@ -39,17 +47,25 @@ contract SpokeMYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.rateOracle(), address(rateOracle));
     }
 
-    function test_constructor_zeroRateOracle() external {
+    function test_initialize_zeroRateOracle() external {
+        address implementation = address(new SpokeMYieldFeeUpgradeableHarness());
+
         vm.expectRevert(ISpokeMYieldFee.ZeroRateOracle.selector);
-        new SpokeMYieldFeeHarness(
-            "SpokeMYieldFee",
-            "MYF",
-            address(mToken),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager,
-            address(0)
+        SpokeMYieldFeeUpgradeableHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    SpokeMYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager,
+                    address(0)
+                )
+            )
         );
     }
 

@@ -2,11 +2,15 @@
 
 pragma solidity 0.8.26;
 
-import { IAccessControl } from "../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import {
+    IAccessControl
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { MockM } from "../utils/Mocks.sol";
 
-import { MYieldToOne } from "../../src/MYieldToOne.sol";
+import { MYieldToOneUpgradeable } from "../../src/MYieldToOneUpgradeable.sol";
 
 import { IBlacklistable } from "../../src/interfaces/IBlacklistable.sol";
 import { IMYieldToOne } from "../../src/interfaces/IMYieldToOne.sol";
@@ -17,8 +21,8 @@ import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.s
 
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
-contract MYieldToOneUnitTests is BaseUnitTest {
-    MYieldToOne public mYieldToOne;
+contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
+    MYieldToOneUpgradeable public mYieldToOne;
 
     string public constant NAME = "HALO USD";
     string public constant SYMBOL = "HALO USD";
@@ -28,20 +32,26 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
         mToken = new MockM();
 
-        mYieldToOne = new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            yieldRecipient,
-            admin,
-            blacklistManager,
-            yieldRecipientManager
+        mYieldToOne = MYieldToOneUpgradeable(
+            Upgrades.deployUUPSProxy(
+                "MYieldToOneUpgradeable.sol:MYieldToOneUpgradeable",
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    yieldRecipient,
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    /* ============ constructor ============ */
+    /* ============ initialize ============ */
 
-    function test_constructor() external view {
+    function test_initialize() external view {
         assertEq(mYieldToOne.name(), NAME);
         assertEq(mYieldToOne.symbol(), SYMBOL);
         assertEq(mYieldToOne.decimals(), 6);
@@ -53,53 +63,109 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
     }
 
-    function test_constructor_zeroMToken() external {
+    function test_initialize_zeroMToken() external {
+        address implementation = address(new MYieldToOneUpgradeable());
+
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(0),
-            address(yieldRecipient),
-            admin,
-            blacklistManager,
-            yieldRecipientManager
+        MYieldToOneUpgradeable(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(0),
+                    address(yieldRecipient),
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroYieldRecipient() external {
+    function test_initialize_zeroYieldRecipient() external {
+        address implementation = address(new MYieldToOneUpgradeable());
+
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipient.selector);
-        new MYieldToOne(NAME, SYMBOL, address(mToken), address(0), admin, blacklistManager, yieldRecipientManager);
+        MYieldToOneUpgradeable(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(0),
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
+        );
     }
 
-    function test_constructor_zeroDefaultAdmin() external {
+    function test_initialize_zeroDefaultAdmin() external {
+        address implementation = address(new MYieldToOneUpgradeable());
+
         vm.expectRevert(IMYieldToOne.ZeroDefaultAdmin.selector);
-        new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            address(yieldRecipient),
-            address(0),
-            blacklistManager,
-            yieldRecipientManager
+        MYieldToOneUpgradeable(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(yieldRecipient),
+                    address(0),
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroBlacklistManager() external {
+    function test_initialize_zeroBlacklistManager() external {
+        address implementation = address(new MYieldToOneUpgradeable());
+
         vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
-        new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            address(yieldRecipient),
-            admin,
-            address(0),
-            yieldRecipientManager
+        MYieldToOneUpgradeable(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(yieldRecipient),
+                    admin,
+                    address(0),
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroYieldRecipientManager() external {
+    function test_initialize_zeroYieldRecipientManager() external {
+        address implementation = address(new MYieldToOneUpgradeable());
+
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipientManager.selector);
-        new MYieldToOne(NAME, SYMBOL, address(mToken), address(yieldRecipient), admin, blacklistManager, address(0));
+        MYieldToOneUpgradeable(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(yieldRecipient),
+                    admin,
+                    blacklistManager,
+                    address(0)
+                )
+            )
+        );
     }
 
     /* ============ _approve ============ */

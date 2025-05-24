@@ -10,8 +10,8 @@ import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
 
-import { MYieldToOne } from "../../src/MYieldToOne.sol";
-import { MYieldFee } from "../../src/MYieldFee.sol";
+import { MYieldToOneUpgradeable } from "../../src/MYieldToOneUpgradeable.sol";
+import { MYieldFeeUpgradeable } from "../../src/MYieldFeeUpgradeable.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -53,8 +53,8 @@ contract BaseIntegrationTest is Helpers, Test {
 
     address[] public accounts = [alice, bob, carol];
 
-    MYieldToOne public mYieldToOne;
-    MYieldFee public mYieldFee;
+    MYieldToOneUpgradeable public mYieldToOne;
+    MYieldFeeUpgradeable public mYieldFee;
 
     string public constant NAME = "M USD Extension";
     string public constant SYMBOL = "MUSDE";

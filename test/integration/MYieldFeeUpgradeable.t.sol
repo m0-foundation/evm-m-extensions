@@ -2,13 +2,15 @@
 
 pragma solidity 0.8.26;
 
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldFee } from "../../src/MYieldFee.sol";
+import { MYieldFeeUpgradeable } from "../../src/MYieldFeeUpgradeable.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract MYieldFeeIntegrationTests is BaseIntegrationTest {
+contract MYieldFeeUpgradeableIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
@@ -18,14 +20,20 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldFee = new MYieldFee(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager
+        mYieldFee = MYieldFeeUpgradeable(
+            Upgrades.deployUUPSProxy(
+                "MYieldFeeUpgradeable.sol:MYieldFeeUpgradeable",
+                abi.encodeWithSelector(
+                    MYieldFeeUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager
+                )
+            )
         );
     }
 
@@ -58,7 +66,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         // wrap from non-earner account
         _wrap(address(mYieldFee), alice, alice, amount);
 
-        // Check balances of MYieldFee and Alice after wrapping
+        // Check balances of MYieldFeeUpgradeable and Alice after wrapping
         assertEq(mYieldFee.balanceOf(alice), amount); // user receives exact amount
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 2); // rounds down
 
@@ -138,7 +146,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         _wrap(address(mYieldFee), bob, bob, amount);
 
-        // Check balances of MYieldFee and Bob after wrapping
+        // Check balances of MYieldFeeUpgradeable and Bob after wrapping
         assertEq(mYieldFee.balanceOf(bob), amount);
         assertEq(mToken.balanceOf(address(mYieldFee)), amount);
 

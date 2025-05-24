@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.26;
-import { console } from "../../lib/forge-std/src/console.sol";
+
+import {
+    IAccessControl
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
-
-import { IAccessControl } from "../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
@@ -14,29 +18,35 @@ import { IMYieldFeeExtension } from "../../src/interfaces/IMYieldFeeExtension.so
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
+import { MYieldFeeUpgradeableHarness } from "../harness/MYieldFeeUpgradeableHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
 contract MYieldFeeUnitTests is BaseUnitTest {
-    MYieldFeeHarness public mYieldFee;
+    MYieldFeeUpgradeableHarness public mYieldFee;
 
     function setUp() public override {
         super.setUp();
 
-        mYieldFee = new MYieldFeeHarness(
-            "MYieldFee",
-            "MYF",
-            address(mToken),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager
+        mYieldFee = MYieldFeeUpgradeableHarness(
+            Upgrades.deployUUPSProxy(
+                "MYieldFeeUpgradeableHarness.sol:MYieldFeeUpgradeableHarness",
+                abi.encodeWithSelector(
+                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager
+                )
+            )
         );
     }
 
-    /* ============ constructor ============ */
+    /* ============ initialize ============ */
 
-    function test_constructor() external view {
+    function test_initialize() external view {
         assertEq(mYieldFee.HUNDRED_PERCENT(), 10_000);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
@@ -45,32 +55,88 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertTrue(mYieldFee.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
     }
 
-    function test_constructor_zeroMToken() external {
+    function test_initialize_zeroMToken() external {
+        address implementation = address(new MYieldFeeUpgradeableHarness());
+
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        new MYieldFeeHarness("MYieldFee", "MYF", address(0), YIELD_FEE_RATE, yieldFeeRecipient, admin, yieldFeeManager);
-    }
-
-    function test_constructor_zeroYieldFeeRecipient() external {
-        vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeRecipient.selector);
-        new MYieldFeeHarness("MYieldFee", "MYF", address(mToken), YIELD_FEE_RATE, address(0), admin, yieldFeeManager);
-    }
-
-    function test_constructor_zeroAdmin() external {
-        vm.expectRevert(IMYieldFeeExtension.ZeroAdmin.selector);
-        new MYieldFeeHarness(
-            "MYieldFee",
-            "MYF",
-            address(mToken),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            address(0),
-            yieldFeeManager
+        MYieldFeeUpgradeableHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(0),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroYieldFeeManager() external {
+    function test_initialize_zeroYieldFeeRecipient() external {
+        address implementation = address(new MYieldFeeUpgradeableHarness());
+
+        vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeRecipient.selector);
+        MYieldFeeUpgradeableHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    address(0),
+                    admin,
+                    yieldFeeManager
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroAdmin() external {
+        address implementation = address(new MYieldFeeUpgradeableHarness());
+
+        vm.expectRevert(IMYieldFeeExtension.ZeroAdmin.selector);
+        MYieldFeeUpgradeableHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    address(0),
+                    yieldFeeManager
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroYieldFeeManager() external {
+        address implementation = address(new MYieldFeeUpgradeableHarness());
+
         vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeManager.selector);
-        new MYieldFeeHarness("MYieldFee", "MYF", address(mToken), YIELD_FEE_RATE, yieldFeeRecipient, admin, address(0));
+        MYieldFeeUpgradeableHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    address(0)
+                )
+            )
+        );
     }
 
     /* ============ claimYieldFor ============ */

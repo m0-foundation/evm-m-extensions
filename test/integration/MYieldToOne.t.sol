@@ -2,13 +2,15 @@
 
 pragma solidity 0.8.26;
 
+import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldToOne } from "../../src/MYieldToOne.sol";
+import { MYieldToOneUpgradeable } from "../../src/MYieldToOneUpgradeable.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract MYieldToOneIntegrationTests is BaseIntegrationTest {
+contract MYieldToOneUpgradeableIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
@@ -18,14 +20,20 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldToOne = new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            yieldRecipient,
-            admin,
-            blacklistManager,
-            yieldRecipientManager
+        mYieldToOne = MYieldToOneUpgradeable(
+            Upgrades.deployUUPSProxy(
+                "MYieldToOneUpgradeable.sol:MYieldToOneUpgradeable",
+                abi.encodeWithSelector(
+                    MYieldToOneUpgradeable.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    yieldRecipient,
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
@@ -55,7 +63,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // wrap from non-earner account
         _wrap(address(mYieldToOne), alice, alice, amount);
 
-        // Check balances of MYieldToOne and Alice after wrapping
+        // Check balances of MYieldToOneUpgradeable and Alice after wrapping
         assertEq(mYieldToOne.balanceOf(alice), amount); // user receives exact amount
         assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), amount, 2); // rounds down
 
@@ -78,12 +86,12 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // unwraps
         _unwrap(address(mYieldToOne), alice, alice, amount / 2);
 
-        // yield stays he same
+        // yield stays the same
         assertApproxEqAbs(mYieldToOne.yield(), 11375, 2);
 
         _unwrap(address(mYieldToOne), bob, bob, amount / 2);
 
-        // yield stays he same
+        // yield stays the same
         assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
 
         assertEq(mYieldToOne.balanceOf(bob), 0);
@@ -109,7 +117,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _wrap(address(mYieldToOne), bob, bob, amount);
 
-        // Check balances of MYieldToOne and Bob after wrapping
+        // Check balances of MYieldToOneUpgradeable and Bob after wrapping
         assertEq(mYieldToOne.balanceOf(bob), amount);
         assertEq(mToken.balanceOf(address(mYieldToOne)), amount);
 
