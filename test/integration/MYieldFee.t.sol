@@ -14,7 +14,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
     function setUp() public override {
         super.setUp();
 
-        mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"));
+        mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
 
         _fundAccounts();
 
@@ -69,8 +69,8 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         uint256 totalYield = 11375;
         uint256 yieldFee = _getYieldFee(totalYield, YIELD_FEE_RATE);
 
-        assertEq(mYieldFee.totalAccruedYield(), totalYield - yieldFee);
-        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 1); // May round up
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
+        assertEq(mYieldFee.totalAccruedYieldFee(), yieldFee);
 
         // transfers do not affect yield (except for rounding error)
         vm.prank(alice);
@@ -80,21 +80,21 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.balanceOf(alice), amount / 2);
 
         // yield accrual
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round up
-        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 1); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
+        assertEq(mYieldFee.totalAccruedYieldFee(), yieldFee);
 
         // unwraps
         _unwrap(address(mYieldFee), alice, alice, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round up
-        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 3); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 1); // May round down
 
         _unwrap(address(mYieldFee), bob, bob, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 2); // May round up
-        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 5); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 2); // May round down
 
         assertEq(mYieldFee.balanceOf(bob), 0);
         assertEq(mYieldFee.balanceOf(alice), 0);
@@ -112,11 +112,9 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.balanceOf(bob), 0); // Bob's yield is 0 cause he received and unwrapped in the same block
 
         assertEq(mYieldFee.balanceOf(yieldFeeRecipient), yieldFee);
-        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), aliceYield + yieldFee, 5); // May round down
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), aliceYield + yieldFee, 1); // May round up
         assertEq(mYieldFee.totalSupply(), aliceYield + yieldFee);
-
-        // Due to principal round down for account and totalPrincipal round up
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), 0, 5);
+        assertEq(mYieldFee.totalAccruedYield(), 0);
         assertEq(mYieldFee.totalAccruedYieldFee(), 0);
 
         // Alice and yield fee recipient unwraps
@@ -130,10 +128,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.accruedYieldOf(yieldFeeRecipient), 0);
         assertEq(mYieldFee.balanceOf(yieldFeeRecipient), 0);
         assertEq(mToken.balanceOf(yieldFeeRecipient), yieldFee);
-
-        // Some excess due to rounding may be left in the extension
-        // TODO: could be avoided by transferring M instead of the extension token to the yield recipient
-        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), 4, 1);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 0);
 
         // wrap from earner account
         _addToList(EARNERS_LIST, bob);
@@ -145,7 +140,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         // Check balances of MYieldFee and Bob after wrapping
         assertEq(mYieldFee.balanceOf(bob), amount);
-        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 4); // Account for the excess
+        assertEq(mToken.balanceOf(address(mYieldFee)), amount);
 
         // Disable earning for the contract
         _removeFomList(EARNERS_LIST, address(mYieldFee));
@@ -157,7 +152,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // No yield should accrue
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), 0, 4); // Account for the excess
+        assertEq(mYieldFee.totalAccruedYield(), 0);
 
         // Re-enable earning for the contract
         _addToList(EARNERS_LIST, address(mYieldFee));
@@ -166,8 +161,8 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         // Yield should accrue again
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
-        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount + totalYield, 4); // Account for the excess
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 3); // May round down
+        assertEq(mToken.balanceOf(address(mYieldFee)), amount + totalYield);
     }
 
     /* ============ enableEarning ============ */
