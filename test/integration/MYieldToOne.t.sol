@@ -6,11 +6,11 @@ import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.s
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldToOneUpgradeable } from "../../src/MYieldToOneUpgradeable.sol";
+import { MYieldToOne } from "../../src/MYieldToOne.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract MYieldToOneUpgradeableIntegrationTests is BaseIntegrationTest {
+contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
@@ -20,11 +20,11 @@ contract MYieldToOneUpgradeableIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldToOne = MYieldToOneUpgradeable(
+        mYieldToOne = MYieldToOne(
             Upgrades.deployUUPSProxy(
-                "MYieldToOneUpgradeable.sol:MYieldToOneUpgradeable",
+                "MYieldToOne.sol:MYieldToOne",
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
@@ -63,7 +63,7 @@ contract MYieldToOneUpgradeableIntegrationTests is BaseIntegrationTest {
         // wrap from non-earner account
         _wrap(address(mYieldToOne), alice, alice, amount);
 
-        // Check balances of MYieldToOneUpgradeable and Alice after wrapping
+        // Check balances of MYieldToOne and Alice after wrapping
         assertEq(mYieldToOne.balanceOf(alice), amount); // user receives exact amount
         assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), amount, 2); // rounds down
 
@@ -117,7 +117,7 @@ contract MYieldToOneUpgradeableIntegrationTests is BaseIntegrationTest {
 
         _wrap(address(mYieldToOne), bob, bob, amount);
 
-        // Check balances of MYieldToOneUpgradeable and Bob after wrapping
+        // Check balances of MYieldToOne and Bob after wrapping
         assertEq(mYieldToOne.balanceOf(bob), amount);
         assertEq(mToken.balanceOf(address(mYieldToOne)), amount);
 

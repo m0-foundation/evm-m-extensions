@@ -18,20 +18,20 @@ import { IMYieldFeeExtension } from "../../src/interfaces/IMYieldFeeExtension.so
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import { MYieldFeeUpgradeableHarness } from "../harness/MYieldFeeUpgradeableHarness.sol";
+import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
 contract MYieldFeeUnitTests is BaseUnitTest {
-    MYieldFeeUpgradeableHarness public mYieldFee;
+    MYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
         super.setUp();
 
-        mYieldFee = MYieldFeeUpgradeableHarness(
+        mYieldFee = MYieldFeeHarness(
             Upgrades.deployUUPSProxy(
-                "MYieldFeeUpgradeableHarness.sol:MYieldFeeUpgradeableHarness",
+                "MYieldFeeHarness.sol:MYieldFeeHarness",
                 abi.encodeWithSelector(
-                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(mToken),
@@ -56,14 +56,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroMToken() external {
-        address implementation = address(new MYieldFeeUpgradeableHarness());
+        address implementation = address(new MYieldFeeHarness());
 
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        MYieldFeeUpgradeableHarness(
+        MYieldFeeHarness(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(0),
@@ -77,14 +77,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroYieldFeeRecipient() external {
-        address implementation = address(new MYieldFeeUpgradeableHarness());
+        address implementation = address(new MYieldFeeHarness());
 
         vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeRecipient.selector);
-        MYieldFeeUpgradeableHarness(
+        MYieldFeeHarness(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(mToken),
@@ -98,14 +98,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroAdmin() external {
-        address implementation = address(new MYieldFeeUpgradeableHarness());
+        address implementation = address(new MYieldFeeHarness());
 
         vm.expectRevert(IMYieldFeeExtension.ZeroAdmin.selector);
-        MYieldFeeUpgradeableHarness(
+        MYieldFeeHarness(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(mToken),
@@ -119,14 +119,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroYieldFeeManager() external {
-        address implementation = address(new MYieldFeeUpgradeableHarness());
+        address implementation = address(new MYieldFeeHarness());
 
         vm.expectRevert(IMYieldFeeExtension.ZeroYieldFeeManager.selector);
-        MYieldFeeUpgradeableHarness(
+        MYieldFeeHarness(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldFeeUpgradeableHarness.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(mToken),

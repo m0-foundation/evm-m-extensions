@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { SpokeMYieldFeeUpgradeable } from "../../src/SpokeMYieldFeeUpgradeable.sol";
+import { SpokeMYieldFee } from "../../src/SpokeMYieldFee.sol";
 
-contract SpokeMYieldFeeUpgradeableHarness is SpokeMYieldFeeUpgradeable {
+contract SpokeMYieldFeeHarness is SpokeMYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();

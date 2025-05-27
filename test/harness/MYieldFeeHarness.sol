@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { MYieldFeeUpgradeable } from "../../src/MYieldFeeUpgradeable.sol";
+import { MYieldFee } from "../../src/MYieldFee.sol";
 
-contract MYieldFeeUpgradeableHarness is MYieldFeeUpgradeable {
+contract MYieldFeeHarness is MYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();

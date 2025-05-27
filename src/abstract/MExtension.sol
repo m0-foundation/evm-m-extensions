@@ -7,7 +7,7 @@ import { ERC20ExtendedUpgradeable } from "../../lib/common/src/ERC20ExtendedUpgr
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
 
-abstract contract MExtensionUpgradeableStorageLayout {
+abstract contract MExtensionStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MExtension
     struct MExtensionStorageStruct {
         address mToken;
@@ -25,11 +25,11 @@ abstract contract MExtensionUpgradeableStorageLayout {
 }
 
 /**
- * @title MExtensionUpgradeable
+ * @title MExtension
  * @notice Upgradeable ERC20 Token contract for wrapping M into a non-rebasing token.
  * @author M0 Labs
  */
-abstract contract MExtensionUpgradeable is IMExtension, MExtensionUpgradeableStorageLayout, ERC20ExtendedUpgradeable {
+abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20ExtendedUpgradeable {
     /* ============ Initializer ============ */
 
     /**
@@ -38,11 +38,7 @@ abstract contract MExtensionUpgradeable is IMExtension, MExtensionUpgradeableSto
      * @param symbol  The symbol of the token (e.g. "HUSD").
      * @param mToken_ The address of the M Token.
      */
-    function __MExtensionUpgradeable_init(
-        string memory name,
-        string memory symbol,
-        address mToken_
-    ) internal onlyInitializing {
+    function __MExtension_init(string memory name, string memory symbol, address mToken_) internal onlyInitializing {
         if ((_getMExtensionStorageLocation().mToken = mToken_) == address(0)) revert ZeroMToken();
 
         __ERC20ExtendedUpgradeable_init(name, symbol, 6);

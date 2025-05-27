@@ -10,20 +10,20 @@ import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgr
 
 import { IBlacklistable } from "../../../src/interfaces/IBlacklistable.sol";
 
-import { BlacklistableUpgradeableHarness } from "../../harness/BlacklistableUpgradeableHarness.sol";
+import { BlacklistableHarness } from "../../harness/BlacklistableHarness.sol";
 
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
-contract BlacklistableUpgradeableUnitTests is BaseUnitTest {
-    BlacklistableUpgradeableHarness public blacklistable;
+contract BlacklistableUnitTests is BaseUnitTest {
+    BlacklistableHarness public blacklistable;
 
     function setUp() public override {
         super.setUp();
 
-        blacklistable = BlacklistableUpgradeableHarness(
+        blacklistable = BlacklistableHarness(
             Upgrades.deployUUPSProxy(
-                "BlacklistableUpgradeableHarness.sol:BlacklistableUpgradeableHarness",
-                abi.encodeWithSelector(BlacklistableUpgradeableHarness.initialize.selector, blacklistManager)
+                "BlacklistableHarness.sol:BlacklistableHarness",
+                abi.encodeWithSelector(BlacklistableHarness.initialize.selector, blacklistManager)
             )
         );
     }
@@ -35,12 +35,12 @@ contract BlacklistableUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroBlacklistManager() external {
-        address implementation = address(new BlacklistableUpgradeableHarness());
+        address implementation = address(new BlacklistableHarness());
 
         vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
         UnsafeUpgrades.deployUUPSProxy(
             implementation,
-            abi.encodeWithSelector(BlacklistableUpgradeableHarness.initialize.selector, address(0))
+            abi.encodeWithSelector(BlacklistableHarness.initialize.selector, address(0))
         );
     }
 

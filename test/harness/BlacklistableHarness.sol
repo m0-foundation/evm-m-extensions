@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.26;
 
-import { BlacklistableUpgradeable } from "../../src/abstract/components/BlacklistableUpgradeable.sol";
+import { Blacklistable } from "../../src/abstract/components/Blacklistable.sol";
 
-contract BlacklistableUpgradeableHarness is BlacklistableUpgradeable {
+contract BlacklistableHarness is Blacklistable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
 
     function initialize(address blacklistManager) public initializer {
-        __BlacklistableUpgradeable_init(blacklistManager);
+        __Blacklistable_init(blacklistManager);
     }
 }

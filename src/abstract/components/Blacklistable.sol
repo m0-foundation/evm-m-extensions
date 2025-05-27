@@ -12,7 +12,7 @@ import {
 
 import { IBlacklistable } from "../../interfaces/IBlacklistable.sol";
 
-abstract contract BlacklistableUpgradeableStorageLayout {
+abstract contract BlacklistableStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.Blacklistable
     struct BlacklistableStorageStruct {
         mapping(address account => bool isBlacklisted) isBlacklisted;
@@ -30,16 +30,12 @@ abstract contract BlacklistableUpgradeableStorageLayout {
 }
 
 /**
- * @title BlacklistableUpgradeable
+ * @title Blacklistable
  * @notice Upgradeable contract that allows for the blacklisting of accounts.
  * @dev This contract is used to prevent certain accounts from interacting with the contract.
  * @author M0 Labs
  */
-abstract contract BlacklistableUpgradeable is
-    IBlacklistable,
-    BlacklistableUpgradeableStorageLayout,
-    AccessControlUpgradeable
-{
+abstract contract Blacklistable is IBlacklistable, BlacklistableStorageLayout, AccessControlUpgradeable {
     /* ============ Variables ============ */
 
     /// @inheritdoc IBlacklistable
@@ -51,7 +47,7 @@ abstract contract BlacklistableUpgradeable is
      * @notice Initializes the contract with the given blacklist manager.
      * @param blacklistManager The address of a blacklist manager.
      */
-    function __BlacklistableUpgradeable_init(address blacklistManager) internal onlyInitializing {
+    function __Blacklistable_init(address blacklistManager) internal onlyInitializing {
         if (blacklistManager == address(0)) revert ZeroBlacklistManager();
         _grantRole(BLACKLIST_MANAGER_ROLE, blacklistManager);
     }

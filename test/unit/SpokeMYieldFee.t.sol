@@ -8,20 +8,20 @@ import { IContinuousIndexing } from "../../src/interfaces/IContinuousIndexing.so
 import { IRateOracle } from "../../src/interfaces/IRateOracle.sol";
 import { ISpokeMYieldFee } from "../../src/interfaces/ISpokeMYieldFee.sol";
 
-import { SpokeMYieldFeeUpgradeableHarness } from "../harness/SpokeMYieldFeeUpgradeableHarness.sol";
+import { SpokeMYieldFeeHarness } from "../harness/SpokeMYieldFeeHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
-contract SpokeMYieldFeeUpgradeableUnitTests is BaseUnitTest {
-    SpokeMYieldFeeUpgradeableHarness public mYieldFee;
+contract SpokeMYieldFeeUnitTests is BaseUnitTest {
+    SpokeMYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
         super.setUp();
 
-        mYieldFee = SpokeMYieldFeeUpgradeableHarness(
+        mYieldFee = SpokeMYieldFeeHarness(
             Upgrades.deployUUPSProxy(
-                "SpokeMYieldFeeUpgradeableHarness.sol:SpokeMYieldFeeUpgradeableHarness",
+                "SpokeMYieldFeeHarness.sol:SpokeMYieldFeeHarness",
                 abi.encodeWithSelector(
-                    SpokeMYieldFeeUpgradeableHarness.initialize.selector,
+                    SpokeMYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(mToken),
@@ -48,14 +48,14 @@ contract SpokeMYieldFeeUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroRateOracle() external {
-        address implementation = address(new SpokeMYieldFeeUpgradeableHarness());
+        address implementation = address(new SpokeMYieldFeeHarness());
 
         vm.expectRevert(ISpokeMYieldFee.ZeroRateOracle.selector);
-        SpokeMYieldFeeUpgradeableHarness(
+        SpokeMYieldFeeHarness(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    SpokeMYieldFeeUpgradeableHarness.initialize.selector,
+                    SpokeMYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
                     address(mToken),

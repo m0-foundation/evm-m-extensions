@@ -7,11 +7,11 @@ import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
 
-import { BlacklistableUpgradeable } from "./abstract/components/BlacklistableUpgradeable.sol";
+import { Blacklistable } from "./abstract/components/Blacklistable.sol";
 
-import { MExtensionUpgradeable } from "./abstract/MExtensionUpgradeable.sol";
+import { MExtension } from "./abstract/MExtension.sol";
 
-abstract contract MYieldToOneUpgradeableStorageLayout {
+abstract contract MYieldToOneStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldToOne
     struct MYieldToOneStorageStruct {
         mapping(address account => uint256 balance) balanceOf;
@@ -31,17 +31,12 @@ abstract contract MYieldToOneUpgradeableStorageLayout {
 }
 
 /**
- * @title MYieldToOneUpgradeable
+ * @title  MYieldToOne
  * @notice Upgradeable ERC20 Token contract for wrapping M into a non-rebasing token
  *         with yield claimable by a single recipient.
  * @author M0 Labs
  */
-contract MYieldToOneUpgradeable is
-    IMYieldToOne,
-    MYieldToOneUpgradeableStorageLayout,
-    MExtensionUpgradeable,
-    BlacklistableUpgradeable
-{
+contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blacklistable {
     /* ============ Variables ============ */
 
     /// @inheritdoc IMYieldToOne
@@ -71,8 +66,8 @@ contract MYieldToOneUpgradeable is
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (defaultAdmin == address(0)) revert ZeroDefaultAdmin();
 
-        __MExtensionUpgradeable_init(name, symbol, mToken);
-        __BlacklistableUpgradeable_init(blacklistManager);
+        __MExtension_init(name, symbol, mToken);
+        __Blacklistable_init(blacklistManager);
 
         _setYieldRecipient(yieldRecipient_);
 

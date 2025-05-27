@@ -6,11 +6,11 @@ import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrade
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldFeeUpgradeable } from "../../src/MYieldFeeUpgradeable.sol";
+import { MYieldFee } from "../../src/MYieldFee.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract MYieldFeeUpgradeableIntegrationTests is BaseIntegrationTest {
+contract MYieldFeeIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
@@ -20,11 +20,11 @@ contract MYieldFeeUpgradeableIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldFee = MYieldFeeUpgradeable(
+        mYieldFee = MYieldFee(
             Upgrades.deployUUPSProxy(
-                "MYieldFeeUpgradeable.sol:MYieldFeeUpgradeable",
+                "MYieldFee.sol:MYieldFee",
                 abi.encodeWithSelector(
-                    MYieldFeeUpgradeable.initialize.selector,
+                    MYieldFee.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
@@ -66,7 +66,7 @@ contract MYieldFeeUpgradeableIntegrationTests is BaseIntegrationTest {
         // wrap from non-earner account
         _wrap(address(mYieldFee), alice, alice, amount);
 
-        // Check balances of MYieldFeeUpgradeable and Alice after wrapping
+        // Check balances of MYieldFee and Alice after wrapping
         assertEq(mYieldFee.balanceOf(alice), amount); // user receives exact amount
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 2); // rounds down
 
@@ -146,7 +146,7 @@ contract MYieldFeeUpgradeableIntegrationTests is BaseIntegrationTest {
 
         _wrap(address(mYieldFee), bob, bob, amount);
 
-        // Check balances of MYieldFeeUpgradeable and Bob after wrapping
+        // Check balances of MYieldFee and Bob after wrapping
         assertEq(mYieldFee.balanceOf(bob), amount);
         assertEq(mToken.balanceOf(address(mYieldFee)), amount);
 

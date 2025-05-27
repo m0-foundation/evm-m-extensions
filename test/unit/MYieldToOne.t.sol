@@ -10,7 +10,7 @@ import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrade
 
 import { MockM } from "../utils/Mocks.sol";
 
-import { MYieldToOneUpgradeable } from "../../src/MYieldToOneUpgradeable.sol";
+import { MYieldToOne } from "../../src/MYieldToOne.sol";
 
 import { IBlacklistable } from "../../src/interfaces/IBlacklistable.sol";
 import { IMYieldToOne } from "../../src/interfaces/IMYieldToOne.sol";
@@ -21,8 +21,8 @@ import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.s
 
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
-contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
-    MYieldToOneUpgradeable public mYieldToOne;
+contract MYieldToOneUnitTests is BaseUnitTest {
+    MYieldToOne public mYieldToOne;
 
     string public constant NAME = "HALO USD";
     string public constant SYMBOL = "HALO USD";
@@ -32,11 +32,11 @@ contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
 
         mToken = new MockM();
 
-        mYieldToOne = MYieldToOneUpgradeable(
+        mYieldToOne = MYieldToOne(
             Upgrades.deployUUPSProxy(
-                "MYieldToOneUpgradeable.sol:MYieldToOneUpgradeable",
+                "MYieldToOne.sol:MYieldToOne",
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
@@ -64,14 +64,14 @@ contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroMToken() external {
-        address implementation = address(new MYieldToOneUpgradeable());
+        address implementation = address(new MYieldToOne());
 
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        MYieldToOneUpgradeable(
+        MYieldToOne(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(0),
@@ -85,14 +85,14 @@ contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroYieldRecipient() external {
-        address implementation = address(new MYieldToOneUpgradeable());
+        address implementation = address(new MYieldToOne());
 
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipient.selector);
-        MYieldToOneUpgradeable(
+        MYieldToOne(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
@@ -106,14 +106,14 @@ contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroDefaultAdmin() external {
-        address implementation = address(new MYieldToOneUpgradeable());
+        address implementation = address(new MYieldToOne());
 
         vm.expectRevert(IMYieldToOne.ZeroDefaultAdmin.selector);
-        MYieldToOneUpgradeable(
+        MYieldToOne(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
@@ -127,14 +127,14 @@ contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroBlacklistManager() external {
-        address implementation = address(new MYieldToOneUpgradeable());
+        address implementation = address(new MYieldToOne());
 
         vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
-        MYieldToOneUpgradeable(
+        MYieldToOne(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
@@ -148,14 +148,14 @@ contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroYieldRecipientManager() external {
-        address implementation = address(new MYieldToOneUpgradeable());
+        address implementation = address(new MYieldToOne());
 
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipientManager.selector);
-        MYieldToOneUpgradeable(
+        MYieldToOne(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    MYieldToOneUpgradeable.initialize.selector,
+                    MYieldToOne.initialize.selector,
                     NAME,
                     SYMBOL,
                     address(mToken),
