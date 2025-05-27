@@ -259,7 +259,9 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
         _revertIfInsufficientAmount(amount);
         _revertIfInvalidRecipient(recipient);
 
-        uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex());
+        uint128 currentIndex_ = currentIndex();
+        uint112 principalDown_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_);
+        uint112 principalUp_ = IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_);
 
         // NOTE: Can be `unchecked` because the max amount of  M is never greater than `type(uint240).max`.
         //       Can be `unchecked` because UIntMath.safe112 is used for principal addition safety for `totalPrincipal`
@@ -267,9 +269,9 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
             balanceOf[recipient] += amount;
             totalSupply += amount;
 
-            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principal_);
+            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principalUp_);
             // No need for `UIntMath.safe112`, principalOf[recipient] cannot be greater than `totalPrincipal`.
-            principalOf[recipient] += principal_;
+            principalOf[recipient] += principalDown_;
         }
 
         emit Transfer(address(0), recipient, amount);
@@ -289,7 +291,9 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         // Slightly overestimate the principal amount to be burned and use safe value to avoid underflow in unchecked block
         uint112 fromPrincipal_ = principalOf[account];
-        uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
+        uint128 currentIndex_ = currentIndex();
+        uint112 principalUp_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex_, fromPrincipal_);
+        uint112 principalDown_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_);
 
         // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used.
         //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
@@ -298,8 +302,8 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
             balanceOf[account] -= amount;
             totalSupply -= amount;
 
-            principalOf[account] = fromPrincipal_ - principal_;
-            totalPrincipal -= principal_;
+            principalOf[account] = fromPrincipal_ - principalUp_;
+            totalPrincipal -= principalDown_;
         }
 
         emit Transfer(account, address(0), amount);

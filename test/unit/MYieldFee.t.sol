@@ -191,15 +191,15 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.claimYieldFee(), yieldFeeAmount);
 
         assertEq(mYieldFee.balanceOf(yieldFeeRecipient), yieldFeeAmount);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 1);
+        assertEq(mYieldFee.totalAccruedYieldFee(), 0);
 
         // Another 10% index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
-        assertEq(mYieldFee.totalAccruedYield(), 166_383837);
+        assertEq(mYieldFee.totalAccruedYield(), 166_383838);
 
-        uint256 secondYieldFeeAmount = 22_846562;
+        uint256 secondYieldFeeAmount = 22_846561;
 
         // 1_210e6 balance with yield without fee.
         mToken.setBalanceOf(address(mYieldFee), 1_210e6);
@@ -212,7 +212,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.claimYieldFee(), secondYieldFeeAmount);
 
         assertEq(mYieldFee.balanceOf(yieldFeeRecipient), yieldFeeAmount + secondYieldFeeAmount);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 1);
+        assertEq(mYieldFee.totalAccruedYieldFee(), 0);
     }
 
     function testFuzz_claimYieldFee(
@@ -845,12 +845,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999);
         assertEq(mYieldFee.accruedYieldOf(alice), 78);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 999 + 78);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 + 925);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 + 926);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999);
-        assertEq(mYieldFee.totalAccruedYield(), 78);
-        assertEq(mYieldFee.projectedTotalSupply(), 2078);
+        assertEq(mYieldFee.totalAccruedYield(), 79);
+        assertEq(mYieldFee.projectedTotalSupply(), 2079);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_099);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 21);
+        assertEq(mYieldFee.totalAccruedYieldFee(), 20);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 1);
@@ -862,12 +862,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1);
         assertEq(mYieldFee.accruedYieldOf(alice), 78 - 1);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 999 + 78);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 + 925);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 + 927);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999 + 1);
-        assertEq(mYieldFee.totalAccruedYield(), 77);
-        assertEq(mYieldFee.projectedTotalSupply(), 2_078);
+        assertEq(mYieldFee.totalAccruedYield(), 79);
+        assertEq(mYieldFee.projectedTotalSupply(), 2_080);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_100);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 22);
+        assertEq(mYieldFee.totalAccruedYieldFee(), 20);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 2);
@@ -879,10 +879,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1 + 2);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 999 + 78 + 1);
         assertEq(mYieldFee.accruedYieldOf(alice), 78 - 1 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 + 926);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 + 929);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999 + 1 + 2);
-        assertEq(mYieldFee.totalAccruedYield(), 76);
-        assertEq(mYieldFee.projectedTotalSupply(), 2_079);
+        assertEq(mYieldFee.totalAccruedYield(), 79);
+        assertEq(mYieldFee.projectedTotalSupply(), 2_082);
 
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_099 + 1 + 2);
@@ -972,7 +972,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.unwrap(alice, 1_000);
     }
 
-    function test_unwrap_4() external {
+    function test_unwrap() external {
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
         // 10% index growth
@@ -1008,10 +1008,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1);
         assertEq(mYieldFee.accruedYieldOf(alice), 79);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 1);
+        assertEq(mYieldFee.totalPrincipal(), 1_000);
         assertEq(mYieldFee.totalSupply(), 1_000 - 1);
-        assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedTotalSupply(), 1_079);
+        assertEq(mYieldFee.totalAccruedYield(), 80);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_080);
 
         vm.expectEmit();
         emit IERC20.Transfer(alice, address(0), 499);
@@ -1022,10 +1022,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463);
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499);
         assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 - 462);
         assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499);
-        assertEq(mYieldFee.totalAccruedYield(), 78);
-        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 2);
+        assertEq(mYieldFee.totalAccruedYield(), 80);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499);
 
         vm.expectEmit();
         emit IERC20.Transfer(alice, address(0), 500);
@@ -1036,10 +1036,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463 - 464); // 72
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499 - 500); // 0
         assertEq(mYieldFee.accruedYieldOf(alice), 77);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 1 - 463 - 464); // 72
+        assertEq(mYieldFee.totalPrincipal(), 1_000 - 462 - 463); // 75
         assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499 - 500); // 0
-        assertEq(mYieldFee.totalAccruedYield(), 77);
-        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 500 - 3);
+        assertEq(mYieldFee.totalAccruedYield(), 80);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 500);
 
         assertEq(mToken.balanceOf(alice), 1000);
         assertEq(mToken.balanceOf(address(mYieldFee)), 100);
