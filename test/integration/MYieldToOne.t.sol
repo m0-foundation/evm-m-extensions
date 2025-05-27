@@ -14,7 +14,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     function setUp() public override {
         super.setUp();
 
-        mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"));
+        mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
 
         _fundAccounts();
 
@@ -41,7 +41,6 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     }
 
     function test_yieldAccumulationAndClaim() external {
-        vm.skip(true);
         uint256 amount = 10e6;
 
         // Enable earning for the contract
@@ -64,7 +63,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // yield accrual
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 1); // may round up
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
 
         // transfers do not affect yield
         vm.prank(alice);
@@ -74,18 +73,18 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), amount / 2);
 
         // yield accrual
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 1);
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
 
         // unwraps
         _unwrap(address(mYieldToOne), alice, alice, amount / 2);
 
-        // yield stays basically the same (except rounding up error on transfer)
+        // yield stays he same
         assertApproxEqAbs(mYieldToOne.yield(), 11375, 2);
 
         _unwrap(address(mYieldToOne), bob, bob, amount / 2);
 
-        // yield stays basically the same (except rounding up error on transfer)
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 1);
+        // yield stays he same
+        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
 
         assertEq(mYieldToOne.balanceOf(bob), 0);
         assertEq(mYieldToOne.balanceOf(alice), 0);
@@ -133,7 +132,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // Yield should accrue again
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
-        // assertApproxEqAbs(mYieldToOne.yield(), 11375, 1);
+        assertEq(mYieldToOne.yield(), 11375);
     }
 
     /* ============ enableEarning ============ */
