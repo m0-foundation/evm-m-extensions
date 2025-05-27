@@ -123,7 +123,8 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         emit YieldFeeClaimed(msg.sender, recipient_, yieldFee_);
 
-        _mint(recipient_, yieldFee_);
+        // NOTE: Round up to allow claim the whole amount of yield fee.
+        _mint(recipient_, yieldFee_, IndexingMath.getPrincipalAmountRoundedUp(yieldFee_, currentIndex()));
 
         return yieldFee_;
     }
@@ -252,26 +253,32 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
     /**
      * @dev   Mints `amount` tokens to `recipient`.
-     * @param recipient The address whose account balance will be incremented.
-     * @param amount    The present amount of tokens to mint.
+     * @param recipient The address that will receive tokens.
+     * @param amount    The amount of tokens to mint.
      */
     function _mint(address recipient, uint256 amount) internal override {
         _revertIfInsufficientAmount(amount);
         _revertIfInvalidRecipient(recipient);
 
-        uint128 currentIndex_ = currentIndex();
-        uint112 principalDown_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_);
-        uint112 principalUp_ = IndexingMath.getPrincipalAmountRoundedUp(amount, currentIndex_);
+        _mint(recipient, amount, IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex()));
+    }
 
+    /**
+     * @dev   Mints `amount` tokens to `recipient` with a specified principal.
+     * @param recipient The address that will receive tokens.
+     * @param amount    The amount of tokens to mint.
+     * @param principal The principal amount to be associated with the minted tokens.
+     */
+    function _mint(address recipient, uint256 amount, uint112 principal) internal {
         // NOTE: Can be `unchecked` because the max amount of  M is never greater than `type(uint240).max`.
         //       Can be `unchecked` because UIntMath.safe112 is used for principal addition safety for `totalPrincipal`
         unchecked {
             balanceOf[recipient] += amount;
             totalSupply += amount;
 
-            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principalUp_);
+            totalPrincipal = UIntMath.safe112(uint256(totalPrincipal) + principal);
             // No need for `UIntMath.safe112`, principalOf[recipient] cannot be greater than `totalPrincipal`.
-            principalOf[recipient] += principalDown_;
+            principalOf[recipient] += principal;
         }
 
         emit Transfer(address(0), recipient, amount);
@@ -291,9 +298,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
 
         // Slightly overestimate the principal amount to be burned and use safe value to avoid underflow in unchecked block
         uint112 fromPrincipal_ = principalOf[account];
-        uint128 currentIndex_ = currentIndex();
-        uint112 principalUp_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex_, fromPrincipal_);
-        uint112 principalDown_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex_);
+        uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
 
         // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used.
         //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
@@ -302,8 +307,8 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControl, MExtension
             balanceOf[account] -= amount;
             totalSupply -= amount;
 
-            principalOf[account] = fromPrincipal_ - principalUp_;
-            totalPrincipal -= principalDown_;
+            principalOf[account] = fromPrincipal_ - principal_;
+            totalPrincipal -= principal_;
         }
 
         emit Transfer(account, address(0), amount);

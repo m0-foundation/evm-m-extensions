@@ -845,12 +845,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999);
         assertEq(mYieldFee.accruedYieldOf(alice), 78);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 999 + 78);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 + 926);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 + 925);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999);
-        assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedTotalSupply(), 2079);
+        assertEq(mYieldFee.totalAccruedYield(), 78);
+        assertEq(mYieldFee.projectedTotalSupply(), 2078);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_099);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 20);
+        assertEq(mYieldFee.totalAccruedYieldFee(), 21);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 1);
@@ -862,12 +862,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1);
         assertEq(mYieldFee.accruedYieldOf(alice), 78 - 1);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 999 + 78);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 + 927);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 + 925);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999 + 1);
-        assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedTotalSupply(), 2_080);
+        assertEq(mYieldFee.totalAccruedYield(), 77);
+        assertEq(mYieldFee.projectedTotalSupply(), 2_078);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_100);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 20);
+        assertEq(mYieldFee.totalAccruedYieldFee(), 22);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 2);
@@ -879,10 +879,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1 + 2);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 999 + 78 + 1);
         assertEq(mYieldFee.accruedYieldOf(alice), 78 - 1 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 + 929);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 + 926);
         assertEq(mYieldFee.totalSupply(), 1_000 + 999 + 1 + 2);
-        assertEq(mYieldFee.totalAccruedYield(), 79);
-        assertEq(mYieldFee.projectedTotalSupply(), 2_082);
+        assertEq(mYieldFee.totalAccruedYield(), 76);
+        assertEq(mYieldFee.projectedTotalSupply(), 2_079);
 
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(address(mYieldFee)), 2_099 + 1 + 2);
@@ -1008,10 +1008,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1);
         assertEq(mYieldFee.accruedYieldOf(alice), 79);
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000);
+        assertEq(mYieldFee.totalPrincipal(), 999);
         assertEq(mYieldFee.totalSupply(), 1_000 - 1);
-        assertEq(mYieldFee.totalAccruedYield(), 80);
-        assertEq(mYieldFee.projectedTotalSupply(), 1_080);
+        assertEq(mYieldFee.totalAccruedYield(), 79);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_079);
 
         vm.expectEmit();
         emit IERC20.Transfer(alice, address(0), 499);
@@ -1022,10 +1022,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463);
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499);
         assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 462);
+        assertEq(mYieldFee.totalPrincipal(), 1_000 - 463 - 1);
         assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499);
-        assertEq(mYieldFee.totalAccruedYield(), 80);
-        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499);
+        assertEq(mYieldFee.totalAccruedYield(), 78);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 2);
 
         vm.expectEmit();
         emit IERC20.Transfer(alice, address(0), 500);
@@ -1036,10 +1036,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463 - 464); // 72
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499 - 500); // 0
         assertEq(mYieldFee.accruedYieldOf(alice), 77);
-        assertEq(mYieldFee.totalPrincipal(), 1_000 - 462 - 463); // 75
+        assertEq(mYieldFee.totalPrincipal(), 1_000 - 464 - 463 - 1); // 72
         assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499 - 500); // 0
-        assertEq(mYieldFee.totalAccruedYield(), 80);
-        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 500);
+        assertEq(mYieldFee.totalAccruedYield(), 77);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 500 - 3);
 
         assertEq(mToken.balanceOf(alice), 1000);
         assertEq(mToken.balanceOf(address(mYieldFee)), 100);
