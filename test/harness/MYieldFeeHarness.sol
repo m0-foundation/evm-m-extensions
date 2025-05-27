@@ -17,9 +17,19 @@ contract MYieldFeeHarness is MYieldFee {
         uint16 yieldFeeRate,
         address yieldFeeRecipient,
         address admin,
-        address yieldFeeManager
+        address yieldFeeManager,
+        address claimRecipientManager
     ) public override initializer {
-        super.initialize(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager);
+        super.initialize(
+            name,
+            symbol,
+            mToken,
+            yieldFeeRate,
+            yieldFeeRecipient,
+            admin,
+            yieldFeeManager,
+            claimRecipientManager
+        );
     }
 
     function currentBlockTimestamp() external view returns (uint40) {

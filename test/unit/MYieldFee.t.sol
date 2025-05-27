@@ -38,7 +38,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
-                    yieldFeeManager
+                    yieldFeeManager,
+                    claimRecipientManager
                 )
             )
         );
@@ -53,6 +54,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldFee.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
+        assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
     }
 
     function test_initialize_zeroMToken() external {
@@ -70,7 +72,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
-                    yieldFeeManager
+                    yieldFeeManager,
+                    claimRecipientManager
                 )
             )
         );
@@ -91,7 +94,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     YIELD_FEE_RATE,
                     address(0),
                     admin,
-                    yieldFeeManager
+                    yieldFeeManager,
+                    claimRecipientManager
                 )
             )
         );
@@ -112,7 +116,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     address(0),
-                    yieldFeeManager
+                    yieldFeeManager,
+                    claimRecipientManager
                 )
             )
         );
@@ -133,6 +138,29 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
+                    address(0),
+                    claimRecipientManager
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroClaimRecipientManager() external {
+        address implementation = address(new MYieldFeeHarness());
+
+        vm.expectRevert(IMYieldFeeExtension.ZeroClaimRecipientManager.selector);
+        MYieldFeeHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager,
                     address(0)
                 )
             )
@@ -142,7 +170,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ claimYieldFor ============ */
 
     function test_claimYieldFor_zeroYieldRecipient() external {
-        vm.expectRevert(IMYieldFeeExtension.ZeroYieldRecipient.selector);
+        vm.expectRevert(IMYieldFeeExtension.ZeroAccount.selector);
         mYieldFee.claimYieldFor(address(0));
     }
 
@@ -487,6 +515,48 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.setYieldFeeRecipient(newYieldFeeRecipient);
 
         assertEq(mYieldFee.yieldFeeRecipient(), newYieldFeeRecipient);
+    }
+
+    /* ============ setClaimRecipient ============ */
+
+    function test_setClaimRecipient_onlyClaimRecipientManager() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                alice,
+                CLAIM_RECIPIENT_MANAGER_ROLE
+            )
+        );
+
+        vm.prank(alice);
+        mYieldFee.setClaimRecipient(alice, bob);
+    }
+
+    function test_setClaimRecipient_zeroAccount() external {
+        vm.expectRevert(IMYieldFeeExtension.ZeroAccount.selector);
+
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(address(0), alice);
+    }
+
+    function test_setClaimRecipient_zeroClaimRecipient() external {
+        vm.expectRevert(IMYieldFeeExtension.ZeroClaimRecipient.selector);
+
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(alice, address(0));
+    }
+
+    function test_setClaimRecipient() external {
+        address newClaimRecipient = makeAddr("newClaimRecipient");
+        assertEq(mYieldFee.claimRecipientFor(alice), alice);
+
+        vm.expectEmit();
+        emit IMYieldFeeExtension.ClaimRecipientSet(alice, newClaimRecipient); // default claim recipient is the account itself
+
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(alice, newClaimRecipient);
+
+        assertEq(mYieldFee.claimRecipientFor(alice), newClaimRecipient);
     }
 
     /* ============ currentIndex ============ */

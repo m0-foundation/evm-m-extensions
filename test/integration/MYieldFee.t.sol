@@ -31,7 +31,8 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
-                    yieldFeeManager
+                    yieldFeeManager,
+                    claimRecipientManager
                 )
             )
         );

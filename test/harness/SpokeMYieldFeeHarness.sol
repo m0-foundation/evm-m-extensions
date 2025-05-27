@@ -18,9 +18,20 @@ contract SpokeMYieldFeeHarness is SpokeMYieldFee {
         address yieldFeeRecipient,
         address admin,
         address yieldFeeManager,
+        address claimRecipientManager,
         address rateOracle
     ) public override initializer {
-        super.initialize(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager, rateOracle);
+        super.initialize(
+            name,
+            symbol,
+            mToken,
+            yieldFeeRate,
+            yieldFeeRecipient,
+            admin,
+            yieldFeeManager,
+            claimRecipientManager,
+            rateOracle
+        );
     }
 
     function currentBlockTimestamp() external view returns (uint40) {
