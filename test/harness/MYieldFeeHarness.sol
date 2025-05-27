@@ -15,6 +15,14 @@ contract MYieldFeeHarness is MYieldFee {
         address yieldFeeManager
     ) MYieldFee(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager) {}
 
+    function currentBlockTimestamp() external view returns (uint40) {
+        return _currentBlockTimestamp();
+    }
+
+    function currentEarnerRate() external view returns (uint32) {
+        return _currentEarnerRate();
+    }
+
     function setAccountOf(address account, uint256 balance, uint112 principal) external {
         balanceOf[account] = balance;
         principalOf[account] = principal;

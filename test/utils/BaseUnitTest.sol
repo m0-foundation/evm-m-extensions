@@ -8,7 +8,7 @@ import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousInde
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
 
-import { MockM } from "../utils/Mocks.sol";
+import { MockM, MockRateOracle } from "../utils/Mocks.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -26,6 +26,7 @@ contract BaseUnitTest is Helpers, Test {
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
 
     MockM public mToken;
+    MockRateOracle public rateOracle;
 
     uint40 public startTimestamp = 0;
     uint128 public expectedCurrentIndex;
@@ -52,6 +53,7 @@ contract BaseUnitTest is Helpers, Test {
         vm.warp(startTimestamp);
 
         mToken = new MockM();
+        rateOracle = new MockRateOracle();
 
         mToken.setEarnerRate(M_EARNER_RATE);
 
