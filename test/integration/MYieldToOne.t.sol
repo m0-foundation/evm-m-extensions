@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
@@ -18,14 +20,20 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldToOne = new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            yieldRecipient,
-            admin,
-            blacklistManager,
-            yieldRecipientManager
+        mYieldToOne = MYieldToOne(
+            Upgrades.deployUUPSProxy(
+                "MYieldToOne.sol:MYieldToOne",
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    yieldRecipient,
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
@@ -78,12 +86,12 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // unwraps
         _unwrap(address(mYieldToOne), alice, alice, amount / 2);
 
-        // yield stays he same
+        // yield stays the same
         assertApproxEqAbs(mYieldToOne.yield(), 11375, 2);
 
         _unwrap(address(mYieldToOne), bob, bob, amount / 2);
 
-        // yield stays he same
+        // yield stays the same
         assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
 
         assertEq(mYieldToOne.balanceOf(bob), 0);

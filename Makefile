@@ -34,7 +34,7 @@ coverage:
 	FOUNDRY_PROFILE=$(profile) forge coverage --no-match-path 'test/integration/**/*.sol' --report lcov && lcov --extract lcov.info -o lcov.info 'src/*' --ignore-errors inconsistent && genhtml lcov.info -o coverage
 
 gas-report:
-	FOUNDRY_PROFILE=$(profile) forge test --gas-report > gasreport.ansi
+	FOUNDRY_PROFILE=$(profile) forge test --force --gas-report > gasreport.ansi
 
 sizes:
 	@./build.sh -p production -s

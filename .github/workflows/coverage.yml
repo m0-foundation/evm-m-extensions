@@ -23,6 +23,10 @@ jobs:
       - name: Install lcov
         uses: hrishikesh-kadam/setup-lcov@v1
 
+      - name: Run Forge build
+        run: forge build
+        id: build
+
       - name: Run coverage
         env:
           MNEMONIC: ${{ secrets.MNEMONIC_FOR_TESTS }}

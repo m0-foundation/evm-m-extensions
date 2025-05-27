@@ -1,0 +1,962 @@
+Unable to resolve imports:
+      "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol" in "/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/src/abstract/MYieldFeeExtensionUpgradeable.sol"
+with remappings:
+      @openzeppelin/contracts-upgradeable/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/common/lib/openzeppelin-contracts-upgradeable/contracts/
+      @openzeppelin/contracts/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/contracts/
+      common/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/common/src/
+      erc4626-tests/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/lib/erc4626-tests/
+      forge-std/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/forge-std/src/
+      halmos-cheatcodes/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/
+      openzeppelin-contracts-upgradeable/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/common/lib/openzeppelin-contracts-upgradeable/
+      openzeppelin-contracts/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/
+      openzeppelin-foundry-upgrades/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-foundry-upgrades/src/
+Compiling 100 files with Solc 0.8.26
+Solc 0.8.26 finished in 5.87s
+Compiler run successful with warnings:
+Warning (3860): Contract initcode size is 143310 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/MYieldFeeUpgradeable.t.sol:24:1:
+   |
+24 | contract MYieldFeeUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 92077 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/MYieldToOneUpgradeable.t.sol:24:1:
+   |
+24 | contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 59183 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/SpokeMYieldFeeUpgradeable.t.sol:14:1:
+   |
+14 | contract SpokeMYieldFeeUpgradeableUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 14 tests for test/unit/components/BlacklistableUpgradeable.t.sol:BlacklistableUpgradeableUnitTests
+[PASS] test_blacklist() (gas: 77949)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_blacklistAccounts() (gas: 222543)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_blacklistAccounts_onlyBlacklistManager() (gas: 52551)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_blacklistAccounts_revertIfBlacklisted() (gas: 68197)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_blacklist_onlyBlacklistManager() (gas: 42103)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_blacklist_revertIfBlacklisted() (gas: 98247)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_blacklist_revertIfNotBlacklisted() (gas: 44267)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize() (gas: 17770)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroBlacklistManager() (gas: 1089181)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unblacklist() (gas: 122024)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unblacklistAccounts() (gas: 259661)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unblacklistAccounts_onlyBlacklistManager() (gas: 52508)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unblacklistAccounts_revertIfNotBlacklisted() (gas: 47979)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unblacklist_onlyBlacklistManager() (gas: 42081)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 2.05s (3.21ms CPU time)
+
+Ran 5 tests for test/integration/MYieldToOne.t.sol:MYieldToOneUpgradeableIntegrationTests
+[PASS] test_disableEarning_approvedEarner() (gas: 176720)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_enableEarning_notApprovedEarner() (gas: 56418)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_integration_constants() (gas: 71388)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrapWithPermits() (gas: 275220)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_yieldAccumulationAndClaim() (gas: 1584857)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 2.52s (148.91ms CPU time)
+
+Ran 5 tests for test/integration/MYieldFeeUpgradeable.t.sol:MYieldFeeUpgradeableIntegrationTests
+[PASS] test_disableEarning_approvedEarner() (gas: 193928)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_enableEarning_notApprovedEarner() (gas: 62725)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_integration_constants() (gas: 137411)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrapWithPermits() (gas: 309608)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_yieldAccumulationAndClaim() (gas: 2314474)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 2.63s (85.92ms CPU time)
+
+Ran 4 tests for test/unit/SpokeMYieldFeeUpgradeable.t.sol:SpokeMYieldFeeUpgradeableUnitTests
+[PASS] test_currentBlockTimestamp() (gas: 23915)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_currentEarnerRate() (gas: 23892)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize() (gas: 98272)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroRateOracle() (gas: 4969942)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 2.66s (270.83µs CPU time)
+
+Ran 38 tests for test/unit/MYieldToOneUpgradeable.t.sol:MYieldToOneUpgradeableUnitTests
+[PASS] testFuzz_transfer(uint256,uint256,uint256) (runs: 10000, μ: 336094, ~: 348959)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_approve_blacklistedAccount() (gas: 98247)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_approve_blacklistedSpender() (gas: 100516)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYield() (gas: 339175)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYield_noYield() (gas: 46526)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_disableEarning() (gas: 184162)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_disableEarning_earningIsDisabled() (gas: 41918)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_enableEarning() (gas: 132476)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_enableEarning_earningEnabled() (gas: 101014)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize() (gas: 118639)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroBlacklistManager() (gas: 4235812)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroDefaultAdmin() (gas: 4099994)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroMToken() (gas: 4102510)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroYieldRecipient() (gas: 4260345)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroYieldRecipientManager() (gas: 4099989)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldRecipient() (gas: 74256)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldRecipient_noUpdate() (gas: 66524)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldRecipient_onlyYieldRecipientManager() (gas: 40150)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldRecipient_zeroYieldRecipient() (gas: 39377)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer() (gas: 241462)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_blacklistedAccount() (gas: 247652)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_blacklistedRecipient() (gas: 250159)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_blacklistedSender() (gas: 312210)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_insufficientBalance() (gas: 198614)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_invalidRecipient() (gas: 191774)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap() (gas: 502088)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap_blacklistedAccount() (gas: 247613)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap_blacklistedRecipient() (gas: 249883)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap_insufficientAmount() (gas: 40407)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap_insufficientBalance() (gas: 192217)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap() (gas: 526596)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrapWithPermit_signature() (gas: 261718)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrapWithPermit_vrs() (gas: 261533)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap_blacklistedAccount() (gas: 147487)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap_blacklistedRecipient() (gas: 149711)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap_insufficientAmount() (gas: 50784)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap_invalidRecipient() (gas: 124391)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_yield() (gas: 351551)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+Suite result: ok. 38 passed; 0 failed; 0 skipped; finished in 3.32s (1.22s CPU time)
+
+Ran 52 tests for test/unit/MYieldFeeUpgradeable.t.sol:MYieldFeeUnitTests
+[PASS] testFuzz_accruedYieldOf(bool,uint32,uint16,uint128,uint240,uint240,uint40,uint40) (runs: 10000, μ: 384011, ~: 381941)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_balanceWithYieldOf(bool,uint32,uint16,uint128,uint240,uint240,uint40,uint40) (runs: 10000, μ: 384535, ~: 382677)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_claimYieldFee(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 512813, ~: 509042)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_claimYieldFor(bool,uint32,uint16,uint128,uint240,uint240) (runs: 10000, μ: 447864, ~: 446870)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_currentIndex(uint32,uint32,uint16,uint16,uint128,uint40,uint40,uint40) (runs: 10000, μ: 338067, ~: 339041)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_transfer(bool,uint32,uint16,uint128,uint240,uint240,uint240,uint240,uint240) (runs: 10000, μ: 664287, ~: 555162)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_unwrap(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 514083, ~: 426516)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] testFuzz_wrap(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 633736, ~: 633202)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_accruedYieldOf() (gas: 310011)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_balanceOf() (gas: 89785)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_balanceWithYieldOf() (gas: 311072)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYieldFee() (gas: 569599)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYieldFee_noYield() (gas: 46564)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYieldFor() (gas: 391040)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYieldFor_noYield() (gas: 45912)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_claimYieldFor_zeroYieldRecipient() (gas: 34555)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_currentBlockTimestamp() (gas: 16200)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_currentEarnerRate() (gas: 23935)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_currentIndex() (gas: 629934)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_disableEarning() (gas: 249520)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_disableEarning_earningIsDisabled() (gas: 36402)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_earnerRate() (gas: 26697)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_enableEarning() (gas: 171825)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_enableEarning_earningIsEnabled() (gas: 70664)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize() (gas: 83870)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroAdmin() (gas: 5167707)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroMToken() (gas: 5170261)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroYieldFeeManager() (gas: 5167749)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_initialize_zeroYieldFeeRecipient() (gas: 5375744)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_principalOf() (gas: 89873)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_projectedTotalSupply() (gas: 154192)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRate() (gas: 97766)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRate_noUpdate() (gas: 64281)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRate_onlyYieldFeeManager() (gas: 39823)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRate_yieldFeeRateTooHigh() (gas: 40038)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRecipient() (gas: 59018)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRecipient_noUpdate() (gas: 66554)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRecipient_onlyYieldFeeManager() (gas: 40107)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_setYieldFeeRecipient_zeroYieldFeeRecipient() (gas: 39298)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_totalAccruedYield() (gas: 353413)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_totalAccruedYieldFee() (gas: 746971)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer() (gas: 631411)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_insufficientBalance() (gas: 116388)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_insufficientBalance_toSelf() (gas: 114355)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_invalidRecipient() (gas: 109706)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_transfer_toSelf() (gas: 442812)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap() (gas: 984873)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap_insufficientAmount() (gas: 37911)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_unwrap_insufficientBalance() (gas: 112403)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap() (gas: 1066622)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap_insufficientAmount() (gas: 48289)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+[PASS] test_wrap_invalidRecipient() (gas: 119928)
+Logs:
+  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+
+
+Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU time)
+
+╭-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------╮
+| lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy Contract |                 |       |        |        |         |
++=================================================================================================================================================+
+| Deployment Cost                                                                           | Deployment Size |       |        |        |         |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| 393120                                                                                    | 1468            |       |        |        |         |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
+|                                                                                           |                 |       |        |        |         |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| Function Name                                                                             | Min             | Avg   | Median | Max    | # Calls |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| fallback                                                                                  | 5143            | 24997 | 14880  | 173521 | 33634   |
+╰-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------╯
+
+╭------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/MYieldFeeUpgradeable.sol:MYieldFeeUpgradeable Contract |                 |        |        |        |         |
++===================================================================================================================+
+| Deployment Cost                                            | Deployment Size |        |        |        |         |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4647458                                                    | 21397           |        |        |        |         |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                            |                 |        |        |        |         |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                              | Min             | Avg    | Median | Max    | # Calls |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| HUNDRED_PERCENT                                            | 315             | 315    | 315    | 315    | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                             | 10030           | 10030  | 10030  | 10030  | 2       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                  | 2644            | 2644   | 2644   | 2644   | 13      |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFee                                              | 74535           | 74535  | 74535  | 74535  | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFor                                              | 10102           | 32164  | 32164  | 54226  | 2       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentIndex                                               | 5310            | 5310   | 5310   | 5310   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| decimals                                                   | 2356            | 2356   | 2356   | 2356   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                             | 26710           | 51447  | 51447  | 76184  | 2       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                              | 28463           | 52400  | 51989  | 77162  | 4       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                    | 2728            | 2728   | 2728   | 2728   | 2       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                 | 257522          | 257522 | 257522 | 257522 | 5       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                           | 2398            | 2398   | 2398   | 2398   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                | 2407            | 2407   | 2407   | 2407   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mToken                                                     | 2362            | 2362   | 2362   | 2362   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| name                                                       | 3225            | 3225   | 3225   | 3225   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| symbol                                                     | 3234            | 3234   | 3234   | 3234   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYield                                          | 6991            | 7624   | 7730   | 7730   | 7       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYieldFee                                       | 16322           | 16322  | 16322  | 16325  | 5       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                | 2382            | 2382   | 2382   | 2382   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                   | 62735           | 62735  | 62735  | 62735  | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                     | 86777           | 96589  | 95340  | 108901 | 4       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                       | 104700          | 126496 | 126496 | 148293 | 2       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrapWithPermit                                             | 80086           | 122836 | 122836 | 165586 | 2       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldFeeRate                                               | 2406            | 2406   | 2406   | 2406   | 1       |
+|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldFeeRecipient                                          | 2394            | 2394   | 2394   | 2394   | 1       |
+╰------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭----------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/MYieldToOneUpgradeable.sol:MYieldToOneUpgradeable Contract |                 |        |        |        |         |
++=======================================================================================================================+
+| Deployment Cost                                                | Deployment Size |        |        |        |         |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 3894215                                                        | 17877           |        |        |        |         |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                |                 |        |        |        |         |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                  | Min             | Avg    | Median | Max    | # Calls |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| approve                                                        | 2746            | 12283  | 4983   | 29120  | 3       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                      | 2654            | 2654   | 2654   | 2654   | 513     |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| blacklist                                                      | 26654           | 26654  | 26654  | 26654  | 9       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYield                                                     | 10074           | 44914  | 39724  | 84944  | 3       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| decimals                                                       | 2356            | 2356   | 2356   | 2356   | 2       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                                 | 7916            | 24776  | 14791  | 61609  | 4       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                  | 7941            | 35549  | 32694  | 68855  | 8       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                        | 2706            | 2706   | 2706   | 2706   | 3       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                     | 24201           | 240203 | 258372 | 258372 | 48      |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                               | 7868            | 7871   | 7873   | 7873   | 3       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mToken                                                         | 2428            | 2428   | 2428   | 2428   | 2       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| name                                                           | 3225            | 3225   | 3225   | 3225   | 2       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setYieldRecipient                                              | 2799            | 4915   | 3871   | 9120   | 4       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| symbol                                                         | 3257            | 3257   | 3257   | 3257   | 2       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                    | 2349            | 2349   | 2349   | 2349   | 15      |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                       | 2743            | 17390  | 17442  | 34542  | 251     |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transferFrom                                                   | 8167            | 8167   | 8167   | 8167   | 1       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                         | 2723            | 33117  | 30913  | 97155  | 9       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                           | 2765            | 65279  | 82273  | 119702 | 511     |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrapWithPermit(address,uint256,uint256,bytes)                  | 83926           | 83926  | 83926  | 83926  | 1       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrapWithPermit(address,uint256,uint256,uint8,bytes32,bytes32)  | 69269           | 96834  | 83564  | 137669 | 3       |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yield                                                          | 10015           | 11147  | 10018  | 13133  | 14      |
+|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldRecipient                                                 | 2373            | 2373   | 2373   | 2373   | 6       |
+╰----------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/harness/BlacklistableUpgradeableHarness.sol:BlacklistableUpgradeableHarness Contract |                 |       |        |       |         |
++================================================================================================================================================+
+| Deployment Cost                                                                           | Deployment Size |       |        |       |         |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| 900213                                                                                    | 4031            |       |        |       |         |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                                                           |                 |       |        |       |         |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                                                             | Min             | Avg   | Median | Max   | # Calls |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| blacklist                                                                                 | 2753            | 17516 | 26610  | 26610 | 5       |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| blacklistAccounts                                                                         | 2853            | 57325 | 63486  | 99477 | 4       |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| hasRole                                                                                   | 2660            | 2660  | 2660   | 2660  | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| initialize                                                                                | 23304           | 47387 | 49108  | 49108 | 15      |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| isBlacklisted                                                                             | 2599            | 2599  | 2599   | 2599  | 11      |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| unblacklist                                                                               | 2710            | 5683  | 4923   | 9418  | 3       |
+|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| unblacklistAccounts                                                                       | 2875            | 13033 | 5322   | 30903 | 3       |
+╰-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/harness/MYieldFeeUpgradeableHarness.sol:MYieldFeeUpgradeableHarness Contract |                 |        |        |        |         |
++==========================================================================================================================================+
+| Deployment Cost                                                                   | Deployment Size |        |        |        |         |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4961963                                                                           | 22924           |        |        |        |         |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                                   |                 |        |        |        |         |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                                     | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| HUNDRED_PERCENT                                                                   | 293             | 293    | 293    | 293    | 1       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                                                    | 9266            | 9639   | 10005  | 10008  | 1533    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                                         | 2622            | 2622   | 2622   | 2622   | 2253    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceWithYieldOf                                                                | 9528            | 9899   | 10267  | 10270  | 1267    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFee                                                                     | 12540           | 71104  | 70009  | 88587  | 259     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFor                                                                     | 440             | 19064  | 19310  | 37149  | 260     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentBlockTimestamp                                                             | 288             | 288    | 288    | 288    | 1       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentEarnerRate                                                                 | 5375            | 5375   | 5375   | 5375   | 1       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentIndex                                                                      | 4637            | 5056   | 5376   | 5376   | 5151    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                                                    | 2402            | 15950  | 19887  | 25561  | 3       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| earnerRate                                                                        | 7782            | 7782   | 7782   | 7782   | 1       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                                     | 2426            | 28568  | 41568  | 41711  | 3       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                                           | 2750            | 2750   | 2750   | 2750   | 2       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                                        | 25207           | 245391 | 258278 | 258278 | 56      |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                                                  | 2398            | 2398   | 2398   | 2398   | 1       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                                       | 2430            | 2430   | 2430   | 2430   | 5       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestRate                                                                        | 2429            | 2429   | 2429   | 2429   | 517     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| principalOf                                                                       | 2659            | 2659   | 2659   | 2659   | 618     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| projectedTotalSupply                                                              | 4820            | 5172   | 4820   | 5559   | 266     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountOf                                                                      | 5041            | 43772  | 44841  | 44841  | 1810    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestIndex                                                                    | 2550            | 5302   | 5350   | 5350   | 2049    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestRate                                                                     | 2551            | 4135   | 5351   | 5351   | 2319    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestUpdateTimestamp                                                          | 2551            | 4924   | 5351   | 5351   | 256     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setTotalPrincipal                                                                 | 2608            | 5296   | 5408   | 5408   | 2060    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setTotalSupply                                                                    | 2520            | 19903  | 22420  | 22420  | 2060    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setYieldFeeRate                                                                   | 2820            | 12506  | 11227  | 22889  | 2309    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setYieldFeeRecipient                                                              | 2755            | 4869   | 3825   | 9073   | 4       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYield                                                                 | 7753            | 7753   | 7753   | 7753   | 24      |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYieldFee                                                              | 12468           | 12816  | 12471  | 13210  | 524     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalPrincipal                                                                    | 2386            | 2386   | 2386   | 2386   | 2664    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                                       | 2405            | 2405   | 2405   | 2405   | 2920    |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                                          | 558             | 15387  | 4694   | 62758  | 261     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                                            | 530             | 28387  | 2813   | 59759  | 261     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| updateIndex                                                                       | 12653           | 19432  | 21127  | 21127  | 5       |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                                              | 10908           | 60688  | 59586  | 110886 | 261     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldFeeRate                                                                      | 2429            | 2429   | 2429   | 2429   | 238     |
+|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldFeeRecipient                                                                 | 2417            | 2417   | 2417   | 2417   | 4       |
+╰-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/harness/SpokeMYieldFeeUpgradeableHarness.sol:SpokeMYieldFeeUpgradeableHarness Contract |                 |        |        |        |         |
++====================================================================================================================================================+
+| Deployment Cost                                                                             | Deployment Size |        |        |        |         |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4760040                                                                                     | 21985           |        |        |        |         |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                                             |                 |        |        |        |         |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                                               | Min             | Avg    | Median | Max    | # Calls |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| HUNDRED_PERCENT                                                                             | 271             | 271    | 271    | 271    | 1       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentBlockTimestamp                                                                       | 5385            | 5385   | 5385   | 5385   | 1       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentEarnerRate                                                                           | 5351            | 5351   | 5351   | 5351   | 1       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                                                     | 2684            | 2684   | 2684   | 2684   | 2       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                                                  | 27199           | 229820 | 280476 | 280476 | 5       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                                                 | 2452            | 2452   | 2452   | 2452   | 1       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| rateOracle                                                                                  | 2397            | 2397   | 2397   | 2397   | 1       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldFeeRate                                                                                | 2451            | 2451   | 2451   | 2451   | 1       |
+|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldFeeRecipient                                                                           | 2394            | 2394   | 2394   | 2394   | 1       |
+╰---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/utils/Mocks.sol:MockM Contract |                 |       |        |       |         |
++==========================================================================================+
+| Deployment Cost                     | Deployment Size |       |        |       |         |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| 580170                              | 2473            |       |        |       |         |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+|                                     |                 |       |        |       |         |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                       | Min             | Avg   | Median | Max   | # Calls |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| balanceOf                           | 2549            | 2549  | 2549   | 2549  | 1188    |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| currentIndex                        | 2379            | 2379  | 2379   | 2379  | 3       |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| earnerRate                          | 0               | 79    | 0      | 2366  | 267     |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| isEarning                           | 2594            | 2594  | 2594   | 2594  | 8       |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| latestUpdateTimestamp               | 0               | 0     | 0      | 0     | 1       |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| setBalanceOf                        | 24252           | 40543 | 44128  | 44284 | 1783    |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| setCurrentIndex                     | 26558           | 37954 | 43646  | 43658 | 3       |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| setEarnerRate                       | 26520           | 43309 | 43620  | 43620 | 110     |
+╰-------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭----------------------------------------------+-----------------+-----+--------+-----+---------╮
+| test/utils/Mocks.sol:MockRateOracle Contract |                 |     |        |     |         |
++===============================================================================================+
+| Deployment Cost                              | Deployment Size |     |        |     |         |
+|----------------------------------------------+-----------------+-----+--------+-----+---------|
+| 107883                                       | 279             |     |        |     |         |
+|----------------------------------------------+-----------------+-----+--------+-----+---------|
+|                                              |                 |     |        |     |         |
+|----------------------------------------------+-----------------+-----+--------+-----+---------|
+| Function Name                                | Min             | Avg | Median | Max | # Calls |
+|----------------------------------------------+-----------------+-----+--------+-----+---------|
+| earnerRate                                   | 0               | 0   | 0      | 0   | 1       |
+╰----------------------------------------------+-----------------+-----+--------+-----+---------╯
+
+
+Ran 6 test suites in 12.00s (24.90s CPU time): 118 tests passed, 0 failed, 0 skipped (118 total tests)

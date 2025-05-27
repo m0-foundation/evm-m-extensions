@@ -5,7 +5,12 @@ pragma solidity 0.8.26;
 import { MYieldFee } from "../../src/MYieldFee.sol";
 
 contract MYieldFeeHarness is MYieldFee {
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
         string memory name,
         string memory symbol,
         address mToken,
@@ -13,7 +18,9 @@ contract MYieldFeeHarness is MYieldFee {
         address yieldFeeRecipient,
         address admin,
         address yieldFeeManager
-    ) MYieldFee(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager) {}
+    ) public override initializer {
+        super.initialize(name, symbol, mToken, yieldFeeRate, yieldFeeRecipient, admin, yieldFeeManager);
+    }
 
     function currentBlockTimestamp() external view returns (uint40) {
         return _currentBlockTimestamp();
@@ -24,27 +31,29 @@ contract MYieldFeeHarness is MYieldFee {
     }
 
     function setAccountOf(address account, uint256 balance, uint112 principal) external {
-        balanceOf[account] = balance;
-        principalOf[account] = principal;
+        MYieldFeeExtensionStorageStruct storage $ = _getMYieldFeeExtensionStorageLocation();
+
+        $.balanceOf[account] = balance;
+        $.principalOf[account] = principal;
     }
 
     function setLatestIndex(uint256 latestIndex_) external {
-        latestIndex = uint128(latestIndex_);
+        _getMYieldFeeExtensionStorageLocation().latestIndex = uint128(latestIndex_);
     }
 
     function setLatestRate(uint256 latestRate_) external {
-        latestRate = uint32(latestRate_);
+        _getMYieldFeeExtensionStorageLocation().latestRate = uint32(latestRate_);
     }
 
     function setLatestUpdateTimestamp(uint256 latestUpdateTimestamp_) external {
-        latestUpdateTimestamp = uint40(latestUpdateTimestamp_);
+        _getMYieldFeeExtensionStorageLocation().latestUpdateTimestamp = uint40(latestUpdateTimestamp_);
     }
 
     function setTotalSupply(uint256 totalSupply_) external {
-        totalSupply = totalSupply_;
+        _getMYieldFeeExtensionStorageLocation().totalSupply = totalSupply_;
     }
 
     function setTotalPrincipal(uint112 totalPrincipal_) external {
-        totalPrincipal = totalPrincipal_;
+        _getMYieldFeeExtensionStorageLocation().totalPrincipal = totalPrincipal_;
     }
 }

@@ -5,5 +5,12 @@ pragma solidity 0.8.26;
 import { Blacklistable } from "../../src/abstract/components/Blacklistable.sol";
 
 contract BlacklistableHarness is Blacklistable {
-    constructor(address blacklistManager_) Blacklistable(blacklistManager_) {}
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(address blacklistManager) public initializer {
+        __Blacklistable_init(blacklistManager);
+    }
 }

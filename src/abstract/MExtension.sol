@@ -2,31 +2,46 @@
 
 pragma solidity 0.8.26;
 
-import { ERC20Extended } from "../../lib/common/src/ERC20Extended.sol";
+import { ERC20ExtendedUpgradeable } from "../../lib/common/src/ERC20ExtendedUpgradeable.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
 
+abstract contract MExtensionStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.MExtension
+    struct MExtensionStorageStruct {
+        address mToken;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.MExtension")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _M_EXTENSION_STORAGE_LOCATION =
+        0x4349758e51eb6c8ee9931b1f5b23d0b7b59124948c3d3d99ca2166d742d63d00;
+
+    function _getMExtensionStorageLocation() internal pure returns (MExtensionStorageStruct storage $) {
+        assembly {
+            $.slot := _M_EXTENSION_STORAGE_LOCATION
+        }
+    }
+}
+
 /**
- * @title  ERC20 Token contract for wrapping M into a non-rebasing token with claimable yields.
- * @author M^0 Labs
+ * @title MExtension
+ * @notice Upgradeable ERC20 Token contract for wrapping M into a non-rebasing token.
+ * @author M0 Labs
  */
-abstract contract MExtension is IMExtension, ERC20Extended {
-    /* ============ Variables ============ */
-
-    /// @inheritdoc IMExtension
-    address public immutable mToken;
-
-    /* ============ Constructor ============ */
+abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20ExtendedUpgradeable {
+    /* ============ Initializer ============ */
 
     /**
-     * @dev   Constructs the generic M extension token.
+     * @notice Initializes the genereic M extension token.
      * @param name    The name of the token (e.g. "HALO USD").
      * @param symbol  The symbol of the token (e.g. "HUSD").
      * @param mToken_ The address of the M Token.
      */
-    constructor(string memory name, string memory symbol, address mToken_) ERC20Extended(name, symbol, 6) {
-        if ((mToken = mToken_) == address(0)) revert ZeroMToken();
+    function __MExtension_init(string memory name, string memory symbol, address mToken_) internal onlyInitializing {
+        if ((_getMExtensionStorageLocation().mToken = mToken_) == address(0)) revert ZeroMToken();
+
+        __ERC20ExtendedUpgradeable_init(name, symbol, 6);
     }
 
     /* ============ Interactive Functions ============ */
@@ -45,14 +60,14 @@ abstract contract MExtension is IMExtension, ERC20Extended {
         bytes32 r,
         bytes32 s
     ) external {
-        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+        try IMTokenLike(mToken()).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
         _wrap(msg.sender, recipient, amount);
     }
 
     /// @inheritdoc IMExtension
     function wrapWithPermit(address recipient, uint256 amount, uint256 deadline, bytes calldata signature) external {
-        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+        try IMTokenLike(mToken()).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _wrap(msg.sender, recipient, amount);
     }
@@ -68,21 +83,26 @@ abstract contract MExtension is IMExtension, ERC20Extended {
 
         emit EarningEnabled(_currentMIndex());
 
-        IMTokenLike(mToken).startEarning();
+        IMTokenLike(mToken()).startEarning();
     }
 
     /// @inheritdoc IMExtension
     function disableEarning() external virtual {
         if (!isEarningEnabled()) revert EarningIsDisabled();
 
-        IMTokenLike(mToken).stopEarning(address(this));
+        IMTokenLike(mToken()).stopEarning(address(this));
     }
 
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IMExtension
     function isEarningEnabled() public view virtual returns (bool) {
-        return IMTokenLike(mToken).isEarning(address(this));
+        return IMTokenLike(mToken()).isEarning(address(this));
+    }
+
+    /// @inheritdoc IMExtension
+    function mToken() public view returns (address) {
+        return _getMExtensionStorageLocation().mToken;
     }
 
     /* ============ Internal Interactive Functions ============ */
@@ -105,7 +125,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
         _beforeWrap(account, recipient, amount);
 
         // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
-        IMTokenLike(mToken).transferFrom(account, address(this), amount);
+        IMTokenLike(mToken()).transferFrom(account, address(this), amount);
 
         // NOTE: Mints precise amount of $M Extension token to `recipient`.
         //       Option 1: $M transfer from an $M earner to another $M earner ($M Extension in earning state): rounds up → rounds up,
@@ -139,7 +159,7 @@ abstract contract MExtension is IMExtension, ERC20Extended {
         //       Option 1: $M transfer from an $M earner ($M Extension in earning state) to another $M earner: round up → rounds up.
         //       Option 2: $M transfer from an $M earner ($M Extension in earning state) to an $M non-earner: round up → precise $M transfer.
         //       In both cases, 0, 1, or XX extra wei may be deducted from the $M Extension contract's $M balance compared to the burned amount of $M Extension token.
-        IMTokenLike(mToken).transfer(recipient, amount);
+        IMTokenLike(mToken()).transfer(recipient, amount);
     }
 
     /**
@@ -160,6 +180,6 @@ abstract contract MExtension is IMExtension, ERC20Extended {
 
     /// @dev Returns the current index of the M Token.
     function _currentMIndex() internal view returns (uint128) {
-        return IMTokenLike(mToken).currentIndex();
+        return IMTokenLike(mToken()).currentIndex();
     }
 }

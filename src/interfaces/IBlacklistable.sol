@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 
 /**
  * @title Blacklistable interface.
- * @author M^0 Labs
+ * @author M0 Labs
  */
 interface IBlacklistable {
     /* ============ Events ============ */

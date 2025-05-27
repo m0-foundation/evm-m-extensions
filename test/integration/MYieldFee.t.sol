@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
 import { MYieldFee } from "../../src/MYieldFee.sol";
@@ -18,14 +20,20 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldFee = new MYieldFee(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            YIELD_FEE_RATE,
-            yieldFeeRecipient,
-            admin,
-            yieldFeeManager
+        mYieldFee = MYieldFee(
+            Upgrades.deployUUPSProxy(
+                "MYieldFee.sol:MYieldFee",
+                abi.encodeWithSelector(
+                    MYieldFee.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    YIELD_FEE_RATE,
+                    yieldFeeRecipient,
+                    admin,
+                    yieldFeeManager
+                )
+            )
         );
     }
 

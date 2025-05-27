@@ -2,7 +2,11 @@
 
 pragma solidity 0.8.26;
 
-import { IAccessControl } from "../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import {
+    IAccessControl
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { MockM } from "../utils/Mocks.sol";
 
@@ -28,20 +32,26 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
         mToken = new MockM();
 
-        mYieldToOne = new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            yieldRecipient,
-            admin,
-            blacklistManager,
-            yieldRecipientManager
+        mYieldToOne = MYieldToOne(
+            Upgrades.deployUUPSProxy(
+                "MYieldToOne.sol:MYieldToOne",
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    yieldRecipient,
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    /* ============ constructor ============ */
+    /* ============ initialize ============ */
 
-    function test_constructor() external view {
+    function test_initialize() external view {
         assertEq(mYieldToOne.name(), NAME);
         assertEq(mYieldToOne.symbol(), SYMBOL);
         assertEq(mYieldToOne.decimals(), 6);
@@ -53,53 +63,109 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
     }
 
-    function test_constructor_zeroMToken() external {
+    function test_initialize_zeroMToken() external {
+        address implementation = address(new MYieldToOne());
+
         vm.expectRevert(IMExtension.ZeroMToken.selector);
-        new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(0),
-            address(yieldRecipient),
-            admin,
-            blacklistManager,
-            yieldRecipientManager
+        MYieldToOne(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(0),
+                    address(yieldRecipient),
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroYieldRecipient() external {
+    function test_initialize_zeroYieldRecipient() external {
+        address implementation = address(new MYieldToOne());
+
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipient.selector);
-        new MYieldToOne(NAME, SYMBOL, address(mToken), address(0), admin, blacklistManager, yieldRecipientManager);
+        MYieldToOne(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(0),
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
+        );
     }
 
-    function test_constructor_zeroDefaultAdmin() external {
+    function test_initialize_zeroDefaultAdmin() external {
+        address implementation = address(new MYieldToOne());
+
         vm.expectRevert(IMYieldToOne.ZeroDefaultAdmin.selector);
-        new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            address(yieldRecipient),
-            address(0),
-            blacklistManager,
-            yieldRecipientManager
+        MYieldToOne(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(yieldRecipient),
+                    address(0),
+                    blacklistManager,
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroBlacklistManager() external {
+    function test_initialize_zeroBlacklistManager() external {
+        address implementation = address(new MYieldToOne());
+
         vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
-        new MYieldToOne(
-            NAME,
-            SYMBOL,
-            address(mToken),
-            address(yieldRecipient),
-            admin,
-            address(0),
-            yieldRecipientManager
+        MYieldToOne(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(yieldRecipient),
+                    admin,
+                    address(0),
+                    yieldRecipientManager
+                )
+            )
         );
     }
 
-    function test_constructor_zeroYieldRecipientManager() external {
+    function test_initialize_zeroYieldRecipientManager() external {
+        address implementation = address(new MYieldToOne());
+
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipientManager.selector);
-        new MYieldToOne(NAME, SYMBOL, address(mToken), address(yieldRecipient), admin, blacklistManager, address(0));
+        MYieldToOne(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(yieldRecipient),
+                    admin,
+                    blacklistManager,
+                    address(0)
+                )
+            )
+        );
     }
 
     /* ============ _approve ============ */
