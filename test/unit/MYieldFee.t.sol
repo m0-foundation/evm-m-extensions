@@ -219,6 +219,84 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.accruedYieldOf(alice), 0);
     }
 
+    function test_claimYieldFor_claimRecipient() external {
+        uint240 yieldAmount = 79_230399;
+        uint240 aliceBalance = 1_000e6;
+        uint240 bobBalance = 0;
+        uint240 carolBalance = 0;
+
+        mToken.setBalanceOf(address(mYieldFee), yieldAmount);
+        mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+
+        assertEq(mYieldFee.claimRecipientFor(alice), alice);
+
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(alice, bob);
+
+        assertEq(mYieldFee.claimRecipientFor(alice), bob);
+
+        // 10% index growth
+        vm.warp(startTimestamp + 30_057_038);
+        assertEq(mYieldFee.currentIndex(), 1_079230399224);
+
+        assertEq(mYieldFee.accruedYieldOf(alice), yieldAmount);
+
+        vm.expectEmit();
+        emit IMYieldFeeExtension.YieldClaimed(alice, bob, yieldAmount);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(address(0), alice, yieldAmount);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, bob, yieldAmount);
+
+        vm.prank(alice);
+        assertEq(mYieldFee.claimYieldFor(alice), yieldAmount);
+
+        bobBalance += yieldAmount;
+
+        assertEq(mYieldFee.balanceOf(alice), aliceBalance);
+        assertEq(mYieldFee.balanceOf(bob), bobBalance);
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+
+        // Another 10% index growth
+        vm.warp(startTimestamp + 30_057_038 * 2);
+        assertEq(mYieldFee.currentIndex(), 1_164738254609);
+
+        yieldAmount = 79_230399;
+        uint240 bobYieldAmount = 6_277456;
+
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(alice, carol);
+
+        assertEq(mYieldFee.claimRecipientFor(alice), carol);
+
+        assertEq(mYieldFee.accruedYieldOf(alice), yieldAmount);
+        assertEq(mYieldFee.accruedYieldOf(bob), bobYieldAmount);
+
+        vm.expectEmit();
+        emit IMYieldFeeExtension.YieldClaimed(alice, carol, yieldAmount);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(address(0), alice, yieldAmount);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, carol, yieldAmount);
+
+        vm.prank(alice);
+        assertEq(mYieldFee.claimYieldFor(alice), yieldAmount);
+
+        carolBalance += yieldAmount;
+
+        assertEq(mYieldFee.balanceOf(alice), aliceBalance);
+        assertEq(mYieldFee.balanceOf(bob), bobBalance);
+        assertEq(mYieldFee.balanceOf(carol), carolBalance);
+
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+        assertEq(mYieldFee.accruedYieldOf(bob), bobYieldAmount);
+    }
+
     function testFuzz_claimYieldFor(
         bool earningEnabled,
         uint32 rate,
