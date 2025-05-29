@@ -87,11 +87,11 @@ interface IMYieldFeeExtension {
     /* ============ Interactive Functions ============ */
 
     /**
-     * @notice Claims `recipient`'s accrued yield.
-     * @dev    Can be used to claim yield on behalf of `recipient`.
-     * @param  recipient The address of the recipient.
+     * @notice Claims `account`'s accrued yield.
+     * @dev    Can be used to claim yield on behalf of `account`.
+     * @param  account The address of the account.
      */
-    function claimYieldFor(address recipient) external returns (uint256);
+    function claimYieldFor(address account) external returns (uint256);
 
     /**
      * @notice Claims current accrued yield fee.
