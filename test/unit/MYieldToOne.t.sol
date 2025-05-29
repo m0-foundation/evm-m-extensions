@@ -572,8 +572,12 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.claimYield();
 
         assertEq(mYieldToOne.yield(), 0);
+
         assertEq(mToken.balanceOf(address(mYieldToOne)), mYieldToOne.totalSupply());
-        assertEq(mToken.balanceOf(yieldRecipient), 500);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 1_500);
+
+        assertEq(mToken.balanceOf(yieldRecipient), 0);
+        assertEq(mYieldToOne.balanceOf(yieldRecipient), 500);
     }
 
     /* ============ enableEarning ============ */
