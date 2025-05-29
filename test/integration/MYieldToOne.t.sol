@@ -71,7 +71,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // yield accrual
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
+        assertEq(mYieldToOne.yield(), 11375);
 
         // transfers do not affect yield
         vm.prank(alice);
@@ -80,34 +80,34 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(bob), amount / 2);
         assertEq(mYieldToOne.balanceOf(alice), amount / 2);
 
-        // yield accrual
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
+        // yield stays the same
+        assertEq(mYieldToOne.yield(), 11375);
 
         // unwraps
         _unwrap(address(mYieldToOne), alice, alice, amount / 2);
 
-        // yield stays the same
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2);
+        // alice receives exact amount but mYieldToOne loses 1 wei
+        // due to rounding up in M when transferring from an earner to a non-earner
+        assertEq(mYieldToOne.yield(), 11374);
 
         _unwrap(address(mYieldToOne), bob, bob, amount / 2);
 
-        // yield stays the same
-        assertApproxEqAbs(mYieldToOne.yield(), 11375, 2); // May round down
+        assertEq(mYieldToOne.yield(), 11373);
 
         assertEq(mYieldToOne.balanceOf(bob), 0);
         assertEq(mYieldToOne.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(bob), amount + amount / 2);
         assertEq(mToken.balanceOf(alice), amount / 2);
 
-        assertEq(mToken.balanceOf(yieldRecipient), 0);
+        assertEq(mYieldToOne.balanceOf(yieldRecipient), 0);
 
         // claim yield
         mYieldToOne.claimYield();
 
-        assertApproxEqAbs(mToken.balanceOf(yieldRecipient), 11375, 2);
+        assertEq(mYieldToOne.balanceOf(yieldRecipient), 11373);
         assertEq(mYieldToOne.yield(), 0);
-        assertEq(mToken.balanceOf(address(mYieldToOne)), 0);
-        assertEq(mYieldToOne.totalSupply(), 0);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 11373);
+        assertEq(mYieldToOne.totalSupply(), 11373);
 
         // wrap from earner account
         _addToList(EARNERS_LIST, bob);
@@ -119,7 +119,10 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         // Check balances of MYieldToOne and Bob after wrapping
         assertEq(mYieldToOne.balanceOf(bob), amount);
-        assertEq(mToken.balanceOf(address(mYieldToOne)), amount);
+
+        // Transfer from bob who is earning to mYieldToOne which is also earning,
+        // mYieldToOne receives 1 extra wei, due to rounding up in M when transferring between earners
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 11374 + amount);
 
         // Disable earning for the contract
         _removeFomList(EARNERS_LIST, address(mYieldToOne));
@@ -131,7 +134,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // No yield should accrue
-        assertEq(mYieldToOne.yield(), 0);
+        // 1 extra wei because of the previous transfer from bob to mYieldToOne
+        assertEq(mYieldToOne.yield(), 1);
 
         // Re-enable earning for the contract
         _addToList(EARNERS_LIST, address(mYieldToOne));
@@ -140,7 +144,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // Yield should accrue again
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
-        assertEq(mYieldToOne.yield(), 11375);
+        // The claimed yield keeps accruing yield, so the claimable yield is slightly higher
+        assertEq(mYieldToOne.yield(), 11389);
     }
 
     /* ============ enableEarning ============ */

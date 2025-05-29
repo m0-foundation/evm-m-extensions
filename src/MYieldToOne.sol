@@ -85,8 +85,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
 
         emit YieldClaimed(yield_);
 
-        // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
-        IMTokenLike(mToken()).transfer(yieldRecipient(), yield_);
+        _mint(yieldRecipient(), yield_);
 
         return yield_;
     }
