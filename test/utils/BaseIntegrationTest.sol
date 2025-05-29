@@ -42,6 +42,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
     address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
     address public yieldFeeManager = makeAddr("yieldFeeManager");
+    address public claimRecipientManager = makeAddr("claimRecipientManager");
 
     address public alice;
     uint256 public aliceKey;

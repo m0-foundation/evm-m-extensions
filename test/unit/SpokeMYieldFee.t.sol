@@ -29,6 +29,7 @@ contract SpokeMYieldFeeUnitTests is BaseUnitTest {
                     yieldFeeRecipient,
                     admin,
                     yieldFeeManager,
+                    claimRecipientManager,
                     address(rateOracle)
                 )
             )
@@ -63,6 +64,7 @@ contract SpokeMYieldFeeUnitTests is BaseUnitTest {
                     yieldFeeRecipient,
                     admin,
                     yieldFeeManager,
+                    claimRecipientManager,
                     address(0)
                 )
             )
