@@ -32,13 +32,6 @@ interface IMYieldFeeExtension {
     event YieldFeeClaimed(address indexed claimer, address indexed recipient, uint256 yieldFee);
 
     /**
-     * @notice Emitted when yield is claimed for an account and the yield fee is distributed.
-     * @param  recipient The address of the recipient.
-     * @param  yieldFee  The amount of yield fee distributed and claimable by the recipient.
-     */
-    event YieldFeeDistributed(address indexed recipient, uint256 yieldFee);
-
-    /**
      * @notice Emitted when the fee rate is set.
      * @param  feeRate The fee rate in bps.
      */
