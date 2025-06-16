@@ -4,13 +4,16 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 import { Ownable } from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import {
+    OwnableUpgradeable
+} from "../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import { Lock } from "../lib/universal-router/contracts/base/Lock.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 
-contract SwapFacility is Ownable, Lock, ISwapFacility {
+contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
 
@@ -20,9 +23,25 @@ contract SwapFacility is Ownable, Lock, ISwapFacility {
     /// @inheritdoc ISwapFacility
     address public immutable registrar;
 
-    constructor(address mToken_, address registrar_, address owner_) Ownable(owner_) {
+    /**
+     * @notice Constructs SwapFacility Implementation contract
+     * @dev    Sets immutable storage.
+     * @param  mToken_    The address of M token.
+     * @param  registrar_ The address of Registrar.
+     */
+    constructor(address mToken_, address registrar_) {
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
+    }
+
+    /* ============ Initializer ============ */
+
+    /**
+     * @notice Initializes SwapFacility Proxy.
+     * @param  initialOwner Address of the initial owner.
+     */
+    function __SwapFacility_init(address initialOwner) internal onlyInitializing {
+        __Ownable_init(initialOwner);
     }
 
     /* ============ Interactive Functions ============ */
