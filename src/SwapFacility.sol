@@ -13,6 +13,11 @@ import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 
+/**
+ * @title  Swap Facility
+ * @notice A contract responsible for swapping between $M Extensions.
+ * @author M0 Labs
+ */
 contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
@@ -26,7 +31,7 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
     /**
      * @notice Constructs SwapFacility Implementation contract
      * @dev    Sets immutable storage.
-     * @param  mToken_    The address of M token.
+     * @param  mToken_    The address of $M token.
      * @param  registrar_ The address of Registrar.
      */
     constructor(address mToken_, address registrar_) {
@@ -46,6 +51,7 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
 
     /* ============ Interactive Functions ============ */
 
+    /// @inheritdoc ISwapFacility
     function swap(address extensionIn, address extensionOut, uint256 amount, address recipient) external isNotLocked {
         _revertIfNotApprovedExtension(extensionIn);
         _revertIfNotApprovedExtension(extensionOut);
@@ -59,6 +65,7 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
 
         IMExtension(extensionIn).unwrap(address(this), amount);
 
+        // NOTE: Calculate amount as M Token balance difference in case of $M Extension has a fee on transfer or unwrap.
         amount = IERC20(mToken_).balanceOf(address(this)) - balanceBefore;
 
         IMExtension(extensionOut).wrap(recipient, amount);
@@ -66,6 +73,7 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
         emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
+    /// @inheritdoc ISwapFacility
     function swapM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
         _revertIfZeroAmount(amount);
@@ -86,10 +94,18 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
 
     /* ============ Private View/Pure Functions ============ */
 
+    /**
+     * @dev   Reverts if `amount` is zero.
+     * @param amount Amount to check.
+     */
     function _revertIfZeroAmount(uint256 amount) private pure {
         if (amount == 0) revert ZeroAmount();
     }
 
+    /**
+     * @dev   Reverts if `recipient` is zero address.
+     * @param recipient Address to check.
+     */
     function _revertIfZeroRecipient(address recipient) private pure {
         if (recipient == address(0)) revert ZeroRecipient();
     }
@@ -102,7 +118,11 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
         if (!_isApprovedEarner(extension)) revert NotApprovedExtension(extension);
     }
 
-    /// @dev Returns whether this contract is a Registrar-approved earner.
+    /**
+     * @dev    Checks if the given extension is an approved earner.
+     * @param  extension Address of the extension to check.
+     * @return True if the extension is an approved earner, false otherwise.
+     */
     function _isApprovedEarner(address extension) private view returns (bool) {
         return
             IRegistrarLike(registrar).get(EARNERS_LIST_IGNORED_KEY) != bytes32(0) ||
