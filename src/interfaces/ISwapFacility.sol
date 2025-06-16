@@ -9,8 +9,6 @@ interface ISwapFacility {
 
     event SwappedM(address indexed extensionOut, uint256 amount, address recipient);
 
-    event ApprovedMTokenSwapperSet(address indexed swapper, bool approved);
-
     /* ============ Custom Errors ============ */
 
     /// @notice Thrown in the constructor if M Token is 0x0.
@@ -28,16 +26,11 @@ interface ISwapFacility {
     /// @notice Thrown in `swap` and `swapM` functions if the extension is not TTG approved earner.
     error NotApprovedExtension(address extension);
 
-    /// @notice Thrown in `swapM` function if the swapper is not an approved M Token swapper.
-    error NotApprovedSwapper(address swapper);
-
     /* ============ Interactive Functions ============ */
 
     function swapM(address extensionOut, uint256 amount, address recipient) external;
 
     function swap(address extensionIn, address extensionOut, uint256 amount, address recipient) external;
-
-    function setApprovedMTokenSwapper(address swapper, bool approved) external;
 
     /* ============ View/Pure Functions ============ */
 

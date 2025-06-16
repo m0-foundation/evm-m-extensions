@@ -20,8 +20,6 @@ contract SwapFacility is Ownable, Lock, ISwapFacility {
     /// @inheritdoc ISwapFacility
     address public immutable registrar;
 
-    mapping(address => bool) public approvedMTokenSwappers;
-
     constructor(address mToken_, address registrar_, address owner_) Ownable(owner_) {
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
@@ -50,8 +48,6 @@ contract SwapFacility is Ownable, Lock, ISwapFacility {
     }
 
     function swapM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
-        // TODO: Should anyone be allowed to swap from M to an Extension?
-        _revertIfNotApprovedSwapper(msg.sender);
         _revertIfNotApprovedExtension(extensionOut);
         _revertIfZeroAmount(amount);
         _revertIfZeroRecipient(recipient);
@@ -60,12 +56,6 @@ contract SwapFacility is Ownable, Lock, ISwapFacility {
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit SwappedM(extensionOut, amount, recipient);
-    }
-
-    function setApprovedMTokenSwapper(address swapper, bool approved) external onlyOwner {
-        approvedMTokenSwappers[swapper] = approved;
-
-        emit ApprovedMTokenSwapperSet(swapper, approved);
     }
 
     /* ============ View/Pure Functions ============ */
@@ -83,10 +73,6 @@ contract SwapFacility is Ownable, Lock, ISwapFacility {
 
     function _revertIfZeroRecipient(address recipient) private pure {
         if (recipient == address(0)) revert ZeroRecipient();
-    }
-
-    function _revertIfNotApprovedSwapper(address account) private view {
-        if (!approvedMTokenSwappers[account]) revert NotApprovedSwapper(account);
     }
 
     /**
