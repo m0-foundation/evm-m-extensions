@@ -45,7 +45,7 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
      * @notice Initializes SwapFacility Proxy.
      * @param  initialOwner Address of the initial owner.
      */
-    function __SwapFacility_init(address initialOwner) internal onlyInitializing {
+    function initialize(address initialOwner) external initializer {
         __Ownable_init(initialOwner);
     }
 
@@ -65,7 +65,7 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
 
         IMExtension(extensionIn).unwrap(address(this), amount);
 
-        // NOTE: Calculate amount as M Token balance difference in case of $M Extension has a fee on transfer or unwrap.
+        // NOTE: Calculate amount as M Token balance difference in case $M Extension has a fee on transfer or unwrap.
         amount = IERC20(mToken_).balanceOf(address(this)) - balanceBefore;
 
         IMExtension(extensionOut).wrap(recipient, amount);

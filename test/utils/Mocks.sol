@@ -77,3 +77,118 @@ contract MockRateOracle {
         earnerRate = rate;
     }
 }
+
+contract MockRegistrar {
+    bytes32 public constant EARNERS_LIST_NAME = "earners";
+
+    mapping(bytes32 key => bytes32 value) internal _values;
+
+    mapping(bytes32 listName => mapping(address account => bool contains)) public listContains;
+
+    function get(bytes32 key) external view returns (bytes32 value) {
+        return _values[key];
+    }
+
+    function set(bytes32 key, bytes32 value) external {
+        _values[key] = value;
+    }
+
+    function setEarner(address account, bool contains) external {
+        listContains[EARNERS_LIST_NAME][account] = contains;
+    }
+}
+
+abstract contract MockERC20 {
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+    event Approval(address indexed owner, address indexed spender, uint256 amount);
+
+    string public name;
+    string public symbol;
+    uint8 public immutable decimals;
+    uint256 public totalSupply;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) {
+        name = name_;
+        symbol = symbol_;
+        decimals = decimals_;
+    }
+
+    function approve(address spender, uint256 amount) public virtual returns (bool) {
+        allowance[msg.sender][spender] = amount;
+
+        emit Approval(msg.sender, spender, amount);
+
+        return true;
+    }
+
+    function transfer(address to, uint256 amount) public virtual returns (bool) {
+        balanceOf[msg.sender] -= amount;
+
+        unchecked {
+            balanceOf[to] += amount;
+        }
+
+        emit Transfer(msg.sender, to, amount);
+
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public virtual returns (bool) {
+        uint256 allowed = allowance[from][msg.sender];
+
+        if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
+
+        balanceOf[from] -= amount;
+
+        unchecked {
+            balanceOf[to] += amount;
+        }
+
+        emit Transfer(from, to, amount);
+
+        return true;
+    }
+
+    function _mint(address to, uint256 amount) internal virtual {
+        totalSupply += amount;
+
+        unchecked {
+            balanceOf[to] += amount;
+        }
+
+        emit Transfer(address(0), to, amount);
+    }
+
+    function _burn(address from, uint256 amount) internal virtual {
+        balanceOf[from] -= amount;
+
+        unchecked {
+            totalSupply -= amount;
+        }
+
+        emit Transfer(from, address(0), amount);
+    }
+}
+
+contract MockMExtension is MockERC20 {
+    MockM public mToken;
+    address public swapFacility;
+
+    constructor(address mToken_, address swapFacility_) MockERC20("MockMExtension", "MME", 6) {
+        mToken = MockM(mToken_);
+        swapFacility = swapFacility_;
+    }
+
+    function wrap(address recipient, uint256 amount) external {
+        uint256 startingBalance = mToken.balanceOf(address(this));
+        mToken.transferFrom(msg.sender, address(this), amount);
+        _mint(recipient, uint240(mToken.balanceOf(address(this)) - startingBalance));
+    }
+
+    function unwrap(address recipient, uint256 amount) external {
+        _burn(msg.sender, amount);
+        mToken.transfer(recipient, amount);
+    }
+}
