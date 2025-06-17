@@ -7,16 +7,22 @@ import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.s
 /**
  * @title  M Extension interface extending Extended ERC20,
  *         includes additional enable/disable earnings and index logic.
- * @author M^0 Labs
+ * @author M0 Labs
  */
 interface IMExtension is IERC20Extended {
     /* ============ Events ============ */
 
     /**
      * @notice Emitted when M extension earning is enabled.
-     * @param  index The M index at the moment earning is enabled.
+     * @param  index The index at the moment earning is enabled.
      */
     event EarningEnabled(uint128 index);
+
+    /**
+     * @notice Emitted when M extension earning is disabled.
+     * @param  index The index at the moment earning is disabled.
+     */
+    event EarningDisabled(uint128 index);
 
     /* ============ Custom Errors ============ */
 
@@ -102,4 +108,10 @@ interface IMExtension is IERC20Extended {
      * @dev SHOULD be virtual to allow extensions to override it.
      */
     function isEarningEnabled() external view returns (bool);
+
+    /**
+     * @notice Returns the current index for M extension earnings.
+     * @dev SHOULD be virtual to allow extensions to override it.
+     */
+    function currentIndex() external view returns (uint128);
 }

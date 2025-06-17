@@ -12,6 +12,8 @@ import { SpokeMYieldFeeHarness } from "../harness/SpokeMYieldFeeHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
 contract SpokeMYieldFeeUnitTests is BaseUnitTest {
+    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+
     SpokeMYieldFeeHarness public mYieldFee;
 
     function setUp() public override {

@@ -21,10 +21,6 @@ contract BaseUnitTest is Helpers, Test {
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
-    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
-    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
-    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
 
     MockM public mToken;
     MockRateOracle public rateOracle;
@@ -75,23 +71,6 @@ contract BaseUnitTest is Helpers, Test {
     ) internal pure returns (uint240 balanceWithYield_, uint240 yield_) {
         balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal, index);
         yield_ = (balanceWithYield_ <= balance) ? 0 : balanceWithYield_ - balance;
-    }
-
-    function _getCurrentIndex(
-        uint128 latestIndex,
-        uint32 latestRate,
-        uint40 latestUpdateTimestamp
-    ) internal view returns (uint128) {
-        return
-            UIntMath.bound128(
-                ContinuousIndexingMath.multiplyIndicesDown(
-                    latestIndex,
-                    ContinuousIndexingMath.getContinuousIndex(
-                        ContinuousIndexingMath.convertFromBasisPoints(latestRate),
-                        uint32(block.timestamp - latestUpdateTimestamp)
-                    )
-                )
-            );
     }
 
     function _getMaxAmount(uint128 index_) internal pure returns (uint240) {

@@ -10,6 +10,7 @@ import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrade
 
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
+import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
@@ -22,6 +23,11 @@ import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
 contract MYieldFeeUnitTests is BaseUnitTest {
+    // Roles
+    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
+    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
+
     MYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
@@ -486,7 +492,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
 
         vm.expectEmit();
-        emit IMYieldFeeExtension.EarningDisabled(1_187153439146);
+        emit IMExtension.EarningDisabled(1_187153439146);
 
         mYieldFee.disableEarning();
 
@@ -1598,6 +1604,23 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     /* ============ Fuzz Utils ============ */
+
+    function _getCurrentIndex(
+        uint128 latestIndex,
+        uint32 latestRate,
+        uint40 latestUpdateTimestamp
+    ) internal view returns (uint128) {
+        return
+            UIntMath.bound128(
+                ContinuousIndexingMath.multiplyIndicesDown(
+                    latestIndex,
+                    ContinuousIndexingMath.getContinuousIndex(
+                        ContinuousIndexingMath.convertFromBasisPoints(latestRate),
+                        uint32(block.timestamp - latestUpdateTimestamp)
+                    )
+                )
+            );
+    }
 
     function _setupAccount(
         address account,

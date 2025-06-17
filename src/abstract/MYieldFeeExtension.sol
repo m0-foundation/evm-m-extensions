@@ -239,7 +239,7 @@ abstract contract MYieldFeeExtension is
     }
 
     /// @inheritdoc IERC20
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _getMYieldFeeExtensionStorageLocation().balanceOf[account];
     }
 
@@ -256,7 +256,7 @@ abstract contract MYieldFeeExtension is
     }
 
     /// @inheritdoc IContinuousIndexing
-    function currentIndex() public view virtual returns (uint128) {
+    function currentIndex() public view virtual override(IContinuousIndexing, MExtension) returns (uint128) {
         MYieldFeeExtensionStorageStruct storage $ = _getMYieldFeeExtensionStorageLocation();
 
         if (!isEarningEnabled()) return $.latestIndex;
@@ -363,9 +363,6 @@ abstract contract MYieldFeeExtension is
      * @param amount    The amount of tokens to mint.
      */
     function _mint(address recipient, uint256 amount) internal override {
-        _revertIfInsufficientAmount(amount);
-        _revertIfInvalidRecipient(recipient);
-
         _mint(recipient, amount, IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex()));
     }
 
@@ -398,8 +395,6 @@ abstract contract MYieldFeeExtension is
      * @param amount  The present amount of tokens to burn.
      */
     function _burn(address account, uint256 amount) internal override {
-        _revertIfInsufficientAmount(amount);
-
         uint256 balance_ = balanceOf(account);
 
         _revertIfInsufficientBalance(account, balance_, amount);
@@ -430,19 +425,7 @@ abstract contract MYieldFeeExtension is
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal override {
-        _revertIfInvalidRecipient(recipient);
-
-        emit Transfer(sender, recipient, amount);
-
-        if (amount == 0) return;
-
-        uint256 balance_ = balanceOf(sender);
-
-        _revertIfInsufficientBalance(sender, balance_, amount);
-
-        if (sender == recipient) return;
-
+    function _update(address sender, address recipient, uint256 amount) internal override {
         MYieldFeeExtensionStorageStruct storage $ = _getMYieldFeeExtensionStorageLocation();
 
         // Slightly overestimate the principal amount to be moved on transfer
@@ -452,7 +435,7 @@ abstract contract MYieldFeeExtension is
         // NOTE: Can be `unchecked` because we check for insufficient sender balance above.
         //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
         unchecked {
-            $.balanceOf[sender] = balance_ - amount;
+            $.balanceOf[sender] -= amount;
             $.balanceOf[recipient] += amount;
 
             $.principalOf[sender] = fromPrincipal_ - principal_;
@@ -528,31 +511,5 @@ abstract contract MYieldFeeExtension is
         unchecked {
             return balanceWithYield_ > balance ? balanceWithYield_ - balance : 0;
         }
-    }
-
-    /**
-     * @dev   Reverts if `amount` is equal to 0.
-     * @param amount Amount of token.
-     */
-    function _revertIfInsufficientAmount(uint256 amount) internal pure {
-        if (amount == 0) revert InsufficientAmount(amount);
-    }
-
-    /**
-     * @dev   Reverts if `account` is address(0).
-     * @param account Address of an account.
-     */
-    function _revertIfInvalidRecipient(address account) internal pure {
-        if (account == address(0)) revert InvalidRecipient(account);
-    }
-
-    /**
-     * @dev   Reverts if `account` balance is below `balance`.
-     * @param account Address of an account.
-     * @param balance Balance of an account.
-     * @param amount Amount to transfer or burn.
-     */
-    function _revertIfInsufficientBalance(address account, uint256 balance, uint256 amount) internal pure {
-        if (balance < amount) revert InsufficientBalance(account, balance, amount);
     }
 }

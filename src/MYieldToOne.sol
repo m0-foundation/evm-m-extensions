@@ -8,7 +8,6 @@ import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
 
 import { Blacklistable } from "./abstract/components/Blacklistable.sol";
-
 import { MExtension } from "./abstract/MExtension.sol";
 
 abstract contract MYieldToOneStorageLayout {
@@ -98,7 +97,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IERC20
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _getMYieldToOneStorageLocation().balanceOf[account];
     }
 
@@ -122,21 +121,18 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         return _getMYieldToOneStorageLocation().yieldRecipient;
     }
 
-    /* ============ Internal Interactive Functions ============ */
+    /* ============ Hooks For Internal Interactive Functions ============ */
 
     /**
-     * @dev Approve `spender` to spend `amount` of tokens from `account`.
-     * @param account The address approving the allowance.
-     * @param spender The address approved to spend the tokens.
-     * @param amount  The amount of tokens being approved for spending.
+     * @dev    Hooks called before approval of M extension spend.
+     * @param  account The account from which M is deposited.
+     * @param  spender The account spending M Extension token.
      */
-    function _approve(address account, address spender, uint256 amount) internal override {
+    function _beforeApprove(address account, address spender, uint256 /* amount */) internal view override {
         BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
 
         _revertIfBlacklisted($, account);
         _revertIfBlacklisted($, spender);
-
-        super._approve(account, spender, amount);
     }
 
     /**
@@ -152,25 +148,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     }
 
     /**
-     * @dev   Mints `amount` tokens to `recipient`.
-     * @param recipient The address whose account balance will be incremented.
-     * @param amount    The present amount of tokens to mint.
-     */
-    function _mint(address recipient, uint256 amount) internal override {
-        _revertIfInsufficientAmount(amount);
-        _revertIfInvalidRecipient(recipient);
-
-        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
-
-        unchecked {
-            $.balanceOf[recipient] += amount;
-            $.totalSupply += amount;
-        }
-
-        emit Transfer(address(0), recipient, amount);
-    }
-
-    /**
      * @dev   Hook called before unwrapping M Extension token.
      * @param account   The account from which M Extension token is burned.
      * @param recipient The account receiving the withdrawn M.
@@ -183,17 +160,47 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     }
 
     /**
+     * @dev   Hook called before transferring M Extension token.
+     * @param sender    The address from which the tokens are being transferred.
+     * @param recipient The address to which the tokens are being transferred.
+     */
+    function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view override {
+        BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
+
+        _revertIfBlacklisted($, msg.sender);
+
+        _revertIfBlacklisted($, sender);
+        _revertIfBlacklisted($, recipient);
+    }
+
+    /* ============ Internal Interactive Functions ============ */
+
+    /**
+     * @dev   Mints `amount` tokens to `recipient`.
+     * @param recipient The address whose account balance will be incremented.
+     * @param amount    The present amount of tokens to mint.
+     */
+    function _mint(address recipient, uint256 amount) internal override {
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+
+        unchecked {
+            $.balanceOf[recipient] += amount;
+            $.totalSupply += amount;
+        }
+
+        emit Transfer(address(0), recipient, amount);
+    }
+
+    /**
      * @dev   Burns `amount` tokens from `account`.
      * @param account The address whose account balance will be decremented.
      * @param amount  The present amount of tokens to burn.
      */
     function _burn(address account, uint256 amount) internal override {
-        _revertIfInsufficientAmount(amount);
-
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
         uint256 balance_ = $.balanceOf[account];
 
-        if (balance_ < amount) revert InsufficientBalance(account, balance_, amount);
+        _revertIfInsufficientBalance(account, balance_, amount);
 
         unchecked {
             $.balanceOf[account] = balance_ - amount;
@@ -209,26 +216,12 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal override {
-        BlacklistableStorageStruct storage blacklistableStorage = _getBlacklistableStorageLocation();
-
-        _revertIfBlacklisted(blacklistableStorage, msg.sender);
-        _revertIfBlacklisted(blacklistableStorage, sender);
-        _revertIfBlacklisted(blacklistableStorage, recipient);
-        _revertIfInvalidRecipient(recipient);
-
-        emit Transfer(sender, recipient, amount);
-
-        if (amount == 0) return;
-
+    function _update(address sender, address recipient, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
-        uint256 balance_ = $.balanceOf[sender];
-
-        if (balance_ < amount) revert InsufficientBalance(sender, balance_, amount);
 
         // NOTE: Can be `unchecked` because we check for insufficient sender balance above.
         unchecked {
-            $.balanceOf[sender] = balance_ - amount;
+            $.balanceOf[sender] -= amount;
             $.balanceOf[recipient] += amount;
         }
     }
@@ -247,32 +240,5 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         $.yieldRecipient = account;
 
         emit YieldRecipientSet(account);
-    }
-
-    /* ============ Internal View/Pure Functions ============ */
-
-    /**
-     * @dev    Returns the M Token balance of `account`.
-     * @param  account The account being queried.
-     * @return balance_ The M Token balance of the account.
-     */
-    function _mBalanceOf(address account) internal view returns (uint256) {
-        return IMTokenLike(mToken()).balanceOf(account);
-    }
-
-    /**
-     * @dev   Reverts if `amount` is equal to 0.
-     * @param amount Amount of token.
-     */
-    function _revertIfInsufficientAmount(uint256 amount) internal pure {
-        if (amount == 0) revert InsufficientAmount(amount);
-    }
-
-    /**
-     * @dev   Reverts if `account` is address(0).
-     * @param account Address of an account.
-     */
-    function _revertIfInvalidRecipient(address account) internal pure {
-        if (account == address(0)) revert InvalidRecipient(account);
     }
 }

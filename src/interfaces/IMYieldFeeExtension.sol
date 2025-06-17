@@ -10,12 +10,6 @@ interface IMYieldFeeExtension {
     /* ============ Events ============ */
 
     /**
-     * @notice Emitted when MYieldFee earning is disabled.
-     * @param  index The index at the moment earning is disabled.
-     */
-    event EarningDisabled(uint128 index);
-
-    /**
      * @notice Emitted when an account's yield is claimed.
      * @param  claimer   The address that claimed the yield fee.
      * @param  recipient The address of the recipient.

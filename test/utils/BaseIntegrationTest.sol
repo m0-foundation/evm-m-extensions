@@ -12,6 +12,7 @@ import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
 
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
 import { MYieldFee } from "../../src/MYieldFee.sol";
+import { MEarnerManager } from "../../src/MEarnerManager.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -35,6 +36,7 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
     bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
+    bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
@@ -43,6 +45,8 @@ contract BaseIntegrationTest is Helpers, Test {
     address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
     address public yieldFeeManager = makeAddr("yieldFeeManager");
     address public claimRecipientManager = makeAddr("claimRecipientManager");
+    address public earnerManager = makeAddr("earnerManager");
+    address public feeRecipient = makeAddr("feeRecipient");
 
     address public alice;
     uint256 public aliceKey;
@@ -52,17 +56,18 @@ contract BaseIntegrationTest is Helpers, Test {
     address public charlie = makeAddr("charlie");
     address public david = makeAddr("david");
 
-    address[] public accounts = [alice, bob, carol];
+    address[] public accounts = [alice, bob, carol, charlie, david];
 
     MYieldToOne public mYieldToOne;
     MYieldFee public mYieldFee;
+    MEarnerManager public mEarnerManager;
 
     string public constant NAME = "M USD Extension";
     string public constant SYMBOL = "MUSDE";
 
     function setUp() public virtual {
         (alice, aliceKey) = makeAddrAndKey("alice");
-        accounts = [alice, bob, charlie, david];
+        accounts = [alice, bob, carol, charlie, david];
     }
 
     function _addToList(bytes32 list, address account) internal {

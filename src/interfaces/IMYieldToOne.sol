@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 
 /**
  * @title M Extension where all yield is claimable by a single recipient.
- * @author M^0 Labs
+ * @author M0 Labs
  */
 interface IMYieldToOne {
     /* ============ Events ============ */
