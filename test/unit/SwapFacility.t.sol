@@ -13,6 +13,8 @@ import { SwapFacility } from "../../src/SwapFacility.sol";
 import { MockM, MockMExtension, MockRegistrar } from "../utils/Mocks.sol";
 
 contract SwapFacilityUnitTests is Test {
+    bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
+
     SwapFacility public swapFacility;
 
     MockM public mToken;
@@ -21,7 +23,8 @@ contract SwapFacilityUnitTests is Test {
     MockMExtension public extensionB;
 
     address public owner = makeAddr("owner");
-    address public alice = makeAddr("alice");
+    address public alice;
+    uint256 public alicePk;
 
     function setUp() public {
         mToken = new MockM();
@@ -40,12 +43,14 @@ contract SwapFacilityUnitTests is Test {
         // Add Extensions to Earners List
         registrar.setEarner(address(extensionA), true);
         registrar.setEarner(address(extensionB), true);
+
+        (alice, alicePk) = makeAddrAndKey("alice");
     }
 
     function test_initialState() external {
         assertEq(swapFacility.mToken(), address(mToken));
         assertEq(swapFacility.registrar(), address(registrar));
-        assertEq(swapFacility.owner(), owner);
+        assertTrue(swapFacility.hasRole(swapFacility.DEFAULT_ADMIN_ROLE(), owner));
     }
 
     function test_constructor_zeroMToken() external {
@@ -58,43 +63,13 @@ contract SwapFacilityUnitTests is Test {
         new SwapFacility(address(mToken), address(0));
     }
 
-    function test_swapM() external {
-        uint256 amount = 1_000;
-        mToken.setBalanceOf(alice, amount);
-
-        vm.expectEmit(true, true, true, true);
-        emit ISwapFacility.SwappedM(address(extensionA), amount, alice);
-
-        vm.prank(alice);
-        swapFacility.swapM(address(extensionA), amount, alice);
-
-        assertEq(mToken.balanceOf(alice), 0);
-        assertEq(extensionA.balanceOf(alice), amount);
-    }
-
-    function test_swapM_zeroAmount() external {
-        vm.expectRevert(ISwapFacility.ZeroAmount.selector);
-        swapFacility.swapM(address(extensionA), 0, alice);
-    }
-
-    function test_swapM_zeroRecipient() external {
-        vm.expectRevert(ISwapFacility.ZeroRecipient.selector);
-        swapFacility.swapM(address(extensionA), 1_000, address(0));
-    }
-
-    function test_swapM_notApprovedExtension() external {
-        address notApprovedExtension = address(0x123);
-
-        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
-        swapFacility.swapM(address(0x123), 1, address(this));
-    }
-
     function test_swap() external {
         uint256 amount = 1_000;
         mToken.setBalanceOf(alice, amount);
 
         vm.startPrank(alice);
-        extensionA.wrap(alice, amount);
+        mToken.approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(extensionA), amount, alice);
         extensionA.approve(address(swapFacility), amount);
 
         vm.expectEmit(true, true, true, true);
@@ -107,23 +82,76 @@ contract SwapFacilityUnitTests is Test {
         assertEq(extensionB.balanceOf(alice), amount);
     }
 
-    function test_swap_zeroAmount() external {
-        vm.expectRevert(ISwapFacility.ZeroAmount.selector);
-        swapFacility.swap(address(extensionA), address(extensionB), 0, alice);
-    }
-
-    function test_swap_zeroRecipient() external {
-        vm.expectRevert(ISwapFacility.ZeroRecipient.selector);
-        swapFacility.swap(address(extensionA), address(extensionB), 1_000, address(0));
-    }
-
     function test_swap_notApprovedExtension() external {
         address notApprovedExtension = address(0x123);
 
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
-        swapFacility.swap(address(0x123), address(extensionA), 1_000, address(this));
+        swapFacility.swap(address(0x123), address(extensionA), 1_000, alice);
 
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
-        swapFacility.swap(address(extensionB), address(0x123), 1_000, address(this));
+        swapFacility.swap(address(extensionB), address(0x123), 1_000, alice);
+    }
+
+    function test_swapInM() external {
+        uint256 amount = 1_000;
+        mToken.setBalanceOf(alice, amount);
+
+        vm.prank(alice);
+        mToken.approve(address(swapFacility), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit ISwapFacility.SwappedInM(address(extensionA), amount, alice);
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(extensionA), amount, alice);
+
+        assertEq(mToken.balanceOf(alice), 0);
+        assertEq(extensionA.balanceOf(alice), amount);
+    }
+
+    function test_swapInM_notApprovedExtension() external {
+        address notApprovedExtension = address(0x123);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
+        swapFacility.swapInM(address(0x123), 1, alice);
+    }
+
+    function test_swapOutM() external {
+        uint256 amount = 1_000;
+        mToken.setBalanceOf(alice, amount);
+
+        vm.prank(owner);
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(extensionA), amount, alice);
+
+        assertEq(mToken.balanceOf(alice), 0);
+        assertEq(extensionA.balanceOf(alice), amount);
+
+        extensionA.approve(address(swapFacility), amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit ISwapFacility.SwappedOutM(address(extensionA), amount, alice);
+
+        swapFacility.swapOutM(address(extensionA), amount, alice);
+
+        assertEq(mToken.balanceOf(alice), amount);
+        assertEq(extensionA.balanceOf(alice), 0);
+    }
+
+    function test_swapOutM_notApprovedExtension() external {
+        address notApprovedExtension = address(0x123);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
+        swapFacility.swapOutM(address(0x123), 1, alice);
+    }
+
+    function test_swapOutM_notApprovedSwapper() external {
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedSwapper.selector, alice));
+
+        vm.prank(alice);
+        swapFacility.swapOutM(address(extensionA), 1, alice);
     }
 }

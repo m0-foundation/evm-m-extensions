@@ -6,12 +6,14 @@ import { ERC20ExtendedUpgradeable } from "../../lib/common/src/ERC20ExtendedUpgr
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
+import { ISwapFacility } from "../interfaces/ISwapFacility.sol";
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 
 abstract contract MExtensionStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MExtension
     struct MExtensionStorageStruct {
         address mToken;
+        address swapFacility;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MExtension")) - 1)) & ~bytes32(uint256(0xff))
@@ -31,16 +33,33 @@ abstract contract MExtensionStorageLayout {
  * @author M0 Labs
  */
 abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20ExtendedUpgradeable {
+    /* ============ Modifiers ============ */
+
+    /// @dev Modifier to check if caller is SwapFacility.
+    modifier onlySwapFacility() {
+        if (msg.sender != _getMExtensionStorageLocation().swapFacility) revert NotSwapFacility();
+        _;
+    }
+
     /* ============ Initializer ============ */
 
     /**
      * @notice Initializes the generic M extension token.
-     * @param name    The name of the token (e.g. "HALO USD").
-     * @param symbol  The symbol of the token (e.g. "HUSD").
-     * @param mToken_ The address of the M Token.
+     * @param name          The name of the token (e.g. "HALO USD").
+     * @param symbol        The symbol of the token (e.g. "HUSD").
+     * @param mToken_       The address of the M Token.
+     * @param swapFacility_ The address of the Swap Facility.
      */
-    function __MExtension_init(string memory name, string memory symbol, address mToken_) internal onlyInitializing {
-        if ((_getMExtensionStorageLocation().mToken = mToken_) == address(0)) revert ZeroMToken();
+    function __MExtension_init(
+        string memory name,
+        string memory symbol,
+        address mToken_,
+        address swapFacility_
+    ) internal onlyInitializing {
+        MExtensionStorageStruct storage $ = _getMExtensionStorageLocation();
+
+        if (($.mToken = mToken_) == address(0)) revert ZeroMToken();
+        if (($.swapFacility = swapFacility_) == address(0)) revert ZeroSwapFacility();
 
         __ERC20ExtendedUpgradeable_init(name, symbol, 6);
     }
@@ -48,34 +67,17 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IMExtension
-    function wrap(address recipient, uint256 amount) external {
-        _wrap(msg.sender, recipient, amount);
+    function wrap(address recipient, uint256 amount) external onlySwapFacility {
+        // NOTE: msg.sender is always SwapFacility contract.
+        //       `swapFacility().msgSender()` is used to ensure that the original caller is passed to `_beforeWrap`.
+        _wrap(ISwapFacility(swapFacility()).msgSender(), recipient, amount);
     }
 
     /// @inheritdoc IMExtension
-    function wrapWithPermit(
-        address recipient,
-        uint256 amount,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
-        try IMTokenLike(mToken()).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
-
-        _wrap(msg.sender, recipient, amount);
-    }
-
-    /// @inheritdoc IMExtension
-    function wrapWithPermit(address recipient, uint256 amount, uint256 deadline, bytes calldata signature) external {
-        try IMTokenLike(mToken()).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
-
-        _wrap(msg.sender, recipient, amount);
-    }
-
-    /// @inheritdoc IMExtension
-    function unwrap(address recipient, uint256 amount) external {
-        _unwrap(msg.sender, recipient, amount);
+    function unwrap(address recipient, uint256 amount) external onlySwapFacility {
+        // NOTE: msg.sender is always SwapFacility contract.
+        //       `swapFacility().msgSender()` is used to ensure that the original caller is passed to `_beforeWrap`.
+        _unwrap(ISwapFacility(swapFacility()).msgSender(), recipient, amount);
     }
 
     /// @inheritdoc IMExtension
@@ -111,6 +113,11 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     /// @inheritdoc IMExtension
     function mToken() public view returns (address) {
         return _getMExtensionStorageLocation().mToken;
+    }
+
+    /// @inheritdoc IMExtension
+    function swapFacility() public view returns (address) {
+        return _getMExtensionStorageLocation().swapFacility;
     }
 
     /// @inheritdoc IERC20
@@ -167,7 +174,7 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
 
     /**
      * @dev    Wraps `amount` M from `account` into M Extension for `recipient`.
-     * @param  account   The account from which M is deposited.
+     * @param  account   The original caller of SwapFacility functions.
      * @param  recipient The account receiving the minted M Extension token.
      * @param  amount    The amount of M deposited.
      */
@@ -178,8 +185,9 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
         // NOTE: Add extension-specific checks before wrapping.
         _beforeWrap(account, recipient, amount);
 
+        // Always transfer from SwapFacility as it is the only contract that can call this function.
         // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
-        IMTokenLike(mToken()).transferFrom(account, address(this), amount);
+        IMTokenLike(mToken()).transferFrom(swapFacility(), address(this), amount);
 
         // NOTE: Mints precise amount of $M Extension token to `recipient`.
         //       Option 1: $M transfer from an $M earner to another $M earner ($M Extension in earning state): rounds up → rounds up,
@@ -192,8 +200,8 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     }
 
     /**
-     * @dev    Unwraps `amount` M Extension token from `account_` into M for `recipient`.
-     * @param  account   The account from which M Extension token is burned.
+     * @dev    Unwraps `amount` M Extension token from `account` into M for `recipient`.
+     * @param  account   The original caller of SwapFacility functions.
      * @param  recipient The account receiving the withdrawn M.
      * @param  amount    The amount of M Extension token burned.
      */
@@ -204,7 +212,11 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
         // NOTE: Add extension-specific checks before unwrapping.
         _beforeUnwrap(account, recipient, amount);
 
-        // NOTE: Burns precise amount of $M Extension token from `account`.
+        // Always burn from SwapFacility as it is the only contract that can call this function.
+        _burn(swapFacility(), amount);
+
+        // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
+        // NOTE: Computes the actual decrease in the $M balance of the $M Extension contract.
         //       Option 1: $M transfer from an $M earner ($M Extension in earning state) to another $M earner: round up → rounds up.
         //       Option 2: $M transfer from an $M earner ($M Extension in earning state) to an $M non-earner: round up → precise $M transfer.
         //       In both cases, 0, 1, or XX extra wei may be deducted from the $M Extension contract's $M balance compared to the burned amount of $M Extension token.

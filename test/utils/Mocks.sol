@@ -8,8 +8,11 @@ contract MockM {
     uint128 public latestIndex;
     uint40 public latestUpdateTimestamp;
 
+    error InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+
     mapping(address account => uint256 balance) public balanceOf;
     mapping(address account => bool isEarning) public isEarning;
+    mapping(address => mapping(address => uint256)) public allowance;
 
     function permit(
         address owner,
@@ -23,7 +26,13 @@ contract MockM {
 
     function permit(address owner, address spender, uint256 value, uint256 deadline, bytes memory signature) external {}
 
-    function transfer(address recipient, uint256 amount) external returns (bool) {
+    function approve(address spender, uint256 amount) public virtual returns (bool) {
+        allowance[msg.sender][spender] = amount;
+
+        return true;
+    }
+
+    function transfer(address recipient, uint256 amount) public returns (bool) {
         balanceOf[msg.sender] -= amount;
         balanceOf[recipient] += amount;
 

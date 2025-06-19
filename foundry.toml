@@ -2,7 +2,6 @@
 evm_version = "cancun"
 gas_reports = ["*"]
 gas_reports_ignore = []
-fork_block_number = 22_482_175
 ignored_error_codes = []
 optimizer = true
 optimizer_runs = 999999

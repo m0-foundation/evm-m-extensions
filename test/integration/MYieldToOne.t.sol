@@ -14,9 +14,9 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
-        super.setUp();
-
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
+
+        super.setUp();
 
         _fundAccounts();
 
@@ -28,6 +28,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
                     NAME,
                     SYMBOL,
                     address(mToken),
+                    address(swapFacility),
                     yieldRecipient,
                     admin,
                     blacklistManager,
@@ -61,7 +62,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 1 days);
 
         // wrap from non-earner account
-        _wrap(address(mYieldToOne), alice, alice, amount);
+        _swapInM(address(mYieldToOne), alice, alice, amount);
 
         // Check balances of MYieldToOne and Alice after wrapping
         assertEq(mYieldToOne.balanceOf(alice), amount); // user receives exact amount
@@ -84,13 +85,13 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.yield(), 11375);
 
         // unwraps
-        _unwrap(address(mYieldToOne), alice, alice, amount / 2);
+        _swapMOut(address(mYieldToOne), alice, alice, amount / 2);
 
         // alice receives exact amount but mYieldToOne loses 1 wei
         // due to rounding up in M when transferring from an earner to a non-earner
         assertEq(mYieldToOne.yield(), 11374);
 
-        _unwrap(address(mYieldToOne), bob, bob, amount / 2);
+        _swapMOut(address(mYieldToOne), bob, bob, amount / 2);
 
         assertEq(mYieldToOne.yield(), 11373);
 
@@ -115,14 +116,11 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.prank(bob);
         mToken.startEarning();
 
-        _wrap(address(mYieldToOne), bob, bob, amount);
+        _swapInM(address(mYieldToOne), bob, bob, amount);
 
         // Check balances of MYieldToOne and Bob after wrapping
         assertEq(mYieldToOne.balanceOf(bob), amount);
-
-        // Transfer from bob who is earning to mYieldToOne which is also earning,
-        // mYieldToOne receives 1 extra wei, due to rounding up in M when transferring between earners
-        assertEq(mToken.balanceOf(address(mYieldToOne)), 11374 + amount);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 11373 + amount);
 
         // Disable earning for the contract
         _removeFomList(EARNERS_LIST, address(mYieldToOne));
@@ -134,8 +132,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         // No yield should accrue
-        // 1 extra wei because of the previous transfer from bob to mYieldToOne
-        assertEq(mYieldToOne.yield(), 1);
+        assertEq(mYieldToOne.yield(), 0);
 
         // Re-enable earning for the contract
         _addToList(EARNERS_LIST, address(mYieldToOne));
@@ -144,8 +141,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // Yield should accrue again
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
-        // The claimed yield keeps accruing yield, so the claimable yield is slightly higher
-        assertEq(mYieldToOne.yield(), 11389);
+        assertEq(mYieldToOne.yield(), 11388);
     }
 
     /* ============ enableEarning ============ */
@@ -165,17 +161,19 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         mYieldToOne.disableEarning();
     }
 
-    /* ============ _wrap ============ */
+    /* ============ swap in M with permit ============ */
 
     function test_wrapWithPermits() external {
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+
         assertEq(mToken.balanceOf(alice), 10e6);
 
-        _wrapWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+        _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
 
         assertEq(mYieldToOne.balanceOf(alice), 5e6);
         assertEq(mToken.balanceOf(alice), 5e6);
 
-        _wrapWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+        _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
         assertEq(mYieldToOne.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);

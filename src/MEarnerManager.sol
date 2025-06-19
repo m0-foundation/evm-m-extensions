@@ -75,6 +75,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      * @param name               The name of the token (e.g. "M Earner Manager").
      * @param symbol             The symbol of the token (e.g. "MEM").
      * @param mToken             The address of an M Token.
+     * @param swapFacility       The address of the Swap Facility.
      * @param admin              The address administrating the M extension. Can grant and revoke roles.
      * @param earnerManager      The address of earner manager
      * @param feeRecipient_      The address that will receive the fees from all the earners.
@@ -83,6 +84,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         string memory name,
         string memory symbol,
         address mToken,
+        address swapFacility,
         address admin,
         address earnerManager,
         address feeRecipient_
@@ -90,7 +92,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         if (admin == address(0)) revert ZeroAdmin();
         if (earnerManager == address(0)) revert ZeroEarnerManager();
 
-        __MExtension_init(name, symbol, mToken);
+        __MExtension_init(name, symbol, mToken, swapFacility);
 
         _setFeeRecipient(feeRecipient_);
 

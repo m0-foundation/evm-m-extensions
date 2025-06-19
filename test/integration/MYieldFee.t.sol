@@ -14,9 +14,9 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
-        super.setUp();
-
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
+
+        super.setUp();
 
         _fundAccounts();
 
@@ -28,6 +28,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
                     NAME,
                     SYMBOL,
                     address(mToken),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
@@ -64,8 +65,8 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         vm.warp(vm.getBlockTimestamp() + 1 days);
 
-        // wrap from non-earner account
-        _wrap(address(mYieldFee), alice, alice, amount);
+        // swap M to extension from non-earner account
+        _swapInM(address(mYieldFee), alice, alice, amount);
 
         // Check balances of MYieldFee and Alice after wrapping
         assertEq(mYieldFee.balanceOf(alice), amount); // user receives exact amount
@@ -93,13 +94,13 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.totalAccruedYieldFee(), yieldFee);
 
         // unwraps
-        _unwrap(address(mYieldFee), alice, alice, amount / 2);
+        _swapMOut(address(mYieldFee), alice, alice, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
         assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 1); // May round down
 
-        _unwrap(address(mYieldFee), bob, bob, amount / 2);
+        _swapMOut(address(mYieldFee), bob, bob, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
@@ -127,8 +128,8 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.totalAccruedYieldFee(), 0);
 
         // Alice and yield fee recipient unwraps
-        _unwrap(address(mYieldFee), alice, alice, aliceYield);
-        _unwrap(address(mYieldFee), yieldFeeRecipient, yieldFeeRecipient, yieldFee);
+        _swapMOut(address(mYieldFee), alice, alice, aliceYield);
+        _swapMOut(address(mYieldFee), yieldFeeRecipient, yieldFeeRecipient, yieldFee);
 
         assertEq(mYieldFee.accruedYieldOf(alice), 0);
         assertEq(mYieldFee.balanceOf(alice), 0);
@@ -145,11 +146,11 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         vm.prank(bob);
         mToken.startEarning();
 
-        _wrap(address(mYieldFee), bob, bob, amount);
+        _swapInM(address(mYieldFee), bob, bob, amount);
 
         // Check balances of MYieldFee and Bob after wrapping
         assertEq(mYieldFee.balanceOf(bob), amount);
-        assertEq(mToken.balanceOf(address(mYieldFee)), amount);
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 1);
 
         // Disable earning for the contract
         _removeFomList(EARNERS_LIST, address(mYieldFee));
@@ -171,7 +172,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 3); // May round down
-        assertEq(mToken.balanceOf(address(mYieldFee)), amount + totalYield);
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount + totalYield, 1);
     }
 
     /* ============ enableEarning ============ */
@@ -191,17 +192,19 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         mYieldFee.disableEarning();
     }
 
-    /* ============ _wrap ============ */
+    /* ============ swap in M with permit ============ */
 
     function test_wrapWithPermits() external {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+
         assertEq(mToken.balanceOf(alice), 10e6);
 
-        _wrapWithPermitVRS(address(mYieldFee), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+        _swapInMWithPermitVRS(address(mYieldFee), alice, aliceKey, alice, 5e6, 0, block.timestamp);
 
         assertEq(mYieldFee.balanceOf(alice), 5e6);
         assertEq(mToken.balanceOf(alice), 5e6);
 
-        _wrapWithPermitVRS(address(mYieldFee), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+        _swapInMWithPermitVRS(address(mYieldFee), alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
         assertEq(mYieldFee.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);

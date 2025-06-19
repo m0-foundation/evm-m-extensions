@@ -3,14 +3,14 @@
 pragma solidity 0.8.26;
 
 import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
-import { Ownable } from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import {
-    OwnableUpgradeable
-} from "../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+    AccessControlUpgradeable
+} from "../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import { Lock } from "../lib/universal-router/contracts/base/Lock.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
+import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 
 /**
@@ -18,9 +18,10 @@ import { IMExtension } from "./interfaces/IMExtension.sol";
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
+contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
+    bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
 
     /// @inheritdoc ISwapFacility
     address public immutable mToken;
@@ -35,6 +36,8 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
      * @param  registrar_ The address of Registrar.
      */
     constructor(address mToken_, address registrar_) {
+        _disableInitializers();
+
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
     }
@@ -43,21 +46,159 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
 
     /**
      * @notice Initializes SwapFacility Proxy.
-     * @param  initialOwner Address of the initial owner.
+     * @param  admin Address of the SwapFacility admin.
      */
-    function initialize(address initialOwner) external initializer {
-        __Ownable_init(initialOwner);
+    function initialize(address admin) external initializer {
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc ISwapFacility
     function swap(address extensionIn, address extensionOut, uint256 amount, address recipient) external isNotLocked {
+        // NOTE: Amount and recipient validation is performed in Extensions.
         _revertIfNotApprovedExtension(extensionIn);
         _revertIfNotApprovedExtension(extensionOut);
-        _revertIfZeroAmount(amount);
-        _revertIfZeroRecipient(recipient);
 
+        _swap(extensionIn, extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapWithPermit(
+        address extensionIn,
+        address extensionOut,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedExtension(extensionOut);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+
+        _swap(extensionIn, extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapWithPermit(
+        address extensionIn,
+        address extensionOut,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        bytes calldata signature
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedExtension(extensionOut);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+
+        _swap(extensionIn, extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapInM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
+        // NOTE: Amount and recipient validation is performed in Extensions.
+        _revertIfNotApprovedExtension(extensionOut);
+
+        _swapInM(extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapInMWithPermit(
+        address extensionOut,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionOut);
+
+        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+
+        _swapInM(extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapInMWithPermit(
+        address extensionOut,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        bytes calldata signature
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionOut);
+
+        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+
+        _swapInM(extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
+        // NOTE: Amount and recipient validation is performed in Extensions.
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedSwapper(msg.sender);
+
+        _swapOutM(extensionIn, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapOutMWithPermit(
+        address extensionIn,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedSwapper(msg.sender);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+
+        _swapOutM(extensionIn, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapOutMWithPermit(
+        address extensionIn,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        bytes calldata signature
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedSwapper(msg.sender);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+
+        _swapOutM(extensionIn, amount, recipient);
+    }
+
+    /* ============ View/Pure Functions ============ */
+
+    /// @inheritdoc ISwapFacility
+    function msgSender() external view returns (address) {
+        return _getLocker();
+    }
+
+    /* ============ Private Interactive Functions ============ */
+
+    /**
+     * @notice Swaps one $M Extension to another.
+     * @param  extensionIn  The address of the $M Extension to swap from.
+     * @param  extensionOut The address of the $M Extension to swap to.
+     * @param  amount       The amount to swap.
+     * @param  recipient    The address to receive the swapped $M Extension tokens.
+     */
+    function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
         address mToken_ = mToken;
@@ -65,50 +206,44 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
 
         IMExtension(extensionIn).unwrap(address(this), amount);
 
-        // NOTE: Calculate amount as M Token balance difference in case $M Extension has a fee on transfer or unwrap.
+        // NOTE: Calculate amount as $M Token balance difference
+        //       to account for rounding errors.
         amount = IERC20(mToken_).balanceOf(address(this)) - balanceBefore;
 
+        IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
-    /// @inheritdoc ISwapFacility
-    function swapM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionOut);
-        _revertIfZeroAmount(amount);
-        _revertIfZeroRecipient(recipient);
-
+    /**
+     * @notice Swaps $M token to $M Extension.
+     * @param  extensionOut The address of the M Extension to swap to.
+     * @param  amount       The amount of $M token to swap.
+     * @param  recipient    The address to receive the swapped $M Extension tokens.
+     */
+    function _swapInM(address extensionOut, uint256 amount, address recipient) private {
         IERC20(mToken).transferFrom(msg.sender, address(this), amount);
+        IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
 
-        emit SwappedM(extensionOut, amount, recipient);
+        emit SwappedInM(extensionOut, amount, recipient);
     }
 
-    /* ============ View/Pure Functions ============ */
+    /**
+     * @notice Swaps $M Extension to $M token.
+     * @param  extensionIn The address of the $M Extension to swap from.
+     * @param  amount      The amount of $M Extension tokens to swap.
+     * @param  recipient   The address to receive $M tokens.
+     */
+    function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+        IMExtension(extensionIn).unwrap(recipient, amount);
 
-    /// @inheritdoc ISwapFacility
-    function msgSender() public view returns (address) {
-        return _getLocker();
+        emit SwappedOutM(extensionIn, amount, recipient);
     }
 
     /* ============ Private View/Pure Functions ============ */
-
-    /**
-     * @dev   Reverts if `amount` is zero.
-     * @param amount Amount to check.
-     */
-    function _revertIfZeroAmount(uint256 amount) private pure {
-        if (amount == 0) revert ZeroAmount();
-    }
-
-    /**
-     * @dev   Reverts if `recipient` is zero address.
-     * @param recipient Address to check.
-     */
-    function _revertIfZeroRecipient(address recipient) private pure {
-        if (recipient == address(0)) revert ZeroRecipient();
-    }
 
     /**
      * @dev   Reverts if `extension` is not an approved earner.
@@ -116,6 +251,14 @@ contract SwapFacility is OwnableUpgradeable, Lock, ISwapFacility {
      */
     function _revertIfNotApprovedExtension(address extension) private view {
         if (!_isApprovedEarner(extension)) revert NotApprovedExtension(extension);
+    }
+
+    /**
+     * @dev   Reverts if `account` is not an approved M token swapper.
+     * @param account Address of an extension.
+     */
+    function _revertIfNotApprovedSwapper(address account) private view {
+        if (!hasRole(M_SWAPPER_ROLE, account)) revert NotApprovedSwapper(account);
     }
 
     /**

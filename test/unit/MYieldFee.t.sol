@@ -15,6 +15,7 @@ import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousInde
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 import { IMYieldFeeExtension } from "../../src/interfaces/IMYieldFeeExtension.sol";
+import { ISwapFacility } from "../../src/interfaces/ISwapFacility.sol";
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
@@ -41,6 +42,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     "MYieldFee",
                     "MYF",
                     address(mToken),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
@@ -49,6 +51,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                 )
             )
         );
+
+        registrar.setEarner(address(mYieldFee), true);
     }
 
     /* ============ initialize ============ */
@@ -75,6 +79,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     "MYieldFee",
                     "MYF",
                     address(0),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
@@ -97,6 +102,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     "MYieldFee",
                     "MYF",
                     address(mToken),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     address(0),
                     admin,
@@ -119,6 +125,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     "MYieldFee",
                     "MYF",
                     address(mToken),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     address(0),
@@ -141,6 +148,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     "MYieldFee",
                     "MYF",
                     address(mToken),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
@@ -163,6 +171,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     "MYieldFee",
                     "MYF",
                     address(mToken),
+                    address(swapFacility),
                     YIELD_FEE_RATE,
                     yieldFeeRecipient,
                     admin,
@@ -1046,7 +1055,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function test_wrap_insufficientAmount() external {
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
 
-        vm.prank(alice);
+        vm.prank(address(swapFacility));
         mYieldFee.wrap(alice, 0);
     }
 
@@ -1056,7 +1065,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InvalidRecipient.selector, address(0)));
 
         vm.prank(alice);
-        mYieldFee.wrap(address(0), 1_000);
+        swapFacility.swapInM(address(mYieldFee), 1_000, address(0));
     }
 
     function test_wrap() external {
@@ -1092,7 +1101,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         emit IERC20.Transfer(address(0), alice, 999);
 
         vm.prank(alice);
-        mYieldFee.wrap(alice, 999);
+        swapFacility.swapInM(address(mYieldFee), 999, alice);
 
         // Balance round up in favor of user, but -1 taken out of yield
         assertEq(mYieldFee.principalOf(alice), 1_000 + 925);
@@ -1110,7 +1119,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         emit IERC20.Transfer(address(0), alice, 1);
 
         vm.prank(alice);
-        mYieldFee.wrap(alice, 1);
+        swapFacility.swapInM(address(mYieldFee), 1, alice);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 + 925); // No change due to principal round down on wrap.
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1);
@@ -1127,7 +1136,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         emit IERC20.Transfer(address(0), alice, 2);
 
         vm.prank(alice);
-        mYieldFee.wrap(alice, 2);
+        swapFacility.swapInM(address(mYieldFee), 2, alice);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 + 926);
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1 + 2);
@@ -1173,8 +1182,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             emit IERC20.Transfer(address(0), alice, wrapAmount);
         }
 
-        vm.startPrank(alice);
-        mYieldFee.wrap(alice, wrapAmount);
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldFee), wrapAmount, alice);
 
         if (wrapAmount == 0) return;
 
@@ -1214,16 +1223,19 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
 
         vm.prank(alice);
-        mYieldFee.unwrap(alice, 0);
+        swapFacility.swapOutM(address(mYieldFee), 0, alice);
     }
 
     function test_unwrap_insufficientBalance() external {
         mYieldFee.setAccountOf(alice, 999, 909);
 
+        vm.prank(alice);
+        IERC20(address(mYieldFee)).approve(address(swapFacility), 1_000);
+
         vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
 
         vm.prank(alice);
-        mYieldFee.unwrap(alice, 1_000);
+        swapFacility.swapOutM(address(mYieldFee), 1_000, alice);
     }
 
     function test_unwrap() external {
@@ -1252,11 +1264,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
         assertEq(mYieldFee.projectedTotalSupply(), 1_080);
 
+        vm.prank(alice);
+        IERC20(address(mYieldFee)).approve(address(swapFacility), 1_000);
+
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 1);
+        emit IERC20.Transfer(address(swapFacility), address(0), 1);
 
         vm.prank(alice);
-        mYieldFee.unwrap(alice, 1);
+        swapFacility.swapOutM(address(mYieldFee), 1, alice);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1);
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1);
@@ -1268,10 +1283,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.projectedTotalSupply(), 1_079);
 
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 499);
+        emit IERC20.Transfer(address(swapFacility), address(0), 499);
 
         vm.prank(alice);
-        mYieldFee.unwrap(alice, 499);
+        swapFacility.swapOutM(address(mYieldFee), 499, alice);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463);
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499);
@@ -1282,10 +1297,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 2);
 
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 500);
+        emit IERC20.Transfer(address(swapFacility), address(0), 500);
 
         vm.prank(alice);
-        mYieldFee.unwrap(alice, 500);
+        swapFacility.swapOutM(address(mYieldFee), 500, alice);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463 - 464); // 72
         assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499 - 500); // 0
@@ -1323,6 +1338,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         mToken.setBalanceOf(address(mYieldFee), balanceWithYield);
 
+        vm.prank(alice);
+        IERC20(address(mYieldFee)).approve(address(swapFacility), unwrapAmount);
+
         if (unwrapAmount == 0) {
             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
         } else if (unwrapAmount > balance) {
@@ -1331,11 +1349,11 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             );
         } else {
             vm.expectEmit();
-            emit IERC20.Transfer(alice, address(0), unwrapAmount);
+            emit IERC20.Transfer(address(swapFacility), address(0), unwrapAmount);
         }
 
-        vm.startPrank(alice);
-        mYieldFee.unwrap(alice, unwrapAmount);
+        vm.prank(alice);
+        swapFacility.swapOutM(address(mYieldFee), unwrapAmount, alice);
 
         if ((unwrapAmount == 0) || (unwrapAmount > balance)) return;
 

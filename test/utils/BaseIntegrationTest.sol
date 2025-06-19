@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
+import { ERC1967Proxy } from "../../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
@@ -13,6 +14,7 @@ import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
 import { MYieldToOne } from "../../src/MYieldToOne.sol";
 import { MYieldFee } from "../../src/MYieldFee.sol";
 import { MEarnerManager } from "../../src/MEarnerManager.sol";
+import { SwapFacility } from "../../src/SwapFacility.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -37,6 +39,7 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
+    bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
@@ -61,6 +64,7 @@ contract BaseIntegrationTest is Helpers, Test {
     MYieldToOne public mYieldToOne;
     MYieldFee public mYieldFee;
     MEarnerManager public mEarnerManager;
+    SwapFacility public swapFacility;
 
     string public constant NAME = "M USD Extension";
     string public constant SYMBOL = "MUSDE";
@@ -68,6 +72,23 @@ contract BaseIntegrationTest is Helpers, Test {
     function setUp() public virtual {
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, carol, charlie, david];
+
+        swapFacility = SwapFacility(
+            address(
+                new ERC1967Proxy(
+                    address(new SwapFacility(address(mToken), address(registrar))),
+                    abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                )
+            )
+        );
+
+        vm.startPrank(admin);
+
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+        swapFacility.grantRole(M_SWAPPER_ROLE, bob);
+        swapFacility.grantRole(M_SWAPPER_ROLE, yieldFeeRecipient);
+
+        vm.stopPrank();
     }
 
     function _addToList(bytes32 list, address account) internal {
@@ -89,15 +110,15 @@ contract BaseIntegrationTest is Helpers, Test {
         vm.deal(account, amount);
     }
 
-    function _wrap(address mExtension, address account, address recipient, uint256 amount) internal {
+    function _swapInM(address mExtension, address account, address recipient, uint256 amount) internal {
         vm.prank(account);
-        mToken.approve(address(mExtension), amount);
+        mToken.approve(address(swapFacility), amount);
 
         vm.prank(account);
-        IMExtension(mExtension).wrap(recipient, amount);
+        swapFacility.swapInM(mExtension, amount, recipient);
     }
 
-    function _wrapWithPermitVRS(
+    function _swapInMWithPermitVRS(
         address mExtension,
         address account,
         uint256 signerPrivateKey,
@@ -106,15 +127,25 @@ contract BaseIntegrationTest is Helpers, Test {
         uint256 nonce,
         uint256 deadline
     ) internal {
-        (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(mExtension, account, signerPrivateKey, amount, nonce, deadline);
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(
+            address(swapFacility),
+            account,
+            signerPrivateKey,
+            amount,
+            nonce,
+            deadline
+        );
 
         vm.prank(account);
-        IMExtension(mExtension).wrapWithPermit(recipient, amount, deadline, v_, r_, s_);
+        swapFacility.swapInMWithPermit(mExtension, amount, recipient, deadline, v_, r_, s_);
     }
 
-    function _unwrap(address mExtension, address account, address recipient, uint256 amount) internal {
+    function _swapMOut(address mExtension, address account, address recipient, uint256 amount) internal {
         vm.prank(account);
-        IMExtension(mExtension).unwrap(recipient, amount);
+        IMExtension(mExtension).approve(address(swapFacility), amount);
+
+        vm.prank(account);
+        swapFacility.swapOutM(mExtension, amount, recipient);
     }
 
     function _set(bytes32 key, bytes32 value) internal {

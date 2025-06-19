@@ -43,6 +43,12 @@ interface IMExtension is IERC20Extended {
     /// @notice Emitted in constructor if M Token is 0x0.
     error ZeroMToken();
 
+    /// @notice Emitted in constructor if Swap Facility is 0x0.
+    error ZeroSwapFacility();
+
+    /// @notice Emitted in `wrap` and `unwrap` functions if the caller is not the Swap Facility.
+    error NotSwapFacility();
+
     /* ============ Interactive Functions ============ */
 
     /**
@@ -59,40 +65,15 @@ interface IMExtension is IERC20Extended {
 
     /**
      * @notice Wraps `amount` M from the caller into extension token for `recipient`.
+     * @dev    Can only be called by the SwapFacility.
      * @param  recipient The account receiving the minted M extension token.
      * @param  amount    The amount of M extension token minted.
      */
     function wrap(address recipient, uint256 amount) external;
 
     /**
-     * @notice Wraps `amount` M from the caller into extension token for `recipient`, using a permit.
-     * @param  recipient The account receiving the minted M extension token.
-     * @param  amount    The amount of M deposited.
-     * @param  deadline  The last timestamp where the signature is still valid.
-     * @param  v         An ECDSA secp256k1 signature parameter (EIP-2612 via EIP-712).
-     * @param  r         An ECDSA secp256k1 signature parameter (EIP-2612 via EIP-712).
-     * @param  s         An ECDSA secp256k1 signature parameter (EIP-2612 via EIP-712).
-     */
-    function wrapWithPermit(
-        address recipient,
-        uint256 amount,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
-    /**
-     * @notice Wraps `amount` M from the caller into extension token for `recipient`, using a permit.
-     * @param  recipient The account receiving the minted M extension token.
-     * @param  amount    The amount of M deposited.
-     * @param  deadline  The last timestamp where the signature is still valid.
-     * @param  signature An arbitrary signature (EIP-712).
-     */
-    function wrapWithPermit(address recipient, uint256 amount, uint256 deadline, bytes calldata signature) external;
-
-    /**
      * @notice Unwraps `amount` extension token from the caller into M for `recipient`.
+     * @dev    Can only be called by the SwapFacility.
      * @param  recipient The account receiving the withdrawn M.
      * @param  amount    The amount of M extension token burned.
      */
@@ -102,6 +83,9 @@ interface IMExtension is IERC20Extended {
 
     /// @notice The address of the M Token contract.
     function mToken() external view returns (address);
+
+    /// @notice The address of the SwapFacility contract.
+    function swapFacility() external view returns (address);
 
     /**
      * @notice Whether M extension earning is enabled.

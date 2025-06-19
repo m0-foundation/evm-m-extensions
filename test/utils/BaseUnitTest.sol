@@ -7,8 +7,11 @@ import { Test } from "../../lib/forge-std/src/Test.sol";
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
+import { ERC1967Proxy } from "../../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-import { MockM, MockRateOracle } from "../utils/Mocks.sol";
+import { SwapFacility } from "../../src/SwapFacility.sol";
+
+import { MockM, MockRateOracle, MockRegistrar } from "../utils/Mocks.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -21,9 +24,12 @@ contract BaseUnitTest is Helpers, Test {
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+    bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
 
     MockM public mToken;
     MockRateOracle public rateOracle;
+    MockRegistrar public registrar;
+    SwapFacility public swapFacility;
 
     uint40 public startTimestamp = 0;
     uint128 public expectedCurrentIndex;
@@ -53,6 +59,17 @@ contract BaseUnitTest is Helpers, Test {
         mToken = new MockM();
         rateOracle = new MockRateOracle();
 
+        registrar = new MockRegistrar();
+
+        swapFacility = SwapFacility(
+            address(
+                new ERC1967Proxy(
+                    address(new SwapFacility(address(mToken), address(registrar))),
+                    abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                )
+            )
+        );
+
         mToken.setEarnerRate(M_EARNER_RATE);
 
         (alice, aliceKey) = makeAddrAndKey("alice");
@@ -60,6 +77,9 @@ contract BaseUnitTest is Helpers, Test {
 
         expectedCurrentIndex = 1_100000068703;
         mYiedFeeEarnerRate = _getEarnerRate(M_EARNER_RATE, YIELD_FEE_RATE);
+
+        vm.prank(admin);
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
     }
 
     /* ============ Utils ============ */
