@@ -74,10 +74,10 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     }
 
     /// @inheritdoc IMExtension
-    function unwrap(address recipient, uint256 amount) external onlySwapFacility {
+    function unwrap(address /* recipient */, uint256 amount) external onlySwapFacility {
         // NOTE: msg.sender is always SwapFacility contract.
         //       `swapFacility().msgSender()` is used to ensure that the original caller is passed to `_beforeWrap`.
-        _unwrap(ISwapFacility(swapFacility()).msgSender(), recipient, amount);
+        _unwrap(ISwapFacility(swapFacility()).msgSender(), amount);
     }
 
     /// @inheritdoc IMExtension
@@ -144,10 +144,9 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     /**
      * @dev   Hook called before unwrapping M Extension token.
      * @param account   The account from which M Extension token is burned.
-     * @param recipient The account receiving the withdrawn M.
      * @param amount    The amount of M Extension token burned.
      */
-    function _beforeUnwrap(address account, address recipient, uint256 amount) internal virtual {}
+    function _beforeUnwrap(address account, uint256 amount) internal virtual {}
 
     /**
      * @dev   Hook called before transferring M Extension token.
@@ -200,17 +199,15 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     }
 
     /**
-     * @dev    Unwraps `amount` M Extension token from `account` into M for `recipient`.
+     * @dev    Unwraps `amount` M Extension token from `account` into $M and transfers to SwapFacility.
      * @param  account   The original caller of SwapFacility functions.
-     * @param  recipient The account receiving the withdrawn M.
      * @param  amount    The amount of M Extension token burned.
      */
-    function _unwrap(address account, address recipient, uint256 amount) internal {
-        _revertIfInvalidRecipient(recipient);
+    function _unwrap(address account, uint256 amount) internal {
         _revertIfInsufficientAmount(amount);
 
         // NOTE: Add extension-specific checks before unwrapping.
-        _beforeUnwrap(account, recipient, amount);
+        _beforeUnwrap(account, amount);
 
         // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
         // NOTE: Computes the actual decrease in the $M balance of the $M Extension contract.
@@ -219,11 +216,10 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
         //       In both cases, 0, 1, or XX extra wei may be deducted from the $M Extension contract's $M balance compared to the burned amount of $M Extension token.
         //
         // This method will be overridden by the inheriting M Extension contract.
-        // NOTE: Always burn from SwapFacility as it is the only contract that can call this function.
-        _burn(swapFacility(), amount);
+        _burn(account, amount);
 
         // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
-        IMTokenLike(mToken()).transfer(recipient, amount);
+        IMTokenLike(mToken()).transfer(swapFacility(), amount);
     }
 
     /**

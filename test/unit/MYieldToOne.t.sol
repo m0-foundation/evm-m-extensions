@@ -346,25 +346,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         swapFacility.swapOutM(address(mYieldToOne), amount, bob);
     }
 
-    function test_unwrap_blacklistedRecipient() external {
-        uint256 amount = 1_000e6;
-        mToken.setBalanceOf(alice, amount);
-
-        vm.prank(alice);
-        swapFacility.swapInM(address(mYieldToOne), amount, alice);
-
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
-
-        vm.prank(alice);
-        IERC20(address(mYieldToOne)).approve(address(swapFacility), amount);
-
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
-
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldToOne), amount, bob);
-    }
-
     function test_unwrap_insufficientAmount() external {
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
 
@@ -395,11 +376,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.balanceOf(alice), 1_000);
         assertEq(mYieldToOne.totalSupply(), 1_000);
 
-        vm.prank(alice);
-        IERC20(address(mYieldToOne)).approve(address(swapFacility), 1_000);
-
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 1);
+        emit IERC20.Transfer(alice, address(0), 1);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mYieldToOne), 1, alice);
@@ -409,7 +387,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(alice), 1);
 
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 499);
+        emit IERC20.Transfer(alice, address(0), 499);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mYieldToOne), 499, alice);
@@ -419,7 +397,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(alice), 500);
 
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 500);
+        emit IERC20.Transfer(alice, address(0), 500);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mYieldToOne), 500, alice);

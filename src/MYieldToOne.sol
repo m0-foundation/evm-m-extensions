@@ -151,14 +151,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
 
     /**
      * @dev   Hook called before unwrapping M Extension token.
-     * @param account   The account from which M Extension token is burned.
-     * @param recipient The account receiving the withdrawn M.
+     * @param account The account from which M Extension token is burned.
      */
-    function _beforeUnwrap(address account, address recipient, uint256 /* amount */) internal view override {
-        BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
-
-        _revertIfBlacklisted($, account);
-        _revertIfBlacklisted($, recipient);
+    function _beforeUnwrap(address account, uint256 /* amount */) internal view override {
+        _revertIfBlacklisted(_getBlacklistableStorageLocation(), account);
     }
 
     /**

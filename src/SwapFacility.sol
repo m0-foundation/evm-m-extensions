@@ -64,42 +64,6 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
     }
 
     /// @inheritdoc ISwapFacility
-    function swapWithPermit(
-        address extensionIn,
-        address extensionOut,
-        uint256 amount,
-        address recipient,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedExtension(extensionOut);
-
-        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
-
-        _swap(extensionIn, extensionOut, amount, recipient);
-    }
-
-    /// @inheritdoc ISwapFacility
-    function swapWithPermit(
-        address extensionIn,
-        address extensionOut,
-        uint256 amount,
-        address recipient,
-        uint256 deadline,
-        bytes calldata signature
-    ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedExtension(extensionOut);
-
-        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
-
-        _swap(extensionIn, extensionOut, amount, recipient);
-    }
-
-    /// @inheritdoc ISwapFacility
     function swapInM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
         // NOTE: Amount and recipient validation is performed in Extensions.
         _revertIfNotApprovedExtension(extensionOut);
@@ -148,40 +112,6 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
         _swapOutM(extensionIn, amount, recipient);
     }
 
-    /// @inheritdoc ISwapFacility
-    function swapOutMWithPermit(
-        address extensionIn,
-        uint256 amount,
-        address recipient,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(msg.sender);
-
-        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
-
-        _swapOutM(extensionIn, amount, recipient);
-    }
-
-    /// @inheritdoc ISwapFacility
-    function swapOutMWithPermit(
-        address extensionIn,
-        uint256 amount,
-        address recipient,
-        uint256 deadline,
-        bytes calldata signature
-    ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(msg.sender);
-
-        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
-
-        _swapOutM(extensionIn, amount, recipient);
-    }
-
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc ISwapFacility
@@ -199,16 +129,13 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
-        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+        uint256 balanceBefore = _mBalanceOf(address(this));
 
-        address mToken_ = mToken;
-        uint256 balanceBefore = IERC20(mToken_).balanceOf(address(this));
-
-        IMExtension(extensionIn).unwrap(address(this), amount);
+        IMExtension(extensionIn).unwrap(msg.sender, amount);
 
         // NOTE: Calculate amount as $M Token balance difference
         //       to account for rounding errors.
-        amount = IERC20(mToken_).balanceOf(address(this)) - balanceBefore;
+        amount = _mBalanceOf(address(this)) - balanceBefore;
 
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
@@ -237,10 +164,24 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
      * @param  recipient   The address to receive $M tokens.
      */
     function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
-        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
-        IMExtension(extensionIn).unwrap(recipient, amount);
+        uint256 balanceBefore = _mBalanceOf(address(this));
+        IMExtension(extensionIn).unwrap(msg.sender, amount);
+
+        // NOTE: Calculate amount as $M Token balance difference
+        //       to account for rounding errors.
+        amount = _mBalanceOf(address(this)) - balanceBefore;
+        IERC20(mToken).transfer(recipient, amount);
 
         emit SwappedOutM(extensionIn, amount, recipient);
+    }
+
+    /**
+     * @dev    Returns the M Token balance of `account`.
+     * @param  account The account being queried.
+     * @return balance The M Token balance of the account.
+     */
+    function _mBalanceOf(address account) internal view returns (uint256) {
+        return IMTokenLike(mToken).balanceOf(account);
     }
 
     /* ============ Private View/Pure Functions ============ */

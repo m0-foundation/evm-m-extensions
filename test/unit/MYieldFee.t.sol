@@ -1264,11 +1264,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
         assertEq(mYieldFee.projectedTotalSupply(), 1_080);
 
-        vm.prank(alice);
-        IERC20(address(mYieldFee)).approve(address(swapFacility), 1_000);
-
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 1);
+        emit IERC20.Transfer(alice, address(0), 1);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mYieldFee), 1, alice);
@@ -1283,7 +1280,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.projectedTotalSupply(), 1_079);
 
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 499);
+        emit IERC20.Transfer(alice, address(0), 499);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mYieldFee), 499, alice);
@@ -1297,7 +1294,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 2);
 
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 500);
+        emit IERC20.Transfer(alice, address(0), 500);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mYieldFee), 500, alice);
@@ -1338,9 +1335,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         mToken.setBalanceOf(address(mYieldFee), balanceWithYield);
 
-        vm.prank(alice);
-        IERC20(address(mYieldFee)).approve(address(swapFacility), unwrapAmount);
-
         if (unwrapAmount == 0) {
             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
         } else if (unwrapAmount > balance) {
@@ -1349,7 +1343,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             );
         } else {
             vm.expectEmit();
-            emit IERC20.Transfer(address(swapFacility), address(0), unwrapAmount);
+            emit IERC20.Transfer(alice, address(0), unwrapAmount);
         }
 
         vm.prank(alice);

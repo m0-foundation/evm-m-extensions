@@ -70,7 +70,10 @@ contract SwapFacilityUnitTests is Test {
         vm.startPrank(alice);
         mToken.approve(address(swapFacility), amount);
         swapFacility.swapInM(address(extensionA), amount, alice);
-        extensionA.approve(address(swapFacility), amount);
+
+        assertEq(mToken.balanceOf(alice), 0);
+        assertEq(extensionA.balanceOf(alice), amount);
+        assertEq(extensionB.balanceOf(alice), 0);
 
         vm.expectEmit(true, true, true, true);
         emit ISwapFacility.Swapped(address(extensionA), address(extensionB), amount, alice);
@@ -124,7 +127,6 @@ contract SwapFacilityUnitTests is Test {
         swapFacility.grantRole(M_SWAPPER_ROLE, alice);
 
         vm.startPrank(alice);
-        mToken.approve(address(swapFacility), amount);
         swapFacility.swapInM(address(extensionA), amount, alice);
 
         assertEq(mToken.balanceOf(alice), 0);

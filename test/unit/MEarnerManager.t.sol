@@ -21,8 +21,6 @@ import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.s
 import { MEarnerManagerHarness } from "../harness/MEarnerManagerHarness.sol";
 import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
 
-import { console2 } from "../../lib/forge-std/src/Test.sol";
-
 contract MEarnerManagerUnitTests is BaseUnitTest {
     MEarnerManagerHarness public mEarnerManager;
 
@@ -611,24 +609,6 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         swapFacility.swapOutM(address(mEarnerManager), amount, alice);
     }
 
-    function test_unwrap_notWhitelistedRecipient() external {
-        uint256 amount = 1_000e6;
-        mToken.setBalanceOf(alice, amount);
-
-        mEarnerManager.setAccountOf(alice, 0, 0, true, 1_000);
-
-        vm.prank(alice);
-        swapFacility.swapInM(address(mEarnerManager), amount, alice);
-
-        vm.prank(alice);
-        IERC20(address(mEarnerManager)).approve(address(swapFacility), amount);
-
-        vm.expectRevert(abi.encodeWithSelector(IMEarnerManager.NotWhitelisted.selector, bob));
-
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mEarnerManager), amount, bob);
-    }
-
     function test_unwrap_insufficientAmount() external {
         mEarnerManager.setAccountOf(alice, 0, 0, true, 1_000);
 
@@ -668,11 +648,8 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mEarnerManager.balanceOf(alice), 1_000);
         assertEq(mEarnerManager.totalSupply(), 1_000);
 
-        vm.prank(alice);
-        IERC20(address(mEarnerManager)).approve(address(swapFacility), 1_000);
-
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 1);
+        emit IERC20.Transfer(alice, address(0), 1);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mEarnerManager), 1, alice);
@@ -682,7 +659,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(alice), 1);
 
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 499);
+        emit IERC20.Transfer(alice, address(0), 499);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mEarnerManager), 499, alice);
@@ -692,7 +669,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(alice), 500);
 
         vm.expectEmit();
-        emit IERC20.Transfer(address(swapFacility), address(0), 500);
+        emit IERC20.Transfer(alice, address(0), 500);
 
         vm.prank(alice);
         swapFacility.swapOutM(address(mEarnerManager), 500, alice);

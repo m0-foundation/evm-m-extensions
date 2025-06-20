@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { ISwapFacility } from "../../src/interfaces/ISwapFacility.sol";
+
 contract MockM {
     uint128 public currentIndex;
     uint32 public earnerRate;
@@ -197,7 +199,7 @@ contract MockMExtension is MockERC20 {
     }
 
     function unwrap(address recipient, uint256 amount) external {
-        _burn(msg.sender, amount);
-        mToken.transfer(recipient, amount);
+        _burn(ISwapFacility(swapFacility).msgSender(), amount);
+        mToken.transfer(swapFacility, amount);
     }
 }

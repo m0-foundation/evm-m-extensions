@@ -262,14 +262,10 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
     /**
      * @dev   Hook called before unwrapping M Extension token.
-     * @param account   The account from which M Extension token is burned.
-     * @param recipient The account receiving the withdrawn M.
+     * @param account The account from which M Extension token is burned.
      */
-    function _beforeUnwrap(address account, address recipient, uint256 /* amount */) internal view override {
-        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
-
-        _revertIfNotWhitelisted($, account);
-        _revertIfNotWhitelisted($, recipient);
+    function _beforeUnwrap(address account, uint256 /* amount */) internal view override {
+        _revertIfNotWhitelisted(_getMEarnerManagerStorageLocation(), account);
     }
 
     /**
