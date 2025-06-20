@@ -16,9 +16,9 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     function setUp() public override {
-        super.setUp();
-
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
+
+        super.setUp();
 
         _fundAccounts();
 
@@ -30,6 +30,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
                     NAME,
                     SYMBOL,
                     address(mToken),
+                    address(swapFacility),
                     admin,
                     earnerManager,
                     feeRecipient
@@ -75,22 +76,22 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
 
         // Wraps
         vm.prank(alice);
-        mToken.approve(address(mEarnerManager), amount);
+        mToken.approve(address(swapFacility), amount);
 
         vm.prank(alice);
-        mEarnerManager.wrap(alice, amount);
+        swapFacility.swapInM(address(mEarnerManager), amount, alice);
 
         vm.prank(bob);
-        mToken.approve(address(mEarnerManager), amount);
+        mToken.approve(address(swapFacility), amount);
 
         vm.prank(bob);
-        mEarnerManager.wrap(bob, amount);
+        swapFacility.swapInM(address(mEarnerManager), amount, bob);
 
         vm.prank(carol);
-        mToken.approve(address(mEarnerManager), amount);
+        mToken.approve(address(swapFacility), amount);
 
         vm.prank(carol);
-        mEarnerManager.wrap(carol, amount);
+        swapFacility.swapInM(address(mEarnerManager), amount, carol);
 
         // Check balances of MEarnerManager and users after wrapping
         assertEq(mEarnerManager.balanceOf(alice), amount);
@@ -166,15 +167,15 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
 
         // Mint tokens for Alice
         vm.prank(alice);
-        mToken.approve(address(mEarnerManager), amount);
+        mToken.approve(address(swapFacility), amount);
         vm.prank(alice);
-        mEarnerManager.wrap(alice, amount);
+        swapFacility.swapInM(address(mEarnerManager), amount, alice);
 
         // Mint tokens for Bob
         vm.prank(bob);
-        mToken.approve(address(mEarnerManager), amount);
+        mToken.approve(address(swapFacility), amount);
         vm.prank(bob);
-        mEarnerManager.wrap(bob, amount);
+        swapFacility.swapInM(address(mEarnerManager), amount, bob);
 
         vm.warp(vm.getBlockTimestamp() + 365 days);
 
