@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20 } from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {
     AccessControlUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
@@ -13,6 +14,9 @@ import { IMExtension } from "../interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
+import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
+import { IMExtension } from "./interfaces/IMExtension.sol";
+import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 
 /**
  * @title  Swap Facility
@@ -32,18 +36,22 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable registrar;
 
+    /// @inheritdoc ISwapFacility
+    address public immutable swapAdapter;
+
     /**
      * @notice Constructs SwapFacility Implementation contract
      * @dev    Sets immutable storage.
-     * @param  mToken_    The address of $M token.
-     * @param  registrar_ The address of Registrar.
+     * @param  mToken_      The address of $M token.
+     * @param  registrar_   The address of Registrar.
+     * @param  swapAdapter_ The address of Uniswap swap adapter.
      */
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address mToken_, address registrar_) {
+    constructor(address mToken_, address registrar_, address swapAdapter_) {
         _disableInitializers();
 
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
+        if ((swapAdapter = swapAdapter_) == address(0)) revert ZeroSwapAdapter();
     }
 
     /* ============ Initializer ============ */
@@ -65,6 +73,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         _revertIfNotApprovedExtension(extensionOut);
 
         _swap(extensionIn, extensionOut, amount, recipient);
+
+        emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
     /// @inheritdoc ISwapFacility
@@ -116,6 +126,76 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         _swapOutM(extensionIn, amount, recipient);
     }
 
+    function swapTokenIn(
+        address tokenIn,
+        uint256 amountIn,
+        address extensionOut,
+        uint256 minAmountOut,
+        address recipient,
+        bytes calldata path
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionOut);
+
+        // Transfer input token to SwapAdapter contract
+        IERC20(tokenIn).safeTransferFrom(msg.sender, swapAdapter, amountIn);
+
+        // Swap input token for base token in Uniswap pool
+        uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapIn(
+            tokenIn,
+            amountIn,
+            minAmountOut,
+            address(this),
+            path
+        );
+
+        address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
+        // If extensionOut is baseToken, transfer to the recipient directly
+        if (extensionOut == baseToken) {
+            IERC20(mToken).transfer(recipient, amountOut);
+        } else {
+            // Otherwise, swap the baseToken to extensionOut
+            _swap(baseToken, extensionOut, amountOut, recipient);
+        }
+
+        emit Swapped(tokenIn, extensionOut, amountOut, recipient);
+    }
+
+    function swapTokenOut(
+        address extensionIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 minAmountOut,
+        address recipient,
+        bytes calldata path
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+
+        address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
+        // If extensionIn is baseToken (wrapped $M), transfer it to SwapAdapter
+        if (extensionIn == baseToken) {
+            IERC20(extensionIn).transferFrom(msg.sender, swapAdapter, amountIn);
+        } else {
+            uint256 balanceBefore = IERC20(extensionIn).balanceOf(address(this));
+
+            // Otherwise, swap the extensionIn to baseToken
+            _swap(extensionIn, baseToken, amountIn, swapAdapter);
+
+            // Calculate amountIn as the difference in balance to account for rounding errors
+            amountIn = IERC20(baseToken).balanceOf(address(this)) - balanceBefore;
+        }
+
+        // Swap baseToken in Uniswap pool for output token
+        uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapOut(
+            tokenOut,
+            amountIn,
+            minAmountOut,
+            recipient,
+            path
+        );
+
+        emit Swapped(extensionIn, tokenOut, amountOut, recipient);
+    }
+
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc ISwapFacility
@@ -143,8 +223,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
 
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
-
-        emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
     /**

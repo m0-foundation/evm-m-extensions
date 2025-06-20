@@ -23,6 +23,9 @@ interface ISwapFacility {
     /// @notice Thrown in the constructor if Registrar is 0x0.
     error ZeroRegistrar();
 
+    /// @notice Thrown in the constructor if SwapAdapter is 0x0.
+    error ZeroSwapAdapter();
+
     /// @notice Thrown in `swap` and `swapM` functions if the extension is not TTG approved earner.
     error NotApprovedExtension(address extension);
 
@@ -99,6 +102,9 @@ interface ISwapFacility {
 
     /// @notice The address of the Registrar.
     function registrar() external view returns (address registrar);
+
+    /// @notice The address of the UniswapV3 Swap Adapter contract.
+    function swapAdapter() external view returns (address registrar);
 
     /**
      * @notice Returns the address that called `swap` or `swapM`
