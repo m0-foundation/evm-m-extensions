@@ -6,10 +6,6 @@ import {
     AccessControlUpgradeable
 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
-import {
-    Initializable
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
-
 import { IBlacklistable } from "../../interfaces/IBlacklistable.sol";
 
 abstract contract BlacklistableStorageLayout {
@@ -110,7 +106,8 @@ abstract contract Blacklistable is IBlacklistable, BlacklistableStorageLayout, A
      * @param account The account to unblacklist.
      */
     function _unblacklist(BlacklistableStorageStruct storage $, address account) internal {
-        if (!$.isBlacklisted[account]) revert AccountNotBlacklisted(account);
+        _revertIfNotBlacklisted($, account);
+
         $.isBlacklisted[account] = false;
 
         emit Unblacklisted(account, block.timestamp);
@@ -125,5 +122,14 @@ abstract contract Blacklistable is IBlacklistable, BlacklistableStorageLayout, A
      */
     function _revertIfBlacklisted(BlacklistableStorageStruct storage $, address account) internal view {
         if ($.isBlacklisted[account]) revert AccountBlacklisted(account);
+    }
+
+    /**
+     * @notice Internal function that reverts if an account is blacklisted.
+     * @param $ The storage location of the blacklistable contract.
+     * @param account The account to check.
+     */
+    function _revertIfNotBlacklisted(BlacklistableStorageStruct storage $, address account) internal view {
+        if (!$.isBlacklisted[account]) revert AccountNotBlacklisted(account);
     }
 }

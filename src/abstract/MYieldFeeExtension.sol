@@ -321,7 +321,7 @@ abstract contract MYieldFeeExtension is
 
     /// @inheritdoc IMYieldFeeExtension
     function totalAccruedYieldFee() public view returns (uint256) {
-        uint256 mBalance_ = IERC20(mToken()).balanceOf(address(this));
+        uint256 mBalance_ = _mBalanceOf(address(this));
         uint256 projectedTotalSupply_ = projectedTotalSupply();
 
         unchecked {
@@ -397,10 +397,6 @@ abstract contract MYieldFeeExtension is
      * @param amount  The present amount of tokens to burn.
      */
     function _burn(address account, uint256 amount) internal override {
-        uint256 balance_ = balanceOf(account);
-
-        _revertIfInsufficientBalance(account, balance_, amount);
-
         MYieldFeeExtensionStorageStruct storage $ = _getMYieldFeeExtensionStorageLocation();
 
         // Slightly overestimate the principal amount to be burned and use safe value to avoid underflow in unchecked block

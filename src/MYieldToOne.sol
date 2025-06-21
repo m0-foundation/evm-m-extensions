@@ -196,12 +196,9 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      */
     function _burn(address account, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
-        uint256 balance_ = $.balanceOf[account];
-
-        _revertIfInsufficientBalance(account, balance_, amount);
 
         unchecked {
-            $.balanceOf[account] = balance_ - amount;
+            $.balanceOf[account] -= amount;
             $.totalSupply -= amount;
         }
 
