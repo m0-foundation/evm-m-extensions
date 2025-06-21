@@ -13,34 +13,33 @@ import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 
+abstract contract SwapFacilityStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.SwapFacility
+    struct SwapFacilityStorageStruct {
+        address mToken;
+        address registrar;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.SwapFacility")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _SWAP_FACILITY_STORAGE_LOCATION =
+        0x2f6671d90ec6fb8a38d5fa4043e503b2789e716b6e5219d1b20da9c6434dde00;
+
+    function _getSwapFacilityStorageLocation() internal pure returns (SwapFacilityStorageStruct storage $) {
+        assembly {
+            $.slot := _SWAP_FACILITY_STORAGE_LOCATION
+        }
+    }
+}
+
 /**
  * @title  Swap Facility
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
+contract SwapFacility is ISwapFacility, SwapFacilityStorageLayout, AccessControlUpgradeable, Lock {
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
-
-    /// @inheritdoc ISwapFacility
-    address public immutable mToken;
-
-    /// @inheritdoc ISwapFacility
-    address public immutable registrar;
-
-    /**
-     * @notice Constructs SwapFacility Implementation contract
-     * @dev    Sets immutable storage.
-     * @param  mToken_    The address of $M token.
-     * @param  registrar_ The address of Registrar.
-     */
-    constructor(address mToken_, address registrar_) {
-        _disableInitializers();
-
-        if ((mToken = mToken_) == address(0)) revert ZeroMToken();
-        if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
-    }
 
     /* ============ Initializer ============ */
 
@@ -48,7 +47,12 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
      * @notice Initializes SwapFacility Proxy.
      * @param  admin Address of the SwapFacility admin.
      */
-    function initialize(address admin) external initializer {
+    function initialize(address mToken_, address registrar_, address admin) external initializer {
+        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
+
+        if (($.mToken = mToken_) == address(0)) revert ZeroMToken();
+        if (($.registrar = registrar_) == address(0)) revert ZeroRegistrar();
+
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
@@ -83,7 +87,7 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+        try IMTokenLike(mToken()).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
     }
@@ -98,7 +102,7 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+        try IMTokenLike(mToken()).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
     }
@@ -119,6 +123,16 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
         return _getLocker();
     }
 
+    /// @inheritdoc ISwapFacility
+    function mToken() public view returns (address) {
+        return _getSwapFacilityStorageLocation().mToken;
+    }
+
+    /// @inheritdoc ISwapFacility
+    function registrar() public view returns (address) {
+        return _getSwapFacilityStorageLocation().registrar;
+    }
+
     /* ============ Private Interactive Functions ============ */
 
     /**
@@ -137,7 +151,7 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
         //       to account for rounding errors.
         amount = _mBalanceOf(address(this)) - balanceBefore;
 
-        IERC20(mToken).approve(extensionOut, amount);
+        IERC20(mToken()).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit Swapped(extensionIn, extensionOut, amount, recipient);
@@ -150,8 +164,8 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swapInM(address extensionOut, uint256 amount, address recipient) private {
-        IERC20(mToken).transferFrom(msg.sender, address(this), amount);
-        IERC20(mToken).approve(extensionOut, amount);
+        IERC20(mToken()).transferFrom(msg.sender, address(this), amount);
+        IERC20(mToken()).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit SwappedInM(extensionOut, amount, recipient);
@@ -170,7 +184,7 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
         // NOTE: Calculate amount as $M Token balance difference
         //       to account for rounding errors.
         amount = _mBalanceOf(address(this)) - balanceBefore;
-        IERC20(mToken).transfer(recipient, amount);
+        IERC20(mToken()).transfer(recipient, amount);
 
         emit SwappedOutM(extensionIn, amount, recipient);
     }
@@ -181,7 +195,7 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
      * @return balance The M Token balance of the account.
      */
     function _mBalanceOf(address account) internal view returns (uint256) {
-        return IMTokenLike(mToken).balanceOf(account);
+        return IMTokenLike(mToken()).balanceOf(account);
     }
 
     /* ============ Private View/Pure Functions ============ */
@@ -208,8 +222,9 @@ contract SwapFacility is AccessControlUpgradeable, Lock, ISwapFacility {
      * @return True if the extension is an approved earner, false otherwise.
      */
     function _isApprovedEarner(address extension) private view returns (bool) {
+        address registrar_ = registrar();
         return
-            IRegistrarLike(registrar).get(EARNERS_LIST_IGNORED_KEY) != bytes32(0) ||
-            IRegistrarLike(registrar).listContains(EARNERS_LIST_NAME, extension);
+            IRegistrarLike(registrar_).get(EARNERS_LIST_IGNORED_KEY) != bytes32(0) ||
+            IRegistrarLike(registrar_).listContains(EARNERS_LIST_NAME, extension);
     }
 }

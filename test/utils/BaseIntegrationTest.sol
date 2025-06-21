@@ -5,7 +5,7 @@ pragma solidity 0.8.26;
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
-import { ERC1967Proxy } from "../../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
@@ -74,11 +74,9 @@ contract BaseIntegrationTest is Helpers, Test {
         accounts = [alice, bob, carol, charlie, david];
 
         swapFacility = SwapFacility(
-            address(
-                new ERC1967Proxy(
-                    address(new SwapFacility(address(mToken), address(registrar))),
-                    abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
-                )
+            Upgrades.deployUUPSProxy(
+                "SwapFacility.sol:SwapFacility",
+                abi.encodeWithSelector(SwapFacility.initialize.selector, address(mToken), address(registrar), admin)
             )
         );
 

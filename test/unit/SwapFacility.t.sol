@@ -3,7 +3,8 @@
 pragma solidity 0.8.26;
 
 import { Test } from "../../lib/forge-std/src/Test.sol";
-import { ERC1967Proxy } from "../../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+
+import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { ISwapFacility } from "../../src/interfaces/ISwapFacility.sol";
@@ -30,12 +31,12 @@ contract SwapFacilityUnitTests is Test {
         mToken = new MockM();
         registrar = new MockRegistrar();
 
-        address implementation = address(new SwapFacility(address(mToken), address(registrar)));
-        ERC1967Proxy proxy = new ERC1967Proxy(
-            implementation,
-            abi.encodeWithSelector(SwapFacility.initialize.selector, owner)
+        swapFacility = SwapFacility(
+            Upgrades.deployUUPSProxy(
+                "SwapFacility.sol:SwapFacility",
+                abi.encodeWithSelector(SwapFacility.initialize.selector, address(mToken), address(registrar), owner)
+            )
         );
-        swapFacility = SwapFacility(address(proxy));
 
         extensionA = new MockMExtension(address(mToken), address(swapFacility));
         extensionB = new MockMExtension(address(mToken), address(swapFacility));
@@ -53,14 +54,30 @@ contract SwapFacilityUnitTests is Test {
         assertTrue(swapFacility.hasRole(swapFacility.DEFAULT_ADMIN_ROLE(), owner));
     }
 
-    function test_constructor_zeroMToken() external {
+    function test_initialize_zeroMToken() external {
+        address implementation = address(new SwapFacility());
+
         vm.expectRevert(ISwapFacility.ZeroMToken.selector);
-        new SwapFacility(address(0), address(registrar));
+
+        SwapFacility(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(SwapFacility.initialize.selector, address(0), address(registrar), owner)
+            )
+        );
     }
 
-    function test_constructor_zeroRegistrar() external {
+    function test_initialize_zeroRegistrar() external {
+        address implementation = address(new SwapFacility());
+
         vm.expectRevert(ISwapFacility.ZeroRegistrar.selector);
-        new SwapFacility(address(mToken), address(0));
+
+        SwapFacility(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(SwapFacility.initialize.selector, address(mToken), address(0), owner)
+            )
+        );
     }
 
     function test_swap() external {
