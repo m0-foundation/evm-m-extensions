@@ -6,26 +6,26 @@ import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-u
 
 import { IContinuousIndexing } from "../../../../src/projects/yieldToAllWithFee/interfaces/IContinuousIndexing.sol";
 import { IRateOracle } from "../../../../src/projects/yieldToAllWithFee/interfaces/IRateOracle.sol";
-import { ISpokeMYieldFee } from "../../../../src/projects/yieldToAllWithFee/interfaces/ISpokeMYieldFee.sol";
+import { IMSpokeYieldFee } from "../../../../src/projects/yieldToAllWithFee/interfaces/IMSpokeYieldFee.sol";
 
-import { SpokeMYieldFeeHarness } from "../../../harness/SpokeMYieldFeeHarness.sol";
+import { MSpokeYieldFeeHarness } from "../../../harness/MSpokeYieldFeeHarness.sol";
 import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
 
-contract SpokeMYieldFeeUnitTests is BaseUnitTest {
+contract MSpokeYieldFeeUnitTests is BaseUnitTest {
     bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
 
-    SpokeMYieldFeeHarness public mYieldFee;
+    MSpokeYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
         super.setUp();
 
-        mYieldFee = SpokeMYieldFeeHarness(
+        mYieldFee = MSpokeYieldFeeHarness(
             Upgrades.deployUUPSProxy(
-                "SpokeMYieldFeeHarness.sol:SpokeMYieldFeeHarness",
+                "MSpokeYieldFeeHarness.sol:MSpokeYieldFeeHarness",
                 abi.encodeWithSelector(
-                    SpokeMYieldFeeHarness.initialize.selector,
-                    "MYieldFee",
-                    "MYF",
+                    MSpokeYieldFeeHarness.initialize.selector,
+                    "MSpokeYieldFee",
+                    "MSYF",
                     address(mToken),
                     address(swapFacility),
                     YIELD_FEE_RATE,
@@ -52,16 +52,16 @@ contract SpokeMYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroRateOracle() external {
-        address implementation = address(new SpokeMYieldFeeHarness());
+        address implementation = address(new MSpokeYieldFeeHarness());
 
-        vm.expectRevert(ISpokeMYieldFee.ZeroRateOracle.selector);
-        SpokeMYieldFeeHarness(
+        vm.expectRevert(IMSpokeYieldFee.ZeroRateOracle.selector);
+        MSpokeYieldFeeHarness(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
                 abi.encodeWithSelector(
-                    SpokeMYieldFeeHarness.initialize.selector,
-                    "MYieldFee",
-                    "MYF",
+                    MSpokeYieldFeeHarness.initialize.selector,
+                    "MSpokeYieldFee",
+                    "MSYF",
                     address(mToken),
                     address(swapFacility),
                     YIELD_FEE_RATE,

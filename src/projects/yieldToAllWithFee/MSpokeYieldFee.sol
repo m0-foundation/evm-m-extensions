@@ -2,25 +2,25 @@
 
 pragma solidity 0.8.26;
 
-import { MYieldFeeExtension } from "./MYieldFeeExtension.sol";
+import { MYieldFee } from "./MYieldFee.sol";
 
 import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 import { IRateOracle } from "./interfaces/IRateOracle.sol";
-import { ISpokeMYieldFee } from "./interfaces/ISpokeMYieldFee.sol";
+import { IMSpokeYieldFee } from "./interfaces/IMSpokeYieldFee.sol";
 
-abstract contract SpokeMYieldFeeStorageLayout {
+abstract contract MSpokeYieldFeeStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.SpokeMYieldFee
-    struct SpokeMYieldFeeStorageStruct {
+    struct MSpokeYieldFeeStorageStruct {
         address rateOracle;
     }
 
-    // keccak256(abi.encode(uint256(keccak256("M0.storage.SpokeMYieldFee")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant _SPOKE_M_YIELD_FEE_STORAGE_LOCATION =
-        0x54c2296372ea14358c5df284dc1e6496c510aae813d2d8682287e15e2b8a6900;
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.MSpokeYieldFee")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _M_SPOKE_YIELD_FEE_STORAGE_LOCATION =
+        0x9d728c135b5b2cd0ace61885d69c4f72215f10f82e77822fb7c6bf472237dd00;
 
-    function _getSpokeMYieldFeeStorageLocation() internal pure returns (SpokeMYieldFeeStorageStruct storage $) {
+    function _getMSpokeYieldFeeStorageLocation() internal pure returns (MSpokeYieldFeeStorageStruct storage $) {
         assembly {
-            $.slot := _SPOKE_M_YIELD_FEE_STORAGE_LOCATION
+            $.slot := _M_SPOKE_YIELD_FEE_STORAGE_LOCATION
         }
     }
 }
@@ -34,7 +34,7 @@ abstract contract SpokeMYieldFeeStorageLayout {
  *         Check MYieldFee for the Mainnet version.
  * @author M0 Labs
  */
-contract SpokeMYieldFee is ISpokeMYieldFee, SpokeMYieldFeeStorageLayout, MYieldFeeExtension {
+contract MSpokeYieldFee is IMSpokeYieldFee, MSpokeYieldFeeStorageLayout, MYieldFee {
     /* ============ Initializer ============ */
 
     /**
@@ -63,9 +63,9 @@ contract SpokeMYieldFee is ISpokeMYieldFee, SpokeMYieldFeeStorageLayout, MYieldF
         address claimRecipientManager,
         address rateOracle_
     ) public virtual initializer {
-        if ((_getSpokeMYieldFeeStorageLocation().rateOracle = rateOracle_) == address(0)) revert ZeroRateOracle();
+        if ((_getMSpokeYieldFeeStorageLocation().rateOracle = rateOracle_) == address(0)) revert ZeroRateOracle();
 
-        __MYieldFeeExtension_init(
+        super.initialize(
             name,
             symbol,
             mToken,
@@ -80,9 +80,9 @@ contract SpokeMYieldFee is ISpokeMYieldFee, SpokeMYieldFeeStorageLayout, MYieldF
 
     /* ============ View/Pure Functions ============ */
 
-    /// @inheritdoc ISpokeMYieldFee
+    /// @inheritdoc IMSpokeYieldFee
     function rateOracle() public view returns (address) {
-        return _getSpokeMYieldFeeStorageLocation().rateOracle;
+        return _getMSpokeYieldFeeStorageLocation().rateOracle;
     }
 
     /* ============ Internal View/Pure Functions ============ */

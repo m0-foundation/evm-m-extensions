@@ -3,10 +3,10 @@
 pragma solidity 0.8.26;
 
 /**
- * @title  Spoke M Yield Fee interface.
+ * @title  M Spoke Yield Fee interface.
  * @author M0 Labs
  */
-interface ISpokeMYieldFee {
+interface IMSpokeYieldFee {
     /* ============ Custom Errors ============ */
 
     /// @notice Emitted in constructor if Rate Oracle is 0x0.

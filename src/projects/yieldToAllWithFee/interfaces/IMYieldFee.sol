@@ -3,10 +3,10 @@
 pragma solidity 0.8.26;
 
 /**
- * @title  Interface for Yield Fee M extension.
+ * @title  Interface for Yield Fee M.
  * @author M0 Labs
  */
-interface IMYieldFeeExtension {
+interface IMYieldFee {
     /* ============ Events ============ */
 
     /**

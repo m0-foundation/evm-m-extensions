@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { SpokeMYieldFee } from "../../src/projects/yieldToAllWithFee/SpokeMYieldFee.sol";
+import { MSpokeYieldFee } from "../../src/projects/yieldToAllWithFee/MSpokeYieldFee.sol";
 
-contract SpokeMYieldFeeHarness is SpokeMYieldFee {
+contract MSpokeYieldFeeHarness is MSpokeYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
