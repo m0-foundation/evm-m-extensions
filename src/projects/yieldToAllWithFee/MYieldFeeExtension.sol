@@ -4,21 +4,22 @@ pragma solidity 0.8.26;
 
 import {
     AccessControlUpgradeable
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
-import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
-import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
-import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
+import { ContinuousIndexingMath } from "../../../lib/common/src/libs/ContinuousIndexingMath.sol";
+import { UIntMath } from "../../../lib/common/src/libs/UIntMath.sol";
 
-import { IContinuousIndexing } from "../interfaces/IContinuousIndexing.sol";
-import { IMExtension } from "../interfaces/IMExtension.sol";
-import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
-import { IMYieldFeeExtension } from "../interfaces/IMYieldFeeExtension.sol";
+import { IndexingMath } from "../../libs/IndexingMath.sol";
 
-import { IndexingMath } from "../lib/IndexingMath.sol";
+import { IMExtension } from "../../interfaces/IMExtension.sol";
+import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 
-import { MExtension } from "./MExtension.sol";
+import { IMYieldFeeExtension } from "./interfaces/IMYieldFeeExtension.sol";
+import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
+
+import { MExtension } from "../../MExtension.sol";
 
 abstract contract MYieldFeeExtensionStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldFeeExtension

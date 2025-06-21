@@ -6,7 +6,7 @@ import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrade
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldFee } from "../../src/MYieldFee.sol";
+import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 

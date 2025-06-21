@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
+import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
-import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
-import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
+import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
+import { IMYieldToOne } from "./IMYieldToOne.sol";
 
-import { Blacklistable } from "./abstract/components/Blacklistable.sol";
-import { MExtension } from "./abstract/MExtension.sol";
+import { Blacklistable } from "../../components/Blacklistable.sol";
+import { MExtension } from "../../MExtension.sol";
 
 abstract contract MYieldToOneStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldToOne

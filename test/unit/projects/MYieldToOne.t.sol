@@ -4,22 +4,22 @@ pragma solidity 0.8.26;
 
 import {
     IAccessControl
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MockM } from "../utils/Mocks.sol";
+import { MockM } from "../../utils/Mocks.sol";
 
-import { MYieldToOne } from "../../src/MYieldToOne.sol";
+import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
 
-import { IBlacklistable } from "../../src/interfaces/IBlacklistable.sol";
-import { IMYieldToOne } from "../../src/interfaces/IMYieldToOne.sol";
-import { IMExtension } from "../../src/interfaces/IMExtension.sol";
+import { IBlacklistable } from "../../../src/components/IBlacklistable.sol";
+import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
+import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
 
-import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
-import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
+import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
+import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
 contract MYieldToOneUnitTests is BaseUnitTest {
     // Roles

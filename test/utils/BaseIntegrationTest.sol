@@ -9,12 +9,12 @@ import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrade
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
-import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
+import { IRegistrarLike } from "../../src/swap/interfaces/IRegistrarLike.sol";
 
-import { MYieldToOne } from "../../src/MYieldToOne.sol";
-import { MYieldFee } from "../../src/MYieldFee.sol";
-import { MEarnerManager } from "../../src/MEarnerManager.sol";
-import { SwapFacility } from "../../src/SwapFacility.sol";
+import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
+import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
+import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
 import { Helpers } from "./Helpers.sol";
 

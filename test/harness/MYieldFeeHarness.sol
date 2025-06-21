@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { MYieldFee } from "../../src/MYieldFee.sol";
+import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
 contract MYieldFeeHarness is MYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor

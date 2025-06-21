@@ -2,16 +2,17 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
+import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import {
     AccessControlUpgradeable
-} from "../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
-import { Lock } from "../lib/universal-router/contracts/base/Lock.sol";
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import { Lock } from "../../lib/universal-router/contracts/base/Lock.sol";
+
+import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
+import { IMExtension } from "../interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
-import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
-import { IMExtension } from "./interfaces/IMExtension.sol";
 
 abstract contract SwapFacilityStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.SwapFacility

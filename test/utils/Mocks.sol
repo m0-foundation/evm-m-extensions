@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { ISwapFacility } from "../../src/interfaces/ISwapFacility.sol";
+import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 contract MockM {
     uint128 public currentIndex;

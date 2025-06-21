@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Template to kickstart a Foundry project",
   "main": "index.js",
-  "author": "M^0 Labs <contact@m0.xyz>",
+  "author": "M0 Labs <contact@m0.xyz>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MZero-Labs/foundry-template.git"

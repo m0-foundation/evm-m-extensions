@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { Blacklistable } from "../../src/abstract/components/Blacklistable.sol";
+import { Blacklistable } from "../../src/components/Blacklistable.sol";
 
 contract BlacklistableHarness is Blacklistable {
     /// @custom:oz-upgrades-unsafe-allow constructor

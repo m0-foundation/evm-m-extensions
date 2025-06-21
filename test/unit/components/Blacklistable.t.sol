@@ -8,7 +8,7 @@ import {
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IBlacklistable } from "../../../src/interfaces/IBlacklistable.sol";
+import { IBlacklistable } from "../../../src/components/IBlacklistable.sol";
 
 import { BlacklistableHarness } from "../../harness/BlacklistableHarness.sol";
 

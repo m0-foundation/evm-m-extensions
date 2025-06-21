@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { MYieldFeeExtension } from "./abstract/MYieldFeeExtension.sol";
+import { MYieldFeeExtension } from "./MYieldFeeExtension.sol";
 
 import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 import { IRateOracle } from "./interfaces/IRateOracle.sol";

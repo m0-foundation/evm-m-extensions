@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.26;
 
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IContinuousIndexing } from "../../src/interfaces/IContinuousIndexing.sol";
-import { IRateOracle } from "../../src/interfaces/IRateOracle.sol";
-import { ISpokeMYieldFee } from "../../src/interfaces/ISpokeMYieldFee.sol";
+import { IContinuousIndexing } from "../../../../src/projects/yieldToAllWithFee/interfaces/IContinuousIndexing.sol";
+import { IRateOracle } from "../../../../src/projects/yieldToAllWithFee/interfaces/IRateOracle.sol";
+import { ISpokeMYieldFee } from "../../../../src/projects/yieldToAllWithFee/interfaces/ISpokeMYieldFee.sol";
 
-import { SpokeMYieldFeeHarness } from "../harness/SpokeMYieldFeeHarness.sol";
-import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
+import { SpokeMYieldFeeHarness } from "../../../harness/SpokeMYieldFeeHarness.sol";
+import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
 
 contract SpokeMYieldFeeUnitTests is BaseUnitTest {
     bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");

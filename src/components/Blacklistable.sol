@@ -6,7 +6,7 @@ import {
     AccessControlUpgradeable
 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
-import { IBlacklistable } from "../../interfaces/IBlacklistable.sol";
+import { IBlacklistable } from "./IBlacklistable.sol";
 
 abstract contract BlacklistableStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.Blacklistable

@@ -4,22 +4,18 @@ pragma solidity 0.8.26;
 
 import {
     IAccessControl
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
-import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
+import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
+import { IMEarnerManager } from "../../../src/projects/earnerManager/IMEarnerManager.sol";
 
-import { IMExtension } from "../../src/interfaces/IMExtension.sol";
-import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
-import { IMEarnerManager } from "../../src/interfaces/IMEarnerManager.sol";
+import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
-import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
-
-import { MEarnerManagerHarness } from "../harness/MEarnerManagerHarness.sol";
-import { BaseUnitTest } from "../utils/BaseUnitTest.sol";
+import { MEarnerManagerHarness } from "../../harness/MEarnerManagerHarness.sol";
+import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
 contract MEarnerManagerUnitTests is BaseUnitTest {
     MEarnerManagerHarness public mEarnerManager;

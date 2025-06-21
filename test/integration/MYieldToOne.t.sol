@@ -6,7 +6,7 @@ import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.s
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldToOne } from "../../src/MYieldToOne.sol";
+import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 

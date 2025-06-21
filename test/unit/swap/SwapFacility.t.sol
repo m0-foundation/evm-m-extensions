@@ -2,16 +2,15 @@
 
 pragma solidity 0.8.26;
 
-import { Test } from "../../lib/forge-std/src/Test.sol";
+import { Test } from "../../../lib/forge-std/src/Test.sol";
 
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IMExtension } from "../../src/interfaces/IMExtension.sol";
-import { ISwapFacility } from "../../src/interfaces/ISwapFacility.sol";
-import { IRegistrarLike } from "../../src/interfaces/IRegistrarLike.sol";
-import { SwapFacility } from "../../src/SwapFacility.sol";
+import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
-import { MockM, MockMExtension, MockRegistrar } from "../utils/Mocks.sol";
+import { SwapFacility } from "../../../src/swap/SwapFacility.sol";
+
+import { MockM, MockMExtension, MockRegistrar } from "../../utils/Mocks.sol";
 
 contract SwapFacilityUnitTests is Test {
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");

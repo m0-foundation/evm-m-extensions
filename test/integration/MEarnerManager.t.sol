@@ -4,9 +4,7 @@ pragma solidity 0.8.26;
 
 import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
-
-import { MEarnerManager } from "../../src/MEarnerManager.sol";
+import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 

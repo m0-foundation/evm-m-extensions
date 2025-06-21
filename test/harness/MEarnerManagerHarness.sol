@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { MEarnerManager } from "../../src/MEarnerManager.sol";
+import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 
 contract MEarnerManagerHarness is MEarnerManager {
     /// @custom:oz-upgrades-unsafe-allow constructor

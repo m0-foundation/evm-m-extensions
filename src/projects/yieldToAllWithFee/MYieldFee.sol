@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { MYieldFeeExtension } from "./abstract/MYieldFeeExtension.sol";
+import { MYieldFeeExtension } from "./MYieldFeeExtension.sol";
 
-import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
+import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 
 /**
  * @title   MYieldFee

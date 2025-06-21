@@ -6,10 +6,9 @@ import { Test } from "../../lib/forge-std/src/Test.sol";
 
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
-import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
 import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { SwapFacility } from "../../src/SwapFacility.sol";
+import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
 import { MockM, MockRateOracle, MockRegistrar } from "../utils/Mocks.sol";
 
