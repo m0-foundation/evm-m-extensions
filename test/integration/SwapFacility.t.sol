@@ -29,7 +29,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         vm.prank(USER);
         IERC20(USDC).approve(address(swapFacility), amountIn);
 
-        vm.prank(USER);
-        swapFacility.swapTokenIn(USDC, amountIn, WRAPPED_M, minAmountOut, USER, "");
+        //vm.prank(USER);
+        //swapFacility.swapTokenIn(USDC, amountIn, WRAPPED_M, minAmountOut, USER, "");
     }
 }

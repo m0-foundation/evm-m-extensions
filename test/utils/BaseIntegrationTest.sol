@@ -44,7 +44,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address constant UNISWAP_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
