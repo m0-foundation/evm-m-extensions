@@ -31,9 +31,9 @@ contract SwapFacilityUnitTests is Test {
         registrar = new MockRegistrar();
 
         swapFacility = SwapFacility(
-            Upgrades.deployUUPSProxy(
-                "SwapFacility.sol:SwapFacility",
-                abi.encodeWithSelector(SwapFacility.initialize.selector, address(mToken), address(registrar), owner)
+            UnsafeUpgrades.deployUUPSProxy(
+                address(new SwapFacility(address(mToken), address(registrar))),
+                abi.encodeWithSelector(SwapFacility.initialize.selector, owner)
             )
         );
 
@@ -53,30 +53,14 @@ contract SwapFacilityUnitTests is Test {
         assertTrue(swapFacility.hasRole(swapFacility.DEFAULT_ADMIN_ROLE(), owner));
     }
 
-    function test_initialize_zeroMToken() external {
-        address implementation = address(new SwapFacility());
-
+    function test_constructor_zeroMToken() external {
         vm.expectRevert(ISwapFacility.ZeroMToken.selector);
-
-        SwapFacility(
-            UnsafeUpgrades.deployUUPSProxy(
-                implementation,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, address(0), address(registrar), owner)
-            )
-        );
+        new SwapFacility(address(0), address(registrar));
     }
 
-    function test_initialize_zeroRegistrar() external {
-        address implementation = address(new SwapFacility());
-
+    function test_constructor_zeroRegistrar() external {
         vm.expectRevert(ISwapFacility.ZeroRegistrar.selector);
-
-        SwapFacility(
-            UnsafeUpgrades.deployUUPSProxy(
-                implementation,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, address(mToken), address(0), owner)
-            )
-        );
+        new SwapFacility(address(mToken), address(0));
     }
 
     function test_swap() external {
