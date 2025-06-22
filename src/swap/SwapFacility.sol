@@ -151,7 +151,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
         // If extensionOut is baseToken, transfer to the recipient directly
         if (extensionOut == baseToken) {
-            IERC20(mToken).transfer(recipient, amountOut);
+            IERC20(extensionOut).transfer(recipient, amountOut);
         } else {
             // Otherwise, swap the baseToken to extensionOut
             _swap(baseToken, extensionOut, amountOut, recipient);

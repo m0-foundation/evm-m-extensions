@@ -22,14 +22,21 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         super.setUp();
     }
 
-    function test_swapTokenIn_USDC_to_WrappedM() public {
+    function test_swapTokenIn_USDC_to_wrappedM() public {
         uint256 amountIn = 1_000_000;
-        uint256 minAmountOut = 0;
+        uint256 minAmountOut = 997_000;
 
-        vm.prank(USER);
+        uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(USER);
+        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
+
+        vm.startPrank(USER);
         IERC20(USDC).approve(address(swapFacility), amountIn);
+        swapFacility.swapTokenIn(USDC, amountIn, WRAPPED_M, minAmountOut, USER, "");
 
-        //vm.prank(USER);
-        //swapFacility.swapTokenIn(USDC, amountIn, WRAPPED_M, minAmountOut, USER, "");
+        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
+        uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
+
+        assertEq(usdcBalanceAfter, usdcBalanceBefore - amountIn);
+        assertApproxEqAbs(wrappedMBalanceAfter, wrappedMBalanceBefore + amountIn, 1000);
     }
 }
