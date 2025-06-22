@@ -49,7 +49,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param mToken                 The address of the M Token.
      * @param swapFacility           The address of the Swap Facility.
      * @param yieldRecipient_        The address of an yield destination.
-     * @param defaultAdmin           The address of a default admin.
+     * @param admin           The address of a admin.
      * @param blacklistManager       The address of a blacklist manager.
      * @param yieldRecipientManager  The address of a yield recipient setter.
      */
@@ -59,19 +59,19 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         address mToken,
         address swapFacility,
         address yieldRecipient_,
-        address defaultAdmin,
+        address admin,
         address blacklistManager,
         address yieldRecipientManager
     ) public initializer {
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
-        if (defaultAdmin == address(0)) revert ZeroDefaultAdmin();
+        if (admin == address(0)) revert ZeroAdmin();
 
         __MExtension_init(name, symbol, mToken, swapFacility);
         __Blacklistable_init(blacklistManager);
 
         _setYieldRecipient(yieldRecipient_);
 
-        _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager);
     }
 

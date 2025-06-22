@@ -3,7 +3,7 @@
 pragma solidity 0.8.26;
 
 /**
- * @title  Interface for Yield Fee M.
+ * @title  Interface for M Yield Fee.
  * @author M0 Labs
  */
 interface IMYieldFee {

@@ -29,11 +29,11 @@ interface IMYieldToOne {
     /// @notice Emitted in constructor if Yield Recipient is 0x0.
     error ZeroYieldRecipient();
 
-    /// @notice Emitted if no recipient manager is set.
+    /// @notice Emitted in constructor if Yield Recipient Manager is 0x0.
     error ZeroYieldRecipientManager();
 
-    /// @notice Emitted if no default admin is set.
-    error ZeroDefaultAdmin();
+    /// @notice Emitted in constructor if Admin is 0x0.
+    error ZeroAdmin();
 
     /* ============ Interactive Functions ============ */
 

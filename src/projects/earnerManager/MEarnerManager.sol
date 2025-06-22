@@ -40,7 +40,7 @@ abstract contract MEarnerManagerStorageLayout {
         uint256 totalSupply;
         // Slot 3
         uint112 totalPrincipal;
-        // Slot 5
+        // Slot 4
         mapping(address account => Account) accounts;
     }
 
@@ -136,7 +136,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
 
-        // Emit the appropriate `YieldClaimed` and `Transfer` events
+        // Emit the appropriate `YieldClaimed` and `Transfer` events.
         emit YieldClaimed(account, yieldNetOfFee);
         emit Transfer(address(0), account, yieldWithFee);
 
@@ -150,11 +150,11 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
         address feeRecipient_ = $.feeRecipient;
 
-        // Emit the appropriate `FeeClaimed` and `Transfer` events
+        // Emit the appropriate `FeeClaimed` and `Transfer` events.
         emit FeeClaimed(account, feeRecipient_, fee);
         emit Transfer(account, feeRecipient_, fee);
 
-        // Transfer fees to fee recipient
+        // Transfer fee to the fee recipient.
         _update(account, feeRecipient_, fee);
     }
 
@@ -172,7 +172,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         if (feeRate_ == 0 || yieldWithFee == 0) return (yieldWithFee, 0, yieldWithFee);
 
         unchecked {
-            fee = (feeRate_ * yieldWithFee) / ONE_HUNDRED_PERCENT;
+            fee = (yieldWithFee * feeRate_) / ONE_HUNDRED_PERCENT;
             yieldNetOfFee = yieldWithFee - fee;
         }
     }
@@ -297,8 +297,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         if (feeRate > ONE_HUNDRED_PERCENT) revert InvalidFeeRate();
         // if (status == false && feeRate != 0) revert InvalidFeeRate();
 
-        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
-        Account storage accountInfo_ = $.accounts[account];
+        Account storage accountInfo_ = _getMEarnerManagerStorageLocation().accounts[account];
         bool isWhitelisted_ = accountInfo_.isWhitelisted;
 
         // No change, no-op action
@@ -321,9 +320,9 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
         if (!status) {
             // Remove whitelisted account info.
-            $.accounts[account].isWhitelisted = false;
-            // fee recipient will receive all yield from such accounts.
-            $.accounts[account].feeRate = ONE_HUNDRED_PERCENT;
+            accountInfo_.isWhitelisted = false;
+            // fee recipient will receive all yield from such 'un-whitelisted' accounts.
+            accountInfo_.feeRate = ONE_HUNDRED_PERCENT;
         } else {
             // Change fee rate for the whitelisted account.
             accountInfo_.feeRate = feeRate;
@@ -359,6 +358,8 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     function _mint(address account, uint256 amount) internal override {
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
         Account storage accountInfo_ = $.accounts[account];
+
+        // Slightly underestimate the principal amount to be minted, round down in favor of protocol.
         uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex());
 
         // NOTE: Can be `unchecked` because the max amount of $M is never greater than `type(uint240).max`.
@@ -384,7 +385,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
         Account storage accountInfo_ = $.accounts[account];
 
-        // Slightly overestimate the principal amount to be burned and use safe value to avoid underflow in unchecked block
+        // Slightly overestimate the principal amount to be burned and use safe value to avoid underflow in the unchecked block.
         uint112 fromPrincipal_ = accountInfo_.principal;
         uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
 
@@ -409,21 +410,21 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      */
     function _update(address sender, address recipient, uint256 amount) internal override {
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
-        Account storage senderAccountInfo_ = $.accounts[sender];
-        Account storage recipientAccountInfo_ = $.accounts[recipient];
+        Account storage senderAccount_ = $.accounts[sender];
+        Account storage recipientAccount_ = $.accounts[recipient];
 
         // Slightly overestimate the principal amount to be moved on transfer
-        uint112 fromPrincipal_ = senderAccountInfo_.principal;
+        uint112 fromPrincipal_ = senderAccount_.principal;
         uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
 
-        // NOTE: Can be `unchecked` because we check for insufficient sender balance above.
+        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used in MExtension.
         //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
         unchecked {
-            senderAccountInfo_.balance -= amount;
-            recipientAccountInfo_.balance += amount;
+            senderAccount_.balance -= amount;
+            recipientAccount_.balance += amount;
 
-            senderAccountInfo_.principal = fromPrincipal_ - principal_;
-            recipientAccountInfo_.principal += principal_;
+            senderAccount_.principal = fromPrincipal_ - principal_;
+            recipientAccount_.principal += principal_;
         }
     }
 

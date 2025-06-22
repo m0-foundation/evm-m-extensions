@@ -115,7 +115,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     function test_initialize_zeroDefaultAdmin() external {
         address implementation = address(new MYieldToOne());
 
-        vm.expectRevert(IMYieldToOne.ZeroDefaultAdmin.selector);
+        vm.expectRevert(IMYieldToOne.ZeroAdmin.selector);
         MYieldToOne(
             UnsafeUpgrades.deployUUPSProxy(
                 implementation,
