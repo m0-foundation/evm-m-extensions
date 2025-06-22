@@ -17,9 +17,9 @@ interface IMYieldToOne {
 
     /**
      * @notice Emitted when the yield recipient is set.
-     * @param  newRecipient The address of the new yield recipient.
+     * @param  yieldRecipient The address of the new yield recipient.
      */
-    event YieldRecipientSet(address indexed newRecipient);
+    event YieldRecipientSet(address indexed yieldRecipient);
 
     /* ============ Custom Errors ============ */
 
@@ -43,11 +43,11 @@ interface IMYieldToOne {
     /**
      * @notice Sets the yield recipient.
      * @dev    MUST only be callable by the YIELD_RECIPIENT_MANAGER_ROLE.
-     * @dev    SHOULD revert if account is 0x0.
-     * @dev    SHOULD return early if the account is already the yield recipient.
-     * @param  account The address of the new yield recipient.
+     * @dev    SHOULD revert if `yieldRecipient` is 0x0.
+     * @dev    SHOULD return early if the `yieldRecipient` is already the actual yield recipient.
+     * @param  yieldRecipient The address of the new yield recipient.
      */
-    function setYieldRecipient(address account) external;
+    function setYieldRecipient(address yieldRecipient) external;
 
     /* ============ View/Pure Functions ============ */
 

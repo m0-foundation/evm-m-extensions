@@ -361,7 +361,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         Account storage accountInfo_ = $.accounts[account];
         uint112 principal_ = IndexingMath.getPrincipalAmountRoundedDown(amount, currentIndex());
 
-        // NOTE: Can be `unchecked` because the max amount of  M is never greater than `type(uint240).max`.
+        // NOTE: Can be `unchecked` because the max amount of $M is never greater than `type(uint240).max`.
         //       Can be `unchecked` because UIntMath.safe112 is used for principal addition safety for `principal[account]`
         unchecked {
             accountInfo_.balance += amount;

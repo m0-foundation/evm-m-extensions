@@ -33,10 +33,10 @@ interface IMEarnerManager {
     event AccountInfoSet(address indexed account, bool status, uint16 feeRate);
 
     /**
-     * @notice Emitted when the yield recipient is set.
-     * @param  newRecipient The address of the new yield recipient.
+     * @notice Emitted when the fee recipient is set.
+     * @param  feeRecipient The address of the new fee recipient.
      */
-    event FeeRecipientSet(address indexed newRecipient);
+    event FeeRecipientSet(address indexed feeRecipient);
 
     /* ============ Custom Errors ============ */
 
@@ -102,11 +102,11 @@ interface IMEarnerManager {
     /**
      * @notice Sets the yield fee recipient.
      * @dev    MUST only be callable by the EARNER_MANAGER_ROLE.
-     * @dev    SHOULD revert if account is 0x0.
-     * @dev    SHOULD return early if the account is already the fee recipient.
-     * @param  account The address of the new yield fee recipient.
+     * @dev    SHOULD revert if `feeRecipient` is 0x0.
+     * @dev    SHOULD return early if `feeRecipient` is already the fee recipient.
+     * @param  feeRecipient The address of the new fee recipient.
      */
-    function setFeeRecipient(address account) external;
+    function setFeeRecipient(address feeRecipient) external;
 
     /* ============ View/Pure Functions ============ */
 

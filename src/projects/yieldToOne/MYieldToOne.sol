@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
-import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 import { IMYieldToOne } from "./IMYieldToOne.sol";
 
 import { Blacklistable } from "../../components/Blacklistable.sol";
@@ -13,9 +12,9 @@ import { MExtension } from "../../MExtension.sol";
 abstract contract MYieldToOneStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldToOne
     struct MYieldToOneStorageStruct {
-        mapping(address account => uint256 balance) balanceOf;
         uint256 totalSupply;
         address yieldRecipient;
+        mapping(address account => uint256 balance) balanceOf;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOne")) - 1)) & ~bytes32(uint256(0xff))
@@ -181,6 +180,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     function _mint(address recipient, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
 
+        // NOTE: Can be `unchecked` because the max amount of $M is never greater than `type(uint240).max`.
         unchecked {
             $.balanceOf[recipient] += amount;
             $.totalSupply += amount;
@@ -197,6 +197,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     function _burn(address account, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
 
+        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used in MExtension.
         unchecked {
             $.balanceOf[account] -= amount;
             $.totalSupply -= amount;
@@ -214,7 +215,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     function _update(address sender, address recipient, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
 
-        // NOTE: Can be `unchecked` because we check for insufficient sender balance above.
+        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` for `sender` is used in MExtension.
         unchecked {
             $.balanceOf[sender] -= amount;
             $.balanceOf[recipient] += amount;
@@ -223,17 +224,17 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
 
     /**
      * @dev Sets the yield recipient.
-     * @param account The address of the new yield recipient.
+     * @param yieldRecipient_ The address of the new yield recipient.
      */
-    function _setYieldRecipient(address account) internal {
-        if (account == address(0)) revert ZeroYieldRecipient();
+    function _setYieldRecipient(address yieldRecipient_) internal {
+        if (yieldRecipient_ == address(0)) revert ZeroYieldRecipient();
 
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
 
-        if (account == $.yieldRecipient) return;
+        if (yieldRecipient_ == $.yieldRecipient) return;
 
-        $.yieldRecipient = account;
+        $.yieldRecipient = yieldRecipient_;
 
-        emit YieldRecipientSet(account);
+        emit YieldRecipientSet(yieldRecipient_);
     }
 }

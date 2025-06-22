@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity ^0.8.26;
+pragma solidity 0.8.26;
 
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 
@@ -74,7 +74,8 @@ interface IMExtension is IERC20Extended {
     /**
      * @notice Unwraps `amount` extension token from the caller into M for `recipient`.
      * @dev    Can only be called by the SwapFacility.
-     * @param  recipient The account receiving the withdrawn M.
+     * @param  recipient The account receiving the withdrawn M,
+     *         it will always be the SwapFacility (keep `recipient` for backward compatibility).
      * @param  amount    The amount of M extension token burned.
      */
     function unwrap(address recipient, uint256 amount) external;
