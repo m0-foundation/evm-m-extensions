@@ -14,24 +14,6 @@ import { IMExtension } from "../interfaces/IMExtension.sol";
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 
-abstract contract SwapFacilityStorageLayout {
-    /// @custom:storage-location erc7201:M0.storage.SwapFacility
-    struct SwapFacilityStorageStruct {
-        address mToken;
-        address registrar;
-    }
-
-    // keccak256(abi.encode(uint256(keccak256("M0.storage.SwapFacility")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant _SWAP_FACILITY_STORAGE_LOCATION =
-        0x2f6671d90ec6fb8a38d5fa4043e503b2789e716b6e5219d1b20da9c6434dde00;
-
-    function _getSwapFacilityStorageLocation() internal pure returns (SwapFacilityStorageStruct storage $) {
-        assembly {
-            $.slot := _SWAP_FACILITY_STORAGE_LOCATION
-        }
-    }
-}
-
 /**
  * @title  Swap Facility
  * @notice A contract responsible for swapping between $M Extensions.
@@ -140,16 +122,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     function msgSender() external view returns (address) {
         return _getLocker();
     }
-
-    // /// @inheritdoc ISwapFacility
-    // function mToken() public view returns (address) {
-    //     return _getSwapFacilityStorageLocation().mToken;
-    // }
-
-    // /// @inheritdoc ISwapFacility
-    // function registrar() public view returns (address) {
-    //     return _getSwapFacilityStorageLocation().registrar;
-    // }
 
     /* ============ Private Interactive Functions ============ */
 
