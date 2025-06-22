@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {
     AccessControlUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
@@ -14,8 +14,6 @@ import { IMExtension } from "../interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
-import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
-import { IMExtension } from "./interfaces/IMExtension.sol";
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 
 /**
@@ -24,6 +22,8 @@ import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
  * @author M0 Labs
  */
 contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
+    using SafeERC20 for IERC20;
+
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
@@ -126,7 +126,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         _swapOutM(extensionIn, amount, recipient);
     }
 
-    function swapTokenIn(
+    /// @inheritdoc ISwapFacility
+    function swapInToken(
         address tokenIn,
         uint256 amountIn,
         address extensionOut,
@@ -160,7 +161,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         emit Swapped(tokenIn, extensionOut, amountOut, recipient);
     }
 
-    function swapTokenOut(
+    /// @inheritdoc ISwapFacility
+    function swapOutToken(
         address extensionIn,
         uint256 amountIn,
         address tokenOut,
@@ -171,7 +173,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         _revertIfNotApprovedExtension(extensionIn);
 
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
-        // If extensionIn is baseToken (wrapped $M), transfer it to SwapAdapter
+        // If extensionIn is baseToken (Wrapped $M), transfer it to SwapAdapter
         if (extensionIn == baseToken) {
             IERC20(extensionIn).transferFrom(msg.sender, swapAdapter, amountIn);
         } else {

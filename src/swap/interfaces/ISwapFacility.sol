@@ -95,6 +95,42 @@ interface ISwapFacility {
      */
     function swapOutM(address extensionIn, uint256 amount, address recipient) external;
 
+    /**
+     * @notice Swaps an external token (e.g. USDC) to $M Extension token.
+     * @param  tokenIn      The address of the external token to swap from.
+     * @param  amountIn     The amount of external tokens to swap.
+     * @param  extensionOut The address of the $M Extension to swap to.
+     * @param  minAmountOut The minimum amount of $M Extension tokens to receive.
+     * @param  recipient    The address to receive $M Extension tokens.
+     * @param  path         The multi-hop Uniswap path. Must be empty for direct pairs.
+     */
+    function swapInToken(
+        address tokenIn,
+        uint256 amountIn,
+        address extensionOut,
+        uint256 minAmountOut,
+        address recipient,
+        bytes calldata path
+    ) external;
+
+    /**
+     * @notice Swaps $M Extension token to an external token (e.g. USDC).
+     * @param  extensionIn  The address of the $M Extension to swap from.
+     * @param  amountIn     The amount of $M Extension tokens to swap.
+     * @param  tokenOut     The address of the external token to swap to.
+     * @param  minAmountOut The minimum amount of external tokens to receive.
+     * @param  recipient    The address to receive external tokens.
+     * @param  path         The multi-hop Uniswap path. Must be empty for direct pairs.
+     */
+    function swapOutToken(
+        address extensionIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 minAmountOut,
+        address recipient,
+        bytes calldata path
+    ) external;
+
     /* ============ View/Pure Functions ============ */
 
     /// @notice The address of the $M Token contract.

@@ -4,7 +4,7 @@ pragma solidity 0.8.26;
 
 import {
     AccessControlUpgradeable
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IBlacklistable } from "./IBlacklistable.sol";
 

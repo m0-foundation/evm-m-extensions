@@ -5,7 +5,8 @@ pragma solidity 0.8.26;
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { UniswapV3SwapAdapter } from "../../src/UniswapV3SwapAdapter.sol";
+import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
+
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
 contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {

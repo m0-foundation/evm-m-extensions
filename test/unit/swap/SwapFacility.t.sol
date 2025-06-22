@@ -24,8 +24,7 @@ contract SwapFacilityUnitTests is Test {
     address public swapAdapter = makeAddr("swapAdapter");
 
     address public owner = makeAddr("owner");
-    address public alice;
-    uint256 public alicePk;
+    address public alice = makeAddr("alice");
 
     function setUp() public {
         mToken = new MockM();
@@ -33,7 +32,7 @@ contract SwapFacilityUnitTests is Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployUUPSProxy(
-                address(new SwapFacility(address(mToken), address(registrar))),
+                address(new SwapFacility(address(mToken), address(registrar), swapAdapter)),
                 abi.encodeWithSelector(SwapFacility.initialize.selector, owner)
             )
         );
@@ -44,8 +43,6 @@ contract SwapFacilityUnitTests is Test {
         // Add Extensions to Earners List
         registrar.setEarner(address(extensionA), true);
         registrar.setEarner(address(extensionB), true);
-
-        (alice, alicePk) = makeAddrAndKey("alice");
     }
 
     function test_initialState() external {

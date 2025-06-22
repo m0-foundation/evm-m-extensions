@@ -15,6 +15,7 @@ import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -93,7 +94,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployUUPSProxy(
-                address(new SwapFacility(address(mToken), address(registrar))),
+                address(new SwapFacility(address(mToken), address(registrar), address(swapAdapter))),
                 abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
             )
         );
