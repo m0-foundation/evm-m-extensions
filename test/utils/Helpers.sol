@@ -5,13 +5,13 @@ pragma solidity 0.8.26;
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
 
 contract Helpers {
-    uint16 public constant HUNDRED_PERCENT = 10_000;
+    uint16 public constant ONE_HUNDRED_PERCENT = 10_000;
 
     function _getEarnerRate(uint32 mEarnerRate, uint32 yieldFeeRate) internal pure returns (uint32) {
-        return UIntMath.safe32((uint256(HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / HUNDRED_PERCENT);
+        return UIntMath.safe32((uint256(ONE_HUNDRED_PERCENT - yieldFeeRate) * mEarnerRate) / ONE_HUNDRED_PERCENT);
     }
 
     function _getYieldFee(uint256 yield, uint16 yieldFeeRate) internal pure returns (uint256) {
-        return yield == 0 ? 0 : (yield * yieldFeeRate) / HUNDRED_PERCENT;
+        return yield == 0 ? 0 : (yield * yieldFeeRate) / ONE_HUNDRED_PERCENT;
     }
 }

@@ -116,7 +116,7 @@ interface IMYieldFee {
     /* ============ View/Pure Functions ============ */
 
     /// @notice Returns 100% in basis points.
-    function HUNDRED_PERCENT() external returns (uint16);
+    function ONE_HUNDRED_PERCENT() external returns (uint16);
 
     /// @notice Returns the yield fee manager role hash.
     function YIELD_FEE_MANAGER_ROLE() external returns (bytes32);

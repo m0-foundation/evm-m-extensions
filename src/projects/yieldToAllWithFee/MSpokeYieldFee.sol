@@ -16,7 +16,7 @@ abstract contract MSpokeYieldFeeStorageLayout {
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MSpokeYieldFee")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant _M_SPOKE_YIELD_FEE_STORAGE_LOCATION =
-        0x9d728c135b5b2cd0ace61885d69c4f72215f10f82e77822fb7c6bf472237dd00;
+        0x2aa34bda88d9a6fad4859c438b6b00a9fe5d9d80a401ed1357a646e247972000;
 
     function _getMSpokeYieldFeeStorageLocation() internal pure returns (MSpokeYieldFeeStorageStruct storage $) {
         assembly {

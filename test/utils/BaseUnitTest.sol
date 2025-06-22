@@ -61,9 +61,9 @@ contract BaseUnitTest is Helpers, Test {
         registrar = new MockRegistrar();
 
         swapFacility = SwapFacility(
-            Upgrades.deployUUPSProxy(
-                "SwapFacility.sol:SwapFacility",
-                abi.encodeWithSelector(SwapFacility.initialize.selector, address(mToken), address(registrar), admin)
+            UnsafeUpgrades.deployUUPSProxy(
+                address(new SwapFacility(address(mToken), address(registrar))),
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
             )
         );
 

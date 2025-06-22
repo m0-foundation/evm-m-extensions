@@ -42,7 +42,7 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
     /* ============ initialize ============ */
 
     function test_initialize() external view {
-        assertEq(mYieldFee.HUNDRED_PERCENT(), 10_000);
+        assertEq(mYieldFee.ONE_HUNDRED_PERCENT(), 10_000);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);

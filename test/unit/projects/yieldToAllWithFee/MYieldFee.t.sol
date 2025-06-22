@@ -58,7 +58,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ initialize ============ */
 
     function test_initialize() external view {
-        assertEq(mYieldFee.HUNDRED_PERCENT(), 10_000);
+        assertEq(mYieldFee.ONE_HUNDRED_PERCENT(), 10_000);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
@@ -533,11 +533,15 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_setYieldFeeRate_yieldFeeRateTooHigh() external {
         vm.expectRevert(
-            abi.encodeWithSelector(IMYieldFee.YieldFeeRateTooHigh.selector, HUNDRED_PERCENT + 1, HUNDRED_PERCENT)
+            abi.encodeWithSelector(
+                IMYieldFee.YieldFeeRateTooHigh.selector,
+                ONE_HUNDRED_PERCENT + 1,
+                ONE_HUNDRED_PERCENT
+            )
         );
 
         vm.prank(yieldFeeManager);
-        mYieldFee.setYieldFeeRate(HUNDRED_PERCENT + 1);
+        mYieldFee.setYieldFeeRate(ONE_HUNDRED_PERCENT + 1);
     }
 
     function test_setYieldFeeRate_noUpdate() external {
@@ -1650,7 +1654,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function _setupYieldFeeRate(uint16 rate) internal returns (uint16) {
-        rate = uint16(bound(rate, 0, HUNDRED_PERCENT));
+        rate = uint16(bound(rate, 0, ONE_HUNDRED_PERCENT));
 
         vm.prank(yieldFeeManager);
         mYieldFee.setYieldFeeRate(rate);
