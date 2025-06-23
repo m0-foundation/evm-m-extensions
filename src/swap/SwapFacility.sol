@@ -217,7 +217,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
         uint256 balanceBefore = _mBalanceOf(address(this));
 
-        IMExtension(extensionIn).unwrap(msg.sender, amount);
+        // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
+        IMExtension(extensionIn).unwrap(address(this), amount);
 
         // NOTE: Calculate amount as $M Token balance difference
         //       to account for rounding errors.
@@ -249,7 +250,9 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
      */
     function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
         uint256 balanceBefore = _mBalanceOf(address(this));
-        IMExtension(extensionIn).unwrap(msg.sender, amount);
+
+        // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
+        IMExtension(extensionIn).unwrap(address(this), amount);
 
         // NOTE: Calculate amount as $M Token balance difference
         //       to account for rounding errors.
