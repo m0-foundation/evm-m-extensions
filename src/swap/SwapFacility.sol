@@ -97,7 +97,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+        try IMTokenLike(mToken).permit(msgSender(), address(this), amount, deadline, v, r, s) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
     }
@@ -112,7 +112,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+        try IMTokenLike(mToken).permit(msgSender(), address(this), amount, deadline, signature) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
     }
@@ -121,7 +121,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
         // NOTE: Amount and recipient validation is performed in Extensions.
         _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(msg.sender);
+        _revertIfNotApprovedSwapper(msgSender());
 
         _swapOutM(extensionIn, amount, recipient);
     }
@@ -138,7 +138,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         _revertIfNotApprovedExtension(extensionOut);
 
         // Transfer input token to SwapFacility for future transfer to Swap Adapter.
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).safeTransferFrom(msgSender(), address(this), amountIn);
 
         // Approve Swap Adapter to spend input token.
         IERC20(tokenIn).forceApprove(swapAdapter, amountIn);
@@ -155,7 +155,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
         // If extensionOut is baseToken, transfer to the recipient directly
         if (extensionOut == baseToken) {
-            IERC20(extensionOut).transfer(recipient, amountOut);
+            IERC20(baseToken).transfer(recipient, amountOut);
         } else {
             // Otherwise, swap the baseToken to extensionOut
             _swap(baseToken, extensionOut, amountOut, recipient);
@@ -178,7 +178,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
         if (extensionIn == baseToken) {
             // If extensionIn is baseToken (Wrapped $M), transfer it to SwapFacility
-            IERC20(baseToken).safeTransferFrom(msg.sender, address(this), amountIn);
+            IERC20(baseToken).safeTransferFrom(msgSender(), address(this), amountIn);
         } else {
             uint256 balanceBefore = IERC20(baseToken).balanceOf(address(this));
 
@@ -207,7 +207,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc ISwapFacility
-    function msgSender() external view returns (address) {
+    function msgSender() public view returns (address) {
         return _getLocker();
     }
 
@@ -241,7 +241,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swapInM(address extensionOut, uint256 amount, address recipient) private {
-        IERC20(mToken).transferFrom(msg.sender, address(this), amount);
+        IERC20(mToken).transferFrom(msgSender(), address(this), amount);
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
 
