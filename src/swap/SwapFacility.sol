@@ -137,8 +137,11 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        // Transfer input token to SwapAdapter contract
-        IERC20(tokenIn).safeTransferFrom(msg.sender, swapAdapter, amountIn);
+        // Transfer input token to SwapFacility for future transfer to Swap Adapter.
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+
+        // Approve Swap Adapter to spend input token.
+        IERC20(tokenIn).forceApprove(swapAdapter, amountIn);
 
         // Swap input token for base token in Uniswap pool
         uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapIn(
@@ -173,18 +176,21 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         _revertIfNotApprovedExtension(extensionIn);
 
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
-        // If extensionIn is baseToken (Wrapped $M), transfer it to SwapAdapter
         if (extensionIn == baseToken) {
-            IERC20(extensionIn).transferFrom(msg.sender, swapAdapter, amountIn);
+            // If extensionIn is baseToken (Wrapped $M), transfer it to SwapFacility
+            IERC20(baseToken).safeTransferFrom(msg.sender, address(this), amountIn);
         } else {
-            uint256 balanceBefore = IERC20(extensionIn).balanceOf(address(this));
+            uint256 balanceBefore = IERC20(baseToken).balanceOf(address(this));
 
             // Otherwise, swap the extensionIn to baseToken
-            _swap(extensionIn, baseToken, amountIn, swapAdapter);
+            _swap(extensionIn, baseToken, amountIn, address(this));
 
             // Calculate amountIn as the difference in balance to account for rounding errors
             amountIn = IERC20(baseToken).balanceOf(address(this)) - balanceBefore;
         }
+
+        // Approve Swap Adapter to spend baseToken (Wrapped $M).
+        IERC20(baseToken).forceApprove(swapAdapter, amountIn);
 
         // Swap baseToken in Uniswap pool for output token
         uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapOut(

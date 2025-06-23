@@ -36,7 +36,9 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
 
         vm.startPrank(USER);
-        IERC20(USDC).transfer(address(swapAdapter), amountIn);
+        IERC20(USDC).approve(address(swapAdapter), amountIn);
+
+        vm.startPrank(USER);
         uint256 amountOut = swapAdapter.swapIn(USDC, amountIn, minAmountOut, USER, "");
 
         uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
@@ -55,7 +57,9 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
 
         vm.startPrank(USER);
-        IERC20(WRAPPED_M).transfer(address(swapAdapter), amountIn);
+        IERC20(WRAPPED_M).approve(address(swapAdapter), amountIn);
+
+        vm.startPrank(USER);
         uint256 amountOut = swapAdapter.swapOut(USDC, amountIn, minAmountOut, USER, "");
 
         uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
@@ -82,8 +86,10 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
             WRAPPED_M
         );
 
+        vm.prank(USER);
+        IERC20(USDT).forceApprove(address(swapAdapter), amountIn);
+
         vm.startPrank(USER);
-        IERC20(USDT).safeTransfer(address(swapAdapter), amountIn);
         uint256 amountOut = swapAdapter.swapIn(USDT, amountIn, minAmountOut, USER, path);
 
         uint256 usdtBalanceAfter = IERC20(USDT).balanceOf(USER);
@@ -111,7 +117,9 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         );
 
         vm.startPrank(USER);
-        IERC20(WRAPPED_M).transfer(address(swapAdapter), amountIn);
+        IERC20(WRAPPED_M).approve(address(swapAdapter), amountIn);
+
+        vm.startPrank(USER);
         uint256 amountOut = swapAdapter.swapOut(USDT, amountIn, minAmountOut, USER, path);
 
         uint256 usdtBalanceAfter = IERC20(USDT).balanceOf(USER);

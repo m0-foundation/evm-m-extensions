@@ -67,8 +67,12 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
         _revertIfInvalidSwapInPath(inputToken, path);
         _revertIfZeroRecipient(recipient);
 
+        /* Transfer token input from sender to this contract */
+        IERC20(inputToken).safeTransferFrom(msg.sender, address(this), inputAmount);
+
         address swapRouter_ = swapRouter;
-        // NOTE: Input token must already be transferred to the contract
+
+        /* Approve the router to spend token input */
         IERC20(inputToken).forceApprove(swapRouter_, inputAmount);
 
         // Swap token input for base token
@@ -109,11 +113,13 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
         _revertIfInvalidSwapOutPath(outputToken, path);
         _revertIfZeroRecipient(recipient);
 
-        // NOTE: Base token must already be transferred to the contract
+        // Transfer token input from sender to this contract
+        IERC20(baseToken).safeTransferFrom(msg.sender, address(this), baseAmount);
+
+        // Approve the router to spend base token
         IERC20(baseToken).forceApprove(swapRouter, baseAmount);
 
         // Swap base token for token output
-
         if (path.length == 0) {
             IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
                 tokenIn: baseToken,
