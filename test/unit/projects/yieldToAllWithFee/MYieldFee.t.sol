@@ -22,6 +22,7 @@ import { IERC20Extended } from "../../../../lib/common/src/interfaces/IERC20Exte
 
 import { MYieldFeeHarness } from "../../../harness/MYieldFeeHarness.sol";
 import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
+import { console2 } from "../../../../lib/forge-std/src/Test.sol";
 
 contract MYieldFeeUnitTests is BaseUnitTest {
     // Roles
@@ -555,7 +556,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     /* ============ setFeeRecipient ============ */
 
-    function test_setFeeRecipient_onlyYieldFeeManager() external {
+    function test_setFeeRecipient_onlyFeeManager() external {
         vm.expectRevert(
             abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, FEE_MANAGER_ROLE)
         );
@@ -581,7 +582,16 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_setFeeRecipient() external {
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+
+        mToken.setBalanceOf(address(mYieldFee), 1_100e6);
+
+        uint256 yieldFee = mYieldFee.totalAccruedFee();
+
         address newYieldFeeRecipient = makeAddr("newYieldFeeRecipient");
+
+        vm.expectEmit();
+        emit IMYieldFee.FeeClaimed(yieldFeeManager, feeRecipient, yieldFee);
 
         vm.expectEmit();
         emit IMYieldFee.FeeRecipientSet(newYieldFeeRecipient);

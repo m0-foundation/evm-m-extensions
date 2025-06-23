@@ -146,7 +146,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
     }
 
     /// @inheritdoc IMYieldFee
-    function claimFee() external returns (uint256) {
+    function claimFee() public returns (uint256) {
         uint256 yieldFee_ = totalAccruedFee();
 
         if (yieldFee_ == 0) return 0;
@@ -211,8 +211,8 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMYieldFee
     function setFeeRecipient(address feeRecipient_) external onlyRole(FEE_MANAGER_ROLE) {
-        // // NOTE: consider claiming fee for the previous fee recipient.
-        // claimFee();
+        // Claim fee for the previous fee recipient.
+        claimFee();
 
         _setFeeRecipient(feeRecipient_);
     }
@@ -229,7 +229,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
         if ($.claimRecipients[account] == claimRecipient) return;
 
-        // // NOTE: Consider claiming yield for the previous claim recipient.
+        // Optionally consider claiming yield for the previous claim recipient.
         // claimYieldFor(account);
 
         $.claimRecipients[account] = claimRecipient;
