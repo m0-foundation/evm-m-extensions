@@ -1,948 +1,927 @@
-Unable to resolve imports:
-      "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol" in "/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/src/abstract/MYieldFeeExtensionUpgradeable.sol"
-with remappings:
-      @openzeppelin/contracts-upgradeable/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/common/lib/openzeppelin-contracts-upgradeable/contracts/
-      @openzeppelin/contracts/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/contracts/
-      common/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/common/src/
-      erc4626-tests/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/lib/erc4626-tests/
-      forge-std/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/forge-std/src/
-      halmos-cheatcodes/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/
-      openzeppelin-contracts-upgradeable/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/common/lib/openzeppelin-contracts-upgradeable/
-      openzeppelin-contracts/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-contracts/
-      openzeppelin-foundry-upgrades/=/Users/pierrick/Documents/00-Work/00-M0/00-Code/m-extensions/lib/openzeppelin-foundry-upgrades/src/
-Compiling 100 files with Solc 0.8.26
-Solc 0.8.26 finished in 5.87s
+Compiling 122 files with Solc 0.8.26
+Solc 0.8.26 finished in 11.25s
 Compiler run successful with warnings:
-Warning (3860): Contract initcode size is 143310 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
-  --> test/unit/MYieldFeeUpgradeable.t.sol:24:1:
+Warning (2394): Transient storage as defined by EIP-1153 can break the composability of smart contracts: Since transient storage is cleared only at the end of the transaction and not at the end of the outermost call frame to the contract within a transaction, your contract may unintentionally misbehave when invoked multiple times in a complex transaction. To avoid this, be sure to clear all transient storage at the end of any call to your contract. The use of transient storage for reentrancy guards that are cleared at the end of the call is safe.
+  --> lib/universal-router/contracts/libraries/Locker.sol:14:13:
    |
-24 | contract MYieldFeeUnitTests is BaseUnitTest {
+14 |             tstore(LOCKER_SLOT, locker)
+   |             ^^^^^^
+
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+   --> test/utils/Mocks.sol:201:21:
+    |
+201 |     function unwrap(address recipient, uint256 amount) external {
+    |                     ^^^^^^^^^^^^^^^^^
+
+Warning (2018): Function state mutability can be restricted to view
+  --> test/integration/UniswapV3SwapAdapter.t.sol:23:5:
+   |
+23 |     function test_initialState() external {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+  --> test/unit/swap/SwapFacility.t.sol:48:5:
+   |
+48 |     function test_initialState() external {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (5574): Contract code size is 29553 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/utils/BaseIntegrationTest.sol:22:1:
+   |
+22 | contract BaseIntegrationTest is Helpers, Test {
    | ^ (Relevant source part starts here and spans across multiple lines).
 
-Warning (3860): Contract initcode size is 92077 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
-  --> test/unit/MYieldToOneUpgradeable.t.sol:24:1:
+Warning (3860): Contract initcode size is 68587 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/integration/MEarnerManager.t.sol:11:1:
    |
-24 | contract MYieldToOneUpgradeableUnitTests is BaseUnitTest {
+11 | contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
    | ^ (Relevant source part starts here and spans across multiple lines).
 
-Warning (3860): Contract initcode size is 59183 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
-  --> test/unit/SpokeMYieldFeeUpgradeable.t.sol:14:1:
+Warning (3860): Contract initcode size is 69485 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/integration/MYieldFee.t.sol:13:1:
    |
-14 | contract SpokeMYieldFeeUpgradeableUnitTests is BaseUnitTest {
+13 | contract MYieldFeeIntegrationTests is BaseIntegrationTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 65994 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/integration/MYieldToOne.t.sol:13:1:
+   |
+13 | contract MYieldToOneIntegrationTests is BaseIntegrationTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 61998 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/integration/SwapFacility.t.sol:14:1:
+   |
+14 | contract SwapFacilityIntegrationTest is BaseIntegrationTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (5574): Contract code size is 25990 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/utils/BaseUnitTest.sol:17:1:
+   |
+17 | contract BaseUnitTest is Helpers, Test {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 62039 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/components/Blacklistable.t.sol:17:1:
+   |
+17 | contract BlacklistableUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 123614 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/projects/MEarnerManager.t.sol:20:1:
+   |
+20 | contract MEarnerManagerUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 107395 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/projects/MYieldToOne.t.sol:24:1:
+   |
+24 | contract MYieldToOneUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 75856 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/projects/yieldToAllWithFee/MSpokeYieldFee.t.sol:14:1:
+   |
+14 | contract MSpokeYieldFeeUnitTests is BaseUnitTest {
+   | ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (3860): Contract initcode size is 169224 bytes and exceeds 49152 bytes (a limit introduced in Shanghai). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+  --> test/unit/projects/yieldToAllWithFee/MYieldFee.t.sol:27:1:
+   |
+27 | contract MYieldFeeUnitTests is BaseUnitTest {
    | ^ (Relevant source part starts here and spans across multiple lines).
 
 
-Ran 14 tests for test/unit/components/BlacklistableUpgradeable.t.sol:BlacklistableUpgradeableUnitTests
+Ran 11 tests for test/unit/swap/SwapFacility.t.sol:SwapFacilityUnitTests
+[PASS] test_constructor_zeroMToken() (gas: 307865)
+[PASS] test_constructor_zeroRegistrar() (gas: 307911)
+[PASS] test_constructor_zeroSwapAdapter() (gas: 307915)
+[PASS] test_initialState() (gas: 48599)
+[PASS] test_swap() (gas: 434849)
+[PASS] test_swapInM() (gas: 247624)
+[PASS] test_swapInM_notApprovedExtension() (gas: 46289)
+[PASS] test_swapOutM() (gas: 410785)
+[PASS] test_swapOutM_notApprovedExtension() (gas: 46315)
+[PASS] test_swapOutM_notApprovedSwapper() (gas: 51488)
+[PASS] test_swap_notApprovedExtension() (gas: 92480)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 16.61ms (8.62ms CPU time)
+
+Ran 5 tests for test/integration/UniswapV3SwapAdapter.t.sol:UniswapV3SwapAdapterIntegrationTest
+[PASS] test_initialState() (gas: 37855)
+[PASS] test_swapIn_USDC_to_WrappedM() (gas: 268666)
+[PASS] test_swapIn_USDT_to_WrappedM() (gas: 313291)
+[PASS] test_swapOut_wrappedM_to_USDC() (gas: 260206)
+[PASS] test_swapOut_wrappedM_to_USDT() (gas: 314766)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 1.59s (170.86ms CPU time)
+
+Ran 4 tests for test/unit/projects/yieldToAllWithFee/MSpokeYieldFee.t.sol:MSpokeYieldFeeUnitTests
+[PASS] test_currentBlockTimestamp() (gas: 23914)
+[PASS] test_currentEarnerRate() (gas: 23936)
+[PASS] test_initialize() (gas: 98440)
+[PASS] test_initialize_zeroRateOracle() (gas: 5298687)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 3.15s (3.39ms CPU time)
+
+Ran 14 tests for test/unit/components/Blacklistable.t.sol:BlacklistableUnitTests
 [PASS] test_blacklist() (gas: 77949)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
 [PASS] test_blacklistAccounts() (gas: 222543)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_blacklistAccounts_onlyBlacklistManager() (gas: 52551)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_blacklistAccounts_revertIfBlacklisted() (gas: 68197)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_blacklist_onlyBlacklistManager() (gas: 42103)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
+[PASS] test_blacklistAccounts_onlyBlacklistManager() (gas: 52540)
+[PASS] test_blacklistAccounts_revertIfBlacklisted() (gas: 68131)
+[PASS] test_blacklist_onlyBlacklistManager() (gas: 42069)
 [PASS] test_blacklist_revertIfBlacklisted() (gas: 98247)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_blacklist_revertIfNotBlacklisted() (gas: 44267)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
+[PASS] test_blacklist_revertIfNotBlacklisted() (gas: 44321)
 [PASS] test_initialize() (gas: 17770)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+[PASS] test_initialize_zeroBlacklistManager() (gas: 1091380)
+[PASS] test_unblacklist() (gas: 122058)
+[PASS] test_unblacklistAccounts() (gas: 259743)
+[PASS] test_unblacklistAccounts_onlyBlacklistManager() (gas: 52541)
+[PASS] test_unblacklistAccounts_revertIfNotBlacklisted() (gas: 48011)
+[PASS] test_unblacklist_onlyBlacklistManager() (gas: 42092)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 3.16s (2.14ms CPU time)
 
+Ran 3 tests for test/integration/MEarnerManager.t.sol:MEarnerManagerIntegrationTests
+[PASS] test_fieldRecipient() (gas: 959014)
+[PASS] test_integration_constants() (gas: 112170)
+[PASS] test_yieldAccumulationAndClaim() (gas: 1630407)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 4.03s (4.34ms CPU time)
 
-[PASS] test_initialize_zeroBlacklistManager() (gas: 1089181)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
+Ran 5 tests for test/integration/MYieldToOne.t.sol:MYieldToOneIntegrationTests
+[PASS] test_disableEarning_approvedEarner() (gas: 181300)
+[PASS] test_enableEarning_notApprovedEarner() (gas: 56439)
+[PASS] test_integration_constants() (gas: 71328)
+[PASS] test_wrapWithPermits() (gas: 409090)
+[PASS] test_yieldAccumulationAndClaim() (gas: 1786866)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 4.03s (10.44ms CPU time)
 
+Ran 5 tests for test/integration/MYieldFee.t.sol:MYieldFeeIntegrationTests
+[PASS] test_disableEarning_approvedEarner() (gas: 194017)
+[PASS] test_enableEarning_notApprovedEarner() (gas: 62746)
+[PASS] test_integration_constants() (gas: 137517)
+[PASS] test_wrapWithPermits() (gas: 431702)
+[PASS] test_yieldAccumulationAndClaim() (gas: 2613823)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 4.15s (117.30ms CPU time)
 
-[PASS] test_unblacklist() (gas: 122024)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unblacklistAccounts() (gas: 259661)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unblacklistAccounts_onlyBlacklistManager() (gas: 52508)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unblacklistAccounts_revertIfNotBlacklisted() (gas: 47979)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unblacklist_onlyBlacklistManager() (gas: 42081)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 2.05s (3.21ms CPU time)
-
-Ran 5 tests for test/integration/MYieldToOne.t.sol:MYieldToOneUpgradeableIntegrationTests
-[PASS] test_disableEarning_approvedEarner() (gas: 176720)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_enableEarning_notApprovedEarner() (gas: 56418)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_integration_constants() (gas: 71388)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrapWithPermits() (gas: 275220)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_yieldAccumulationAndClaim() (gas: 1584857)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 2.52s (148.91ms CPU time)
-
-Ran 5 tests for test/integration/MYieldFeeUpgradeable.t.sol:MYieldFeeUpgradeableIntegrationTests
-[PASS] test_disableEarning_approvedEarner() (gas: 193928)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_enableEarning_notApprovedEarner() (gas: 62725)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_integration_constants() (gas: 137411)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrapWithPermits() (gas: 309608)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_yieldAccumulationAndClaim() (gas: 2314474)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 2.63s (85.92ms CPU time)
-
-Ran 4 tests for test/unit/SpokeMYieldFeeUpgradeable.t.sol:SpokeMYieldFeeUpgradeableUnitTests
-[PASS] test_currentBlockTimestamp() (gas: 23915)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_currentEarnerRate() (gas: 23892)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize() (gas: 98272)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroRateOracle() (gas: 4969942)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 2.66s (270.83µs CPU time)
-
-Ran 38 tests for test/unit/MYieldToOneUpgradeable.t.sol:MYieldToOneUpgradeableUnitTests
-[PASS] testFuzz_transfer(uint256,uint256,uint256) (runs: 10000, μ: 336094, ~: 348959)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_approve_blacklistedAccount() (gas: 98247)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_approve_blacklistedSpender() (gas: 100516)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_claimYield() (gas: 339175)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
+Ran 37 tests for test/unit/projects/MYieldToOne.t.sol:MYieldToOneUnitTests
+[PASS] testFuzz_transfer(uint256,uint256,uint256) (runs: 5000, μ: 378555, ~: 393681)
+[PASS] test_approve_blacklistedAccount() (gas: 98303)
+[PASS] test_approve_blacklistedSpender() (gas: 100505)
+[PASS] test_claimYield() (gas: 399164)
 [PASS] test_claimYield_noYield() (gas: 46526)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_disableEarning() (gas: 184162)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_disableEarning_earningIsDisabled() (gas: 41918)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_enableEarning() (gas: 132476)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_enableEarning_earningEnabled() (gas: 101014)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize() (gas: 118639)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroBlacklistManager() (gas: 4235812)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroDefaultAdmin() (gas: 4099994)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroMToken() (gas: 4102510)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroYieldRecipient() (gas: 4260345)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroYieldRecipientManager() (gas: 4099989)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setYieldRecipient() (gas: 74256)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setYieldRecipient_noUpdate() (gas: 66524)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setYieldRecipient_onlyYieldRecipientManager() (gas: 40150)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setYieldRecipient_zeroYieldRecipient() (gas: 39377)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer() (gas: 241462)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_blacklistedAccount() (gas: 247652)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_blacklistedRecipient() (gas: 250159)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_blacklistedSender() (gas: 312210)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_insufficientBalance() (gas: 198614)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_invalidRecipient() (gas: 191774)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap() (gas: 502088)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap_blacklistedAccount() (gas: 247613)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap_blacklistedRecipient() (gas: 249883)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap_insufficientAmount() (gas: 40407)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap_insufficientBalance() (gas: 192217)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap() (gas: 526596)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrapWithPermit_signature() (gas: 261718)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrapWithPermit_vrs() (gas: 261533)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap_blacklistedAccount() (gas: 147487)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap_blacklistedRecipient() (gas: 149711)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap_insufficientAmount() (gas: 50784)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap_invalidRecipient() (gas: 124391)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_yield() (gas: 351551)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-Suite result: ok. 38 passed; 0 failed; 0 skipped; finished in 3.32s (1.22s CPU time)
-
-Ran 52 tests for test/unit/MYieldFeeUpgradeable.t.sol:MYieldFeeUnitTests
-[PASS] testFuzz_accruedYieldOf(bool,uint32,uint16,uint128,uint240,uint240,uint40,uint40) (runs: 10000, μ: 384011, ~: 381941)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_balanceWithYieldOf(bool,uint32,uint16,uint128,uint240,uint240,uint40,uint40) (runs: 10000, μ: 384535, ~: 382677)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_claimFee(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 512813, ~: 509042)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_claimYieldFor(bool,uint32,uint16,uint128,uint240,uint240) (runs: 10000, μ: 447864, ~: 446870)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_currentIndex(uint32,uint32,uint16,uint16,uint128,uint40,uint40,uint40) (runs: 10000, μ: 338067, ~: 339041)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_transfer(bool,uint32,uint16,uint128,uint240,uint240,uint240,uint240,uint240) (runs: 10000, μ: 664287, ~: 555162)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_unwrap(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 514083, ~: 426516)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] testFuzz_wrap(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 633736, ~: 633202)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_accruedYieldOf() (gas: 310011)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_balanceOf() (gas: 89785)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_balanceWithYieldOf() (gas: 311072)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_claimFee() (gas: 569599)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_claimFee_noYield() (gas: 46564)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_claimYieldFor() (gas: 391040)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_claimYieldFor_noYield() (gas: 45912)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_claimYieldFor_zeroYieldRecipient() (gas: 34555)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_currentBlockTimestamp() (gas: 16200)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_currentEarnerRate() (gas: 23935)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_currentIndex() (gas: 629934)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_disableEarning() (gas: 249520)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
+[PASS] test_disableEarning() (gas: 171067)
+[PASS] test_disableEarning_earningIsDisabled() (gas: 41895)
+[PASS] test_enableEarning() (gas: 115399)
+[PASS] test_enableEarning_earningEnabled() (gas: 100991)
+[PASS] test_initialize() (gas: 118646)
+[PASS] test_initialize_zeroBlacklistManager() (gas: 4218672)
+[PASS] test_initialize_zeroDefaultAdmin() (gas: 4060716)
+[PASS] test_initialize_zeroMToken() (gas: 4063202)
+[PASS] test_initialize_zeroYieldRecipient() (gas: 4243227)
+[PASS] test_initialize_zeroYieldRecipientManager() (gas: 4060666)
+[PASS] test_setYieldRecipient() (gas: 74330)
+[PASS] test_setYieldRecipient_noUpdate() (gas: 66576)
+[PASS] test_setYieldRecipient_onlyYieldRecipientManager() (gas: 40144)
+[PASS] test_setYieldRecipient_zeroYieldRecipient() (gas: 39392)
+[PASS] test_transfer() (gas: 273432)
+[PASS] test_transfer_blacklistedAccount() (gas: 279621)
+[PASS] test_transfer_blacklistedRecipient() (gas: 282106)
+[PASS] test_transfer_blacklistedSender() (gas: 344195)
+[PASS] test_transfer_insufficientBalance() (gas: 230559)
+[PASS] test_transfer_invalidRecipient() (gas: 218915)
+[PASS] test_unwrap() (gas: 599223)
+[PASS] test_unwrap_blacklistedAccount() (gas: 367382)
+[PASS] test_unwrap_insufficientAmount() (gas: 68532)
+[PASS] test_unwrap_insufficientBalance() (gas: 309195)
+[PASS] test_wrap() (gas: 575360)
+[PASS] test_wrapWithPermit_signature() (gas: 293705)
+[PASS] test_wrapWithPermit_vrs() (gas: 293367)
+[PASS] test_wrap_blacklistedAccount() (gas: 227088)
+[PASS] test_wrap_blacklistedRecipient() (gas: 229313)
+[PASS] test_wrap_insufficientAmount() (gas: 72411)
+[PASS] test_wrap_invalidRecipient() (gas: 163778)
+[PASS] test_yield() (gas: 393439)
+Suite result: ok. 37 passed; 0 failed; 0 skipped; finished in 4.33s (1.18s CPU time)
+
+Ran 6 tests for test/integration/SwapFacility.t.sol:SwapFacilityIntegrationTest
+[PASS] test_swap() (gas: 414314)
+[PASS] test_swapInM() (gas: 198170)
+[PASS] test_swapInMWithPermit_VRS() (gas: 288502)
+[PASS] test_swapInToken_USDC_to_wrappedM() (gas: 324407)
+[PASS] test_swapOutM() (gas: 285537)
+[PASS] test_swapOutToken_wrappedM_to_USDC() (gas: 279291)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 4.41s (619.65ms CPU time)
+
+Ran 48 tests for test/unit/projects/MEarnerManager.t.sol:MEarnerManagerUnitTests
+[PASS] testFuzz_transfer(uint256,uint256,uint256) (runs: 5000, μ: 534704, ~: 555369)
+[PASS] test_approve_blacklistedSpender() (gas: 117130)
+[PASS] test_approve_notWhitelistedAccount() (gas: 42294)
+[PASS] test_claimFor() (gas: 375010)
+[PASS] test_claimFor_feeRecipient() (gas: 272821)
+[PASS] test_claimFor_fee_100() (gas: 256946)
+[PASS] test_claimFor_noYield() (gas: 196233)
+[PASS] test_claimFor_zeroAccount() (gas: 34822)
+[PASS] test_disableEarning() (gas: 168632)
+[PASS] test_disableEarning_earningIsDisabled() (gas: 41978)
+[PASS] test_enableEarning() (gas: 115583)
+[PASS] test_enableEarning_earningEnabled() (gas: 101124)
+[PASS] test_initialize() (gas: 58328)
+[PASS] test_initialize_zeroAdmin() (gas: 4815118)
+[PASS] test_initialize_zeroEarnerManager() (gas: 4815141)
+[PASS] test_initialize_zeroFeeRecipient() (gas: 4972863)
+[PASS] test_initialize_zeroMToken() (gas: 4817605)
+[PASS] test_setAccountInfo_batch() (gas: 157930)
+[PASS] test_setAccountInfo_batch_arrayLengthMismatch() (gas: 109010)
+[PASS] test_setAccountInfo_batch_arrayLengthZero() (gas: 42198)
+[PASS] test_setAccountInfo_batch_onlyEarnerManager() (gas: 41615)
+[PASS] test_setAccountInfo_changeFee() (gas: 327490)
+[PASS] test_setAccountInfo_invalidAccountInfo() (gas: 42296)
+[PASS] test_setAccountInfo_invalidFeeRate() (gas: 42206)
+[PASS] test_setAccountInfo_noAction() (gas: 339719)
+[PASS] test_setAccountInfo_onlyEarnerManager() (gas: 40621)
+[PASS] test_setAccountInfo_unwhitelistAccount() (gas: 338541)
+[PASS] test_setAccountInfo_whitelistAccount() (gas: 177094)
+[PASS] test_setAccountInfo_zeroYieldRecipient() (gas: 39846)
+[PASS] test_setFeeRecipient() (gas: 121639)
+[PASS] test_setFeeRecipient_noUpdate() (gas: 66594)
+[PASS] test_setFeeRecipient_onlyEarnerManager() (gas: 40143)
+[PASS] test_setFeeRecipient_zeroFeeRecipient() (gas: 39369)
+[PASS] test_transfer() (gas: 423740)
+[PASS] test_transfer_insufficientBalance() (gas: 366871)
+[PASS] test_transfer_invalidRecipient() (gas: 302618)
+[PASS] test_transfer_notWhitelistedApprovedSender() (gas: 503039)
+[PASS] test_transfer_notWhitelistedRecipient() (gas: 309843)
+[PASS] test_transfer_notWhitelistedSender() (gas: 330555)
+[PASS] test_unwrap() (gas: 712723)
+[PASS] test_unwrap_insufficientAmount() (gas: 180320)
+[PASS] test_unwrap_insufficientBalance() (gas: 392812)
+[PASS] test_unwrap_notWhitelistedAccount() (gas: 419254)
+[PASS] test_wrap() (gas: 711064)
+[PASS] test_wrap_insufficientAmount() (gas: 72311)
+[PASS] test_wrap_invalidRecipient() (gas: 121101)
+[PASS] test_wrap_notWhitelistedAccount() (gas: 166520)
+[PASS] test_wrap_notWhitelistedRecipient() (gas: 225931)
+Suite result: ok. 48 passed; 0 failed; 0 skipped; finished in 4.59s (1.46s CPU time)
+
+Ran 58 tests for test/unit/projects/yieldToAllWithFee/MYieldFee.t.sol:MYieldFeeUnitTests
+[PASS] testFuzz_accruedYieldOf(bool,uint32,uint16,uint128,uint240,uint240,uint40,uint40) (runs: 5000, μ: 384235, ~: 381700)
+[PASS] testFuzz_balanceWithYieldOf(bool,uint32,uint16,uint128,uint240,uint240,uint40,uint40) (runs: 5000, μ: 384659, ~: 382647)
+[PASS] testFuzz_claimFee(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 5000, μ: 489588, ~: 489090)
+[PASS] testFuzz_claimYieldFor(bool,uint32,uint16,uint128,uint240,uint240) (runs: 5000, μ: 451594, ~: 450462)
+[PASS] testFuzz_currentIndex(uint32,uint32,uint16,uint16,uint128,uint40,uint40,uint40) (runs: 5000, μ: 337941, ~: 338948)
+[PASS] testFuzz_transfer(bool,uint32,uint16,uint128,uint240,uint240,uint240,uint240,uint240) (runs: 5000, μ: 666992, ~: 555501)
+[PASS] testFuzz_unwrap(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 5000, μ: 535015, ~: 457013)
+[PASS] testFuzz_wrap(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 5000, μ: 667437, ~: 667127)
+[PASS] test_accruedYieldOf() (gas: 310186)
+[PASS] test_balanceOf() (gas: 89773)
+[PASS] test_balanceWithYieldOf() (gas: 311005)
+[PASS] test_claimFee() (gas: 568956)
+[PASS] test_claimFee_noYield() (gas: 46650)
+[PASS] test_claimYieldFor() (gas: 399404)
+[PASS] test_claimYieldFor_claimRecipient() (gas: 775272)
+[PASS] test_claimYieldFor_noYield() (gas: 45933)
+[PASS] test_claimYieldFor_zeroYieldRecipient() (gas: 34571)
+[PASS] test_currentBlockTimestamp() (gas: 16223)
+[PASS] test_currentEarnerRate() (gas: 23916)
+[PASS] test_currentIndex() (gas: 630228)
+[PASS] test_disableEarning() (gas: 249501)
 [PASS] test_disableEarning_earningIsDisabled() (gas: 36402)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_earnerRate() (gas: 26697)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_enableEarning() (gas: 171825)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_enableEarning_earningIsEnabled() (gas: 70664)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize() (gas: 83870)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroAdmin() (gas: 5167707)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroMToken() (gas: 5170261)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroYieldFeeManager() (gas: 5167749)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_initialize_zeroYieldFeeRecipient() (gas: 5375744)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_principalOf() (gas: 89873)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_projectedTotalSupply() (gas: 154192)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRate() (gas: 97766)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRate_noUpdate() (gas: 64281)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRate_onlyYieldFeeManager() (gas: 39823)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRate_feeRateTooHigh() (gas: 40038)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRecipient() (gas: 59018)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRecipient_noUpdate() (gas: 66554)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRecipient_onlyYieldFeeManager() (gas: 40107)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_setFeeRecipient_zeroYieldFeeRecipient() (gas: 39298)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_totalAccruedYield() (gas: 353413)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_totalAccruedFee() (gas: 746971)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer() (gas: 631411)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_insufficientBalance() (gas: 116388)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_insufficientBalance_toSelf() (gas: 114355)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_invalidRecipient() (gas: 109706)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_transfer_toSelf() (gas: 442812)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap() (gas: 984873)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap_insufficientAmount() (gas: 37911)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_unwrap_insufficientBalance() (gas: 112403)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap() (gas: 1066622)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap_insufficientAmount() (gas: 48289)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-[PASS] test_wrap_invalidRecipient() (gas: 119928)
-Logs:
-  npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
-
-
-Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU time)
-
-╭-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------╮
-| lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy Contract |                 |       |        |        |         |
-+=================================================================================================================================================+
-| Deployment Cost                                                                           | Deployment Size |       |        |        |         |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
-| 393120                                                                                    | 1468            |       |        |        |         |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
-|                                                                                           |                 |       |        |        |         |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
-| Function Name                                                                             | Min             | Avg   | Median | Max    | # Calls |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------|
-| fallback                                                                                  | 5143            | 24997 | 14880  | 173521 | 33634   |
-╰-------------------------------------------------------------------------------------------+-----------------+-------+--------+--------+---------╯
-
-╭------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
-| src/MYieldFeeUpgradeable.sol:MYieldFeeUpgradeable Contract |                 |        |        |        |         |
-+===================================================================================================================+
-| Deployment Cost                                            | Deployment Size |        |        |        |         |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| 4647458                                                    | 21397           |        |        |        |         |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-|                                                            |                 |        |        |        |         |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| Function Name                                              | Min             | Avg    | Median | Max    | # Calls |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| HUNDRED_PERCENT                                            | 315             | 315    | 315    | 315    | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| accruedYieldOf                                             | 10030           | 10030  | 10030  | 10030  | 2       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| balanceOf                                                  | 2644            | 2644   | 2644   | 2644   | 13      |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimFee                                              | 74535           | 74535  | 74535  | 74535  | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimYieldFor                                              | 10102           | 32164  | 32164  | 54226  | 2       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| currentIndex                                               | 5310            | 5310   | 5310   | 5310   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| decimals                                                   | 2356            | 2356   | 2356   | 2356   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| disableEarning                                             | 26710           | 51447  | 51447  | 76184  | 2       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| enableEarning                                              | 28463           | 52400  | 51989  | 77162  | 4       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| hasRole                                                    | 2728            | 2728   | 2728   | 2728   | 2       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| initialize                                                 | 257522          | 257522 | 257522 | 257522 | 5       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| isEarningEnabled                                           | 2398            | 2398   | 2398   | 2398   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| latestIndex                                                | 2407            | 2407   | 2407   | 2407   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| mToken                                                     | 2362            | 2362   | 2362   | 2362   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| name                                                       | 3225            | 3225   | 3225   | 3225   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| symbol                                                     | 3234            | 3234   | 3234   | 3234   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalAccruedYield                                          | 6991            | 7624   | 7730   | 7730   | 7       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalAccruedFee                                       | 16322           | 16322  | 16322  | 16325  | 5       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalSupply                                                | 2382            | 2382   | 2382   | 2382   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| transfer                                                   | 62735           | 62735  | 62735  | 62735  | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| unwrap                                                     | 86777           | 96589  | 95340  | 108901 | 4       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| wrap                                                       | 104700          | 126496 | 126496 | 148293 | 2       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| wrapWithPermit                                             | 80086           | 122836 | 122836 | 165586 | 2       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| feeRate                                               | 2406            | 2406   | 2406   | 2406   | 1       |
-|------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| feeRecipient                                          | 2394            | 2394   | 2394   | 2394   | 1       |
-╰------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
-
-╭----------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
-| src/MYieldToOneUpgradeable.sol:MYieldToOneUpgradeable Contract |                 |        |        |        |         |
-+=======================================================================================================================+
-| Deployment Cost                                                | Deployment Size |        |        |        |         |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| 3894215                                                        | 17877           |        |        |        |         |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-|                                                                |                 |        |        |        |         |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| Function Name                                                  | Min             | Avg    | Median | Max    | # Calls |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| approve                                                        | 2746            | 12283  | 4983   | 29120  | 3       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| balanceOf                                                      | 2654            | 2654   | 2654   | 2654   | 513     |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| blacklist                                                      | 26654           | 26654  | 26654  | 26654  | 9       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimYield                                                     | 10074           | 44914  | 39724  | 84944  | 3       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| decimals                                                       | 2356            | 2356   | 2356   | 2356   | 2       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| disableEarning                                                 | 7916            | 24776  | 14791  | 61609  | 4       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| enableEarning                                                  | 7941            | 35549  | 32694  | 68855  | 8       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| hasRole                                                        | 2706            | 2706   | 2706   | 2706   | 3       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| initialize                                                     | 24201           | 240203 | 258372 | 258372 | 48      |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| isEarningEnabled                                               | 7868            | 7871   | 7873   | 7873   | 3       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| mToken                                                         | 2428            | 2428   | 2428   | 2428   | 2       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| name                                                           | 3225            | 3225   | 3225   | 3225   | 2       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setYieldRecipient                                              | 2799            | 4915   | 3871   | 9120   | 4       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| symbol                                                         | 3257            | 3257   | 3257   | 3257   | 2       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalSupply                                                    | 2349            | 2349   | 2349   | 2349   | 15      |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| transfer                                                       | 2743            | 17390  | 17442  | 34542  | 251     |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| transferFrom                                                   | 8167            | 8167   | 8167   | 8167   | 1       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| unwrap                                                         | 2723            | 33117  | 30913  | 97155  | 9       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| wrap                                                           | 2765            | 65279  | 82273  | 119702 | 511     |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| wrapWithPermit(address,uint256,uint256,bytes)                  | 83926           | 83926  | 83926  | 83926  | 1       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| wrapWithPermit(address,uint256,uint256,uint8,bytes32,bytes32)  | 69269           | 96834  | 83564  | 137669 | 3       |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yield                                                          | 10015           | 11147  | 10018  | 13133  | 14      |
-|----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldRecipient                                                 | 2373            | 2373   | 2373   | 2373   | 6       |
-╰----------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
-
-╭-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------╮
-| test/harness/BlacklistableUpgradeableHarness.sol:BlacklistableUpgradeableHarness Contract |                 |       |        |       |         |
-+================================================================================================================================================+
-| Deployment Cost                                                                           | Deployment Size |       |        |       |         |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| 900213                                                                                    | 4031            |       |        |       |         |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-|                                                                                           |                 |       |        |       |         |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| Function Name                                                                             | Min             | Avg   | Median | Max   | # Calls |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| blacklist                                                                                 | 2753            | 17516 | 26610  | 26610 | 5       |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| blacklistAccounts                                                                         | 2853            | 57325 | 63486  | 99477 | 4       |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| hasRole                                                                                   | 2660            | 2660  | 2660   | 2660  | 1       |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| initialize                                                                                | 23304           | 47387 | 49108  | 49108 | 15      |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| isBlacklisted                                                                             | 2599            | 2599  | 2599   | 2599  | 11      |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| unblacklist                                                                               | 2710            | 5683  | 4923   | 9418  | 3       |
-|-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
-| unblacklistAccounts                                                                       | 2875            | 13033 | 5322   | 30903 | 3       |
-╰-------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------╯
-
-╭-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
-| test/harness/MYieldFeeUpgradeableHarness.sol:MYieldFeeUpgradeableHarness Contract |                 |        |        |        |         |
-+==========================================================================================================================================+
-| Deployment Cost                                                                   | Deployment Size |        |        |        |         |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| 4961963                                                                           | 22924           |        |        |        |         |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-|                                                                                   |                 |        |        |        |         |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| Function Name                                                                     | Min             | Avg    | Median | Max    | # Calls |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| HUNDRED_PERCENT                                                                   | 293             | 293    | 293    | 293    | 1       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| accruedYieldOf                                                                    | 9266            | 9639   | 10005  | 10008  | 1533    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| balanceOf                                                                         | 2622            | 2622   | 2622   | 2622   | 2253    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| balanceWithYieldOf                                                                | 9528            | 9899   | 10267  | 10270  | 1267    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimFee                                                                     | 12540           | 71104  | 70009  | 88587  | 259     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimYieldFor                                                                     | 440             | 19064  | 19310  | 37149  | 260     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| currentBlockTimestamp                                                             | 288             | 288    | 288    | 288    | 1       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| currentEarnerRate                                                                 | 5375            | 5375   | 5375   | 5375   | 1       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| currentIndex                                                                      | 4637            | 5056   | 5376   | 5376   | 5151    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| disableEarning                                                                    | 2402            | 15950  | 19887  | 25561  | 3       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| earnerRate                                                                        | 7782            | 7782   | 7782   | 7782   | 1       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| enableEarning                                                                     | 2426            | 28568  | 41568  | 41711  | 3       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| hasRole                                                                           | 2750            | 2750   | 2750   | 2750   | 2       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| initialize                                                                        | 25207           | 245391 | 258278 | 258278 | 56      |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| isEarningEnabled                                                                  | 2398            | 2398   | 2398   | 2398   | 1       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| latestIndex                                                                       | 2430            | 2430   | 2430   | 2430   | 5       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| latestRate                                                                        | 2429            | 2429   | 2429   | 2429   | 517     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| principalOf                                                                       | 2659            | 2659   | 2659   | 2659   | 618     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| projectedTotalSupply                                                              | 4820            | 5172   | 4820   | 5559   | 266     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setAccountOf                                                                      | 5041            | 43772  | 44841  | 44841  | 1810    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setLatestIndex                                                                    | 2550            | 5302   | 5350   | 5350   | 2049    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setLatestRate                                                                     | 2551            | 4135   | 5351   | 5351   | 2319    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setLatestUpdateTimestamp                                                          | 2551            | 4924   | 5351   | 5351   | 256     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setTotalPrincipal                                                                 | 2608            | 5296   | 5408   | 5408   | 2060    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setTotalSupply                                                                    | 2520            | 19903  | 22420  | 22420  | 2060    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setFeeRate                                                                   | 2820            | 12506  | 11227  | 22889  | 2309    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setFeeRecipient                                                              | 2755            | 4869   | 3825   | 9073   | 4       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalAccruedYield                                                                 | 7753            | 7753   | 7753   | 7753   | 24      |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalAccruedFee                                                              | 12468           | 12816  | 12471  | 13210  | 524     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalPrincipal                                                                    | 2386            | 2386   | 2386   | 2386   | 2664    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalSupply                                                                       | 2405            | 2405   | 2405   | 2405   | 2920    |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| transfer                                                                          | 558             | 15387  | 4694   | 62758  | 261     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| unwrap                                                                            | 530             | 28387  | 2813   | 59759  | 261     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| updateIndex                                                                       | 12653           | 19432  | 21127  | 21127  | 5       |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| wrap                                                                              | 10908           | 60688  | 59586  | 110886 | 261     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| feeRate                                                                      | 2429            | 2429   | 2429   | 2429   | 238     |
-|-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| feeRecipient                                                                 | 2417            | 2417   | 2417   | 2417   | 4       |
-╰-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
-
-╭---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
-| test/harness/SpokeMYieldFeeUpgradeableHarness.sol:SpokeMYieldFeeUpgradeableHarness Contract |                 |        |        |        |         |
-+====================================================================================================================================================+
-| Deployment Cost                                                                             | Deployment Size |        |        |        |         |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| 4760040                                                                                     | 21985           |        |        |        |         |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-|                                                                                             |                 |        |        |        |         |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| Function Name                                                                               | Min             | Avg    | Median | Max    | # Calls |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| HUNDRED_PERCENT                                                                             | 271             | 271    | 271    | 271    | 1       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| currentBlockTimestamp                                                                       | 5385            | 5385   | 5385   | 5385   | 1       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| currentEarnerRate                                                                           | 5351            | 5351   | 5351   | 5351   | 1       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| hasRole                                                                                     | 2684            | 2684   | 2684   | 2684   | 2       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| initialize                                                                                  | 27199           | 229820 | 280476 | 280476 | 5       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| latestIndex                                                                                 | 2452            | 2452   | 2452   | 2452   | 1       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| rateOracle                                                                                  | 2397            | 2397   | 2397   | 2397   | 1       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| feeRate                                                                                | 2451            | 2451   | 2451   | 2451   | 1       |
-|---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| feeRecipient                                                                           | 2394            | 2394   | 2394   | 2394   | 1       |
-╰---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+[PASS] test_earnerRate() (gas: 26720)
+[PASS] test_enableEarning() (gas: 171762)
+[PASS] test_enableEarning_earningIsEnabled() (gas: 70708)
+[PASS] test_initialize() (gas: 98864)
+[PASS] test_initialize_zeroAdmin() (gas: 5357525)
+[PASS] test_initialize_zeroClaimRecipientManager() (gas: 5357545)
+[PASS] test_initialize_zeroMToken() (gas: 5360078)
+[PASS] test_initialize_zeroYieldFeeManager() (gas: 5357551)
+[PASS] test_initialize_zeroYieldFeeRecipient() (gas: 5612262)
+[PASS] test_principalOf() (gas: 89839)
+[PASS] test_projectedTotalSupply() (gas: 154257)
+[PASS] test_setClaimRecipient() (gas: 95290)
+[PASS] test_setClaimRecipient_onlyClaimRecipientManager() (gas: 42750)
+[PASS] test_setClaimRecipient_zeroAccount() (gas: 41927)
+[PASS] test_setClaimRecipient_zeroClaimRecipient() (gas: 41959)
+[PASS] test_setFeeRate() (gas: 97629)
+[PASS] test_setFeeRate_feeRateTooHigh() (gas: 39997)
+[PASS] test_setFeeRate_noUpdate() (gas: 64196)
+[PASS] test_setFeeRate_onlyYieldFeeManager() (gas: 39781)
+[PASS] test_setFeeRecipient() (gas: 253123)
+[PASS] test_setFeeRecipient_noUpdate() (gas: 76789)
+[PASS] test_setFeeRecipient_onlyFeeManager() (gas: 40142)
+[PASS] test_setFeeRecipient_zeroFeeRecipient() (gas: 51647)
+[PASS] test_totalAccruedFee() (gas: 747718)
+[PASS] test_totalAccruedYield() (gas: 353714)
+[PASS] test_transfer() (gas: 631805)
+[PASS] test_transfer_insufficientBalance() (gas: 116407)
+[PASS] test_transfer_insufficientBalance_toSelf() (gas: 114439)
+[PASS] test_transfer_invalidRecipient() (gas: 109757)
+[PASS] test_transfer_toSelf() (gas: 446199)
+[PASS] test_unwrap() (gas: 1044038)
+[PASS] test_unwrap_insufficientAmount() (gas: 68520)
+[PASS] test_unwrap_insufficientBalance() (gas: 197772)
+[PASS] test_wrap() (gas: 1248188)
+[PASS] test_wrap_insufficientAmount() (gas: 47861)
+[PASS] test_wrap_invalidRecipient() (gas: 163700)
+Suite result: ok. 58 passed; 0 failed; 0 skipped; finished in 8.30s (14.11s CPU time)
+
+╭-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy Contract |                 |        |        |        |         |
++==================================================================================================================================================+
+| Deployment Cost                                                                           | Deployment Size |        |        |        |         |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 440584                                                                                    | 1532            |        |        |        |         |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                                           |                 |        |        |        |         |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                                             | Min             | Avg    | Median | Max    | # Calls |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| ONE_HUNDRED_PERCENT                                                                       | 5186            | 5200   | 5208   | 5208   | 3       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedFeeOf                                                                              | 17516           | 17532  | 17539  | 17539  | 7       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldAndFeeOf                                                                      | 17573           | 17878  | 17873  | 18173  | 10      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                                                            | 14948           | 17343  | 17534  | 18106  | 16      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| approve                                                                                   | 29203           | 47173  | 55592  | 55604  | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                                                 | 7436            | 7436   | 7436   | 7436   | 502     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimFee                                                                                  | 38521           | 96607  | 95480  | 114058 | 260     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimFor                                                                                  | 26483           | 64935  | 67576  | 105376 | 11      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimRecipientFor                                                                         | 7539            | 7545   | 7549   | 7549   | 5       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYield                                                                                | 86521           | 86521  | 86521  | 86521  | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFor                                                                             | 26502           | 49474  | 49743  | 114198 | 264     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentBlockTimestamp                                                                     | 5160            | 5160   | 5160   | 5160   | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentEarnerRate                                                                         | 10183           | 10183  | 10183  | 10183  | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentIndex                                                                              | 10182           | 11659  | 11659  | 13136  | 2       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                                                            | 33935           | 60695  | 50487  | 102162 | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| earnerRate                                                                                | 12654           | 12654  | 12654  | 12654  | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                                             | 33894           | 67489  | 69615  | 103095 | 14      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| fallback                                                                                  | 716             | 15800  | 9509   | 162236 | 22084   |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRate                                                                                   | 7290            | 7290   | 7290   | 7290   | 245     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRateOf                                                                                 | 7478            | 7478   | 7478   | 7478   | 14      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRecipient                                                                              | 7246            | 7304   | 7314   | 7314   | 7       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| grantRole                                                                                 | 56223           | 56233  | 56235  | 56235  | 224     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                                                   | 7614            | 7620   | 7620   | 7627   | 4       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                                                          | 7270            | 11720  | 12854  | 12859  | 5       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isWhitelisted                                                                             | 7466            | 7466   | 7466   | 7466   | 14      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                                               | 7279            | 7279   | 7280   | 7280   | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestRate                                                                                | 7280            | 7280   | 7280   | 7280   | 517     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| msgSender                                                                                 | 716             | 718    | 716    | 5216   | 1572    |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountInfo(address,bool,uint16)                                                       | 29310           | 50872  | 53830  | 110735 | 15      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountInfo(address[],bool[],uint16[])                                                 | 30167           | 39211  | 30905  | 81646  | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountOf(address,uint256,uint112)                                                     | 31604           | 70190  | 71548  | 71752  | 1811    |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountOf(address,uint256,uint112,bool,uint16)                                         | 30084           | 52230  | 52020  | 71992  | 564     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setClaimRecipient                                                                         | 29333           | 38620  | 33001  | 53514  | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setFeeRate                                                                                | 28830           | 38526  | 37251  | 48914  | 2309    |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setFeeRecipient                                                                           | 28868           | 51247  | 45497  | 98737  | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestIndex                                                                            | 28684           | 31459  | 31508  | 31508  | 2049    |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestRate                                                                             | 28659           | 30251  | 31471  | 31483  | 2321    |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestUpdateTimestamp                                                                  | 28637           | 31182  | 31461  | 31485  | 256     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swap                                                                                      | 169175          | 169175 | 169175 | 169175 | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInM                                                                                   | 58960           | 136455 | 129886 | 208877 | 1283    |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInMWithPermit(address,uint256,address,uint256,bytes)                                  | 155816          | 155816 | 155816 | 155816 | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInMWithPermit(address,uint256,address,uint256,uint8,bytes32,bytes32)                  | 137827          | 170863 | 167157 | 214447 | 6       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInToken                                                                               | 281175          | 281175 | 281175 | 281175 | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapOutM                                                                                  | 55435           | 86286  | 57931  | 161908 | 280     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapOutToken                                                                              | 255063          | 255063 | 255063 | 255063 | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedFee                                                                           | 17388           | 17809  | 17388  | 21245  | 277     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYield                                                                         | 11866           | 12629  | 12668  | 12668  | 31      |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                                               | 7243            | 7243   | 7243   | 7243   | 7       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                                                  | 26812           | 57466  | 58172  | 70471  | 248     |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transferFrom                                                                              | 35111           | 35111  | 35111  | 35111  | 1       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| updateIndex                                                                               | 38612           | 45391  | 47086  | 47086  | 5       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yield                                                                                     | 15169           | 17616  | 18024  | 18027  | 7       |
+|-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldRecipient                                                                            | 7285            | 7285   | 7285   | 7285   | 1       |
+╰-------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/projects/earnerManager/MEarnerManager.sol:MEarnerManager Contract |                 |        |        |        |         |
++==============================================================================================================================+
+| Deployment Cost                                                       | Deployment Size |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4377681                                                               | 20126           |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                       |                 |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                         | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| ONE_HUNDRED_PERCENT                                                   | 336             | 336    | 336    | 336    | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldAndFeeOf                                                  | 13269           | 13287  | 13292  | 13292  | 5       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                                        | 13218           | 13225  | 13227  | 13231  | 4       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                             | 2583            | 2583   | 2583   | 2583   | 11      |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimFor                                                              | 13377           | 36353  | 35400  | 63139  | 6       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentIndex                                                          | 8264            | 8264   | 8264   | 8264   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| decimals                                                              | 2356            | 2356   | 2356   | 2356   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                         | 43775           | 43775  | 43775  | 43775  | 2       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRecipient                                                          | 2442            | 2442   | 2442   | 2442   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                               | 2736            | 2736   | 2736   | 2736   | 2       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                            | 280097          | 280097 | 280097 | 280097 | 3       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                                      | 7982            | 7982   | 7982   | 7982   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mToken                                                                | 2429            | 2429   | 2429   | 2429   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| name                                                                  | 3247            | 3247   | 3247   | 3247   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountInfo                                                        | 27261           | 27261  | 27261  | 27261  | 6       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setFeeRecipient                                                       | 72433           | 72433  | 72433  | 72433  | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| symbol                                                                | 3213            | 3213   | 3213   | 3213   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                           | 2371            | 2371   | 2371   | 2371   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                              | 49321           | 49321  | 49321  | 49321  | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                                  | 96472           | 112166 | 96472  | 135709 | 5       |
+╰-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-----------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/projects/yieldToAllWithFee/MYieldFee.sol:MYieldFee Contract |                 |        |        |        |         |
++========================================================================================================================+
+| Deployment Cost                                                 | Deployment Size |        |        |        |         |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4812078                                                         | 22164           |        |        |        |         |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                 |                 |        |        |        |         |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                   | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| ONE_HUNDRED_PERCENT                                             | 336             | 336    | 336    | 336    | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                                  | 10073           | 10073  | 10073  | 10073  | 2       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| approve                                                         | 7597            | 20422  | 24697  | 24697  | 4       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                       | 2615            | 2615   | 2615   | 2615   | 13      |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimFee                                                        | 74137           | 74137  | 74137  | 74137  | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFor                                                   | 10101           | 34226  | 34226  | 58352  | 2       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentIndex                                                    | 5310            | 5310   | 5310   | 5310   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| decimals                                                        | 2400            | 2400   | 2400   | 2400   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                                  | 26755           | 51492  | 51492  | 76229  | 2       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                   | 28463           | 52400  | 51989  | 77162  | 4       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRate                                                         | 2418            | 2418   | 2418   | 2418   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRecipient                                                    | 2374            | 2374   | 2374   | 2374   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                         | 2749            | 2749   | 2749   | 2749   | 2       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                      | 304232          | 304232 | 304232 | 304232 | 5       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                                | 2398            | 2398   | 2398   | 2398   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                     | 2407            | 2407   | 2407   | 2407   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mToken                                                          | 2373            | 2373   | 2373   | 2373   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| name                                                            | 3247            | 3247   | 3247   | 3247   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| symbol                                                          | 3234            | 3234   | 3234   | 3234   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedFee                                                 | 16370           | 16370  | 16370  | 16373  | 5       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYield                                               | 6994            | 7625   | 7730   | 7733   | 7       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                     | 2382            | 2382   | 2382   | 2382   | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                        | 62908           | 62908  | 62908  | 62908  | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                          | 99987           | 101246 | 99987  | 105024 | 4       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                            | 40767           | 98489  | 108180 | 136830 | 4       |
+╰-----------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭--------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/projects/yieldToOne/MYieldToOne.sol:MYieldToOne Contract |                 |        |        |        |         |
++=====================================================================================================================+
+| Deployment Cost                                              | Deployment Size |        |        |        |         |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 3852322                                                      | 17683           |        |        |        |         |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                              |                 |        |        |        |         |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                | Min             | Avg    | Median | Max    | # Calls |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| approve                                                      | 2764            | 22843  | 29164  | 29164  | 8       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                    | 2616            | 2616   | 2616   | 2616   | 526     |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| blacklist                                                    | 26648           | 26648  | 26648  | 26648  | 8       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYield                                                   | 10074           | 37009  | 40370  | 60585  | 3       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| decimals                                                     | 2378            | 2378   | 2378   | 2378   | 2       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                               | 7916            | 27534  | 19038  | 64145  | 4       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                | 7941            | 35541  | 32672  | 68855  | 8       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                      | 2705            | 2705   | 2705   | 2705   | 3       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                   | 24345           | 262969 | 280678 | 280678 | 53      |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                             | 7890            | 7893   | 7895   | 7895   | 3       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mToken                                                       | 2374            | 2374   | 2374   | 2374   | 2       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| name                                                         | 3225            | 3225   | 3225   | 3225   | 2       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setYieldRecipient                                            | 2793            | 4909   | 3865   | 9114   | 4       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| symbol                                                       | 3212            | 3212   | 3212   | 3212   | 2       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                  | 2349            | 2349   | 2349   | 2349   | 15      |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                     | 552             | 17533  | 17605  | 34705  | 252     |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transferFrom                                                 | 8231            | 8231   | 8231   | 8231   | 1       |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                       | 3939            | 44104  | 46970  | 93638  | 10      |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                         | 4010            | 61664  | 78567  | 108696 | 520     |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yield                                                        | 10037           | 11301  | 10040  | 13155  | 15      |
+|--------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| yieldRecipient                                               | 2413            | 2413   | 2413   | 2413   | 6       |
+╰--------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/swap/SwapFacility.sol:SwapFacility Contract                          |                 |        |        |        |         |
++=================================================================================================================================+
+| Deployment Cost                                                          | Deployment Size |        |        |        |         |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 2793837                                                                  | 13391           |        |        |        |         |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                          |                 |        |        |        |         |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                            | Min             | Avg    | Median | Max    | # Calls |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| DEFAULT_ADMIN_ROLE                                                       | 238             | 238    | 238    | 238    | 1       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| grantRole                                                                | 29416           | 29416  | 29416  | 29416  | 240     |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                                  | 2660            | 2660   | 2660   | 2660   | 1       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                               | 48850           | 48850  | 48850  | 48850  | 196     |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mToken                                                                   | 248             | 248    | 248    | 248    | 1       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| msgSender                                                                | 344             | 344    | 344    | 344    | 1574    |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| registrar                                                                | 249             | 249    | 249    | 249    | 1       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swap                                                                     | 9284            | 94016  | 91266  | 184249 | 4       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInM                                                                  | 9204            | 134094 | 127597 | 229432 | 1287    |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInMWithPermit(address,uint256,address,uint256,bytes)                 | 153269          | 153269 | 153269 | 153269 | 1       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInMWithPermit(address,uint256,address,uint256,uint8,bytes32,bytes32) | 144074          | 183149 | 174861 | 239849 | 6       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapInToken                                                              | 323799          | 323799 | 323799 | 323799 | 1       |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapOutM                                                                 | 9206            | 69022  | 30929  | 159763 | 283     |
+|--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapOutToken                                                             | 291159          | 291159 | 291159 | 291159 | 1       |
+╰--------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-----------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/swap/UniswapV3SwapAdapter.sol:UniswapV3SwapAdapter Contract |                 |        |        |        |         |
++========================================================================================================================+
+| Deployment Cost                                                 | Deployment Size |        |        |        |         |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 1416215                                                         | 7025            |        |        |        |         |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                 |                 |        |        |        |         |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                   | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| baseToken                                                       | 247             | 247    | 247    | 247    | 3       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapIn                                                          | 201861          | 242133 | 242133 | 282406 | 2       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapOut                                                         | 197956          | 239778 | 239778 | 281600 | 2       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| swapRouter                                                      | 225             | 225    | 225    | 225    | 1       |
+|-----------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| whitelistedTokens                                               | 2593            | 2593   | 2593   | 2593   | 3       |
+╰-----------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭---------------------------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/harness/BlacklistableHarness.sol:BlacklistableHarness Contract |                 |       |        |       |         |
++==========================================================================================================================+
+| Deployment Cost                                                     | Deployment Size |       |        |       |         |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| 902375                                                              | 4041            |       |        |       |         |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                                     |                 |       |        |       |         |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                                       | Min             | Avg   | Median | Max   | # Calls |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| blacklist                                                           | 2742            | 17514 | 26610  | 26610 | 5       |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| blacklistAccounts                                                   | 2842            | 57323 | 63486  | 99477 | 4       |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| hasRole                                                             | 2660            | 2660  | 2660   | 2660  | 1       |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| initialize                                                          | 23304           | 47387 | 49108  | 49108 | 15      |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| isBlacklisted                                                       | 2599            | 2599  | 2599   | 2599  | 11      |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| unblacklist                                                         | 2699            | 5702  | 4955   | 9452  | 3       |
+|---------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| unblacklistAccounts                                                 | 2864            | 13085 | 5354   | 31039 | 3       |
+╰---------------------------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/harness/MEarnerManagerHarness.sol:MEarnerManagerHarness Contract |                 |        |        |        |         |
++==============================================================================================================================+
+| Deployment Cost                                                       | Deployment Size |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4607828                                                               | 21259           |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                       |                 |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                         | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| ONE_HUNDRED_PERCENT                                                   | 314             | 314    | 314    | 314    | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedFeeOf                                                          | 12641           | 12657  | 12664  | 12664  | 7       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldAndFeeOf                                                  | 12692           | 12708  | 12715  | 12715  | 5       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                                        | 12535           | 12644  | 12654  | 12664  | 10      |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| approve                                                               | 2725            | 20702  | 29130  | 29130  | 6       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                             | 2561            | 2561   | 2561   | 2561   | 502     |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimFor                                                              | 415             | 42518  | 41263  | 79063  | 5       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                                        | 7998            | 11944  | 11944  | 15891  | 2       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                                         | 7957            | 26563  | 32765  | 32765  | 4       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRateOf                                                             | 2603            | 2603   | 2603   | 2603   | 14      |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRecipient                                                          | 2442            | 2442   | 2442   | 2442   | 5       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                               | 2736            | 2736   | 2736   | 2736   | 2       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                            | 24922           | 264238 | 280842 | 280842 | 52      |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                                      | 7987            | 7987   | 7987   | 7987   | 2       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isWhitelisted                                                         | 2591            | 2591   | 2591   | 2591   | 14      |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountInfo(address,bool,uint16)                                   | 2939            | 22330  | 5279   | 84142  | 9       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountInfo(address[],bool[],uint16[])                             | 3382            | 11759  | 3428   | 53487  | 6       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountOf                                                          | 8047            | 25388  | 25147  | 45047  | 564     |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setFeeRecipient                                                       | 2792            | 15493  | 4922   | 33476  | 5       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                           | 2371            | 2371   | 2371   | 2371   | 7       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                              | 574             | 31204  | 31710  | 48797  | 248     |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transferFrom                                                          | 8259            | 8259   | 8259   | 8259   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                                | 3925            | 32354  | 33496  | 58509  | 6       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                                  | 3932            | 81088  | 84370  | 107070 | 501     |
+╰-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/harness/MSpokeYieldFeeHarness.sol:MSpokeYieldFeeHarness Contract |                 |        |        |        |         |
++==============================================================================================================================+
+| Deployment Cost                                                       | Deployment Size |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 5082876                                                               | 23488           |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                                       |                 |        |        |        |         |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                                         | Min             | Avg    | Median | Max    | # Calls |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| ONE_HUNDRED_PERCENT                                                   | 314             | 314    | 314    | 314    | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentBlockTimestamp                                                 | 5362            | 5362   | 5362   | 5362   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentEarnerRate                                                     | 5395            | 5395   | 5395   | 5395   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRate                                                               | 2419            | 2419   | 2419   | 2419   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRecipient                                                          | 2441            | 2441   | 2441   | 2441   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                               | 2727            | 2727   | 2727   | 2727   | 2       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                            | 27623           | 268001 | 328096 | 328096 | 5       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                           | 2451            | 2451   | 2451   | 2451   | 1       |
+|-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| rateOracle                                                            | 2419            | 2419   | 2419   | 2419   | 1       |
+╰-----------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/harness/MYieldFeeHarness.sol:MYieldFeeHarness Contract |                 |        |        |        |         |
++====================================================================================================================+
+| Deployment Cost                                             | Deployment Size |        |        |        |         |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 5146539                                                     | 23784           |        |        |        |         |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                             |                 |        |        |        |         |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                               | Min             | Avg    | Median | Max    | # Calls |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| ONE_HUNDRED_PERCENT                                         | 314             | 314    | 314    | 314    | 1       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| accruedYieldOf                                              | 9309            | 9689   | 10048  | 10051  | 1543    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| approve                                                     | 24697           | 24697  | 24697  | 24697  | 1       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceOf                                                   | 2616            | 2616   | 2616   | 2616   | 2272    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| balanceWithYieldOf                                          | 9505            | 9877   | 10244  | 10247  | 1267    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimFee                                                    | 12585           | 70657  | 69544  | 88122  | 259     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimRecipientFor                                           | 2664            | 2670   | 2674   | 2674   | 5       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| claimYieldFor                                               | 434             | 23104  | 23436  | 90691  | 262     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentBlockTimestamp                                       | 288             | 288    | 288    | 288    | 1       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentEarnerRate                                           | 5311            | 5311   | 5311   | 5311   | 1       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| currentIndex                                                | 4637            | 5062   | 5376   | 5376   | 5153    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| disableEarning                                              | 2402            | 15965  | 19910  | 25584  | 3       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| earnerRate                                                  | 7782            | 7782   | 7782   | 7782   | 1       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| enableEarning                                               | 2426            | 28569  | 41569  | 41712  | 3       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRate                                                     | 2418            | 2418   | 2418   | 2418   | 244     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| feeRecipient                                                | 2397            | 2397   | 2397   | 2397   | 4       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| hasRole                                                     | 2705            | 2705   | 2705   | 2705   | 3       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| initialize                                                  | 25219           | 286869 | 304988 | 304988 | 63      |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| isEarningEnabled                                            | 2398            | 2398   | 2398   | 2398   | 1       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestIndex                                                 | 2408            | 2408   | 2408   | 2408   | 5       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| latestRate                                                  | 2408            | 2408   | 2408   | 2408   | 517     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| principalOf                                                 | 2631            | 2631   | 2631   | 2631   | 625     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| projectedTotalSupply                                        | 4842            | 5192   | 4842   | 5581   | 266     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setAccountOf                                                | 5035            | 43437  | 44835  | 44835  | 1811    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setClaimRecipient                                           | 2894            | 12022  | 6328   | 26839  | 6       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setFeeRate                                                  | 2756            | 12444  | 11163  | 22826  | 2309    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setFeeRecipient                                             | 2792            | 32001  | 15142  | 94930  | 4       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestIndex                                              | 2572            | 5324   | 5372   | 5372   | 2049    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestRate                                               | 2595            | 4175   | 5395   | 5395   | 2321    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setLatestUpdateTimestamp                                    | 2573            | 5099   | 5373   | 5373   | 256     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setTotalPrincipal                                           | 2607            | 5273   | 5407   | 5407   | 2060    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| setTotalSupply                                              | 2542            | 19885  | 22442  | 22442  | 2060    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedFee                                             | 12516           | 12874  | 12516  | 13258  | 272     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalAccruedYield                                           | 7796            | 7796   | 7796   | 7796   | 24      |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalPrincipal                                              | 2408            | 2408   | 2408   | 2408   | 2671    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalSupply                                                 | 2405            | 2405   | 2405   | 2405   | 2927    |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| transfer                                                    | 552             | 16256  | 4740   | 62931  | 261     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| unwrap                                                      | 3904            | 30799  | 6199   | 58356  | 261     |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| updateIndex                                                 | 12676           | 19455  | 21150  | 21150  | 5       |
+|-------------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| wrap                                                        | 3932            | 53832  | 54684  | 106723 | 261     |
+╰-------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
 
 ╭-------------------------------------+-----------------+-------+--------+-------+---------╮
 | test/utils/Mocks.sol:MockM Contract |                 |       |        |       |         |
 +==========================================================================================+
 | Deployment Cost                     | Deployment Size |       |        |       |         |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| 580170                              | 2473            |       |        |       |         |
+| 627532                              | 2692            |       |        |       |         |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
 |                                     |                 |       |        |       |         |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
 | Function Name                       | Min             | Avg   | Median | Max   | # Calls |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| balanceOf                           | 2549            | 2549  | 2549   | 2549  | 1188    |
+| approve                             | 44282           | 44282 | 44282  | 44282 | 2       |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| currentIndex                        | 2379            | 2379  | 2379   | 2379  | 3       |
+| balanceOf                           | 549             | 2350  | 2549   | 2549  | 1372    |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| earnerRate                          | 0               | 79    | 0      | 2366  | 267     |
+| currentIndex                        | 379             | 2368  | 2379   | 2379  | 784     |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| isEarning                           | 2594            | 2594  | 2594   | 2594  | 8       |
+| earnerRate                          | 0               | 80    | 0      | 2389  | 267     |
+|-------------------------------------+-----------------+-------+--------+-------+---------|
+| isEarning                           | 2594            | 2594  | 2594   | 2594  | 16      |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
 | latestUpdateTimestamp               | 0               | 0     | 0      | 0     | 1       |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| setBalanceOf                        | 24252           | 40543 | 44128  | 44284 | 1783    |
+| setBalanceOf                        | 24182           | 41277 | 44106  | 44262 | 2292    |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| setCurrentIndex                     | 26558           | 37954 | 43646  | 43658 | 3       |
+| setCurrentIndex                     | 23769           | 26519 | 26569  | 26581 | 55      |
 |-------------------------------------+-----------------+-------+--------+-------+---------|
-| setEarnerRate                       | 26520           | 43309 | 43620  | 43620 | 110     |
+| setEarnerRate                       | 26564           | 43454 | 43664  | 43664 | 163     |
 ╰-------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭----------------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/utils/Mocks.sol:MockMExtension Contract |                 |       |        |       |         |
++===================================================================================================+
+| Deployment Cost                              | Deployment Size |       |        |       |         |
+|----------------------------------------------+-----------------+-------+--------+-------+---------|
+| 807281                                       | 3738            |       |        |       |         |
+|----------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                              |                 |       |        |       |         |
+|----------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                | Min             | Avg   | Median | Max   | # Calls |
+|----------------------------------------------+-----------------+-------+--------+-------+---------|
+| approve                                      | 46097           | 46097 | 46097  | 46097 | 1       |
+|----------------------------------------------+-----------------+-------+--------+-------+---------|
+| balanceOf                                    | 2521            | 2521  | 2521   | 2521  | 7       |
+╰----------------------------------------------+-----------------+-------+--------+-------+---------╯
 
 ╭----------------------------------------------+-----------------+-----+--------+-----+---------╮
 | test/utils/Mocks.sol:MockRateOracle Contract |                 |     |        |     |         |
@@ -958,5 +937,23 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 | earnerRate                                   | 0               | 0   | 0      | 0   | 1       |
 ╰----------------------------------------------+-----------------+-----+--------+-----+---------╯
 
+╭---------------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/utils/Mocks.sol:MockRegistrar Contract |                 |       |        |       |         |
++==================================================================================================+
+| Deployment Cost                             | Deployment Size |       |        |       |         |
+|---------------------------------------------+-----------------+-------+--------+-------+---------|
+| 196851                                      | 693             |       |        |       |         |
+|---------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                             |                 |       |        |       |         |
+|---------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                               | Min             | Avg   | Median | Max   | # Calls |
+|---------------------------------------------+-----------------+-------+--------+-------+---------|
+| get                                         | 427             | 2424  | 2427   | 2427  | 1558    |
+|---------------------------------------------+-----------------+-------+--------+-------+---------|
+| listContains                                | 2636            | 2636  | 2636   | 2636  | 1558    |
+|---------------------------------------------+-----------------+-------+--------+-------+---------|
+| setEarner                                   | 44125           | 44125 | 44125  | 44125 | 165     |
+╰---------------------------------------------+-----------------+-------+--------+-------+---------╯
 
-Ran 6 test suites in 12.00s (24.90s CPU time): 118 tests passed, 0 failed, 0 skipped (118 total tests)
+
+Ran 11 test suites in 9.00s (41.76s CPU time): 196 tests passed, 0 failed, 0 skipped (196 total tests)
