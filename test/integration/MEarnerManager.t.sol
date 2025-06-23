@@ -8,8 +8,6 @@ import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-import { Test } from "../../lib/forge-std/src/Test.sol";
-
 contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
