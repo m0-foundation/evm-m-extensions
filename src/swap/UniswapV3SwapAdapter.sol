@@ -67,12 +67,12 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
         _revertIfInvalidSwapInPath(inputToken, path);
         _revertIfZeroRecipient(recipient);
 
-        /* Transfer token input from sender to this contract */
+        // Transfer token input from sender to this contract
         IERC20(inputToken).safeTransferFrom(msg.sender, address(this), inputAmount);
 
         address swapRouter_ = swapRouter;
 
-        /* Approve the router to spend token input */
+        // Approve the router to spend token input
         IERC20(inputToken).forceApprove(swapRouter_, inputAmount);
 
         // Swap token input for base token

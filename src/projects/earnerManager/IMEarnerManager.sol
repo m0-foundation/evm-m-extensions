@@ -55,6 +55,9 @@ interface IMEarnerManager {
     /// @notice Emitted if the fee rate provided exceeds 100% in bps.
     error InvalidFeeRate();
 
+    /// @notice Emitted if account is not whitelisted and fee rate is not zero.
+    error InvalidAccountInfo();
+
     /// @notice Emitted if the account is not whitelisted.
     error NotWhitelisted(address account);
 

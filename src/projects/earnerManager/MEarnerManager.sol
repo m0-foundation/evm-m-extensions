@@ -295,7 +295,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     function _setAccountInfo(address account, bool status, uint16 feeRate) internal {
         if (account == address(0)) revert ZeroAccount();
         if (feeRate > ONE_HUNDRED_PERCENT) revert InvalidFeeRate();
-        // if (status == false && feeRate != 0) revert InvalidFeeRate();
+        if (status == false && feeRate != 0) revert InvalidAccountInfo();
 
         Account storage accountInfo_ = _getMEarnerManagerStorageLocation().accounts[account];
         bool isWhitelisted_ = accountInfo_.isWhitelisted;

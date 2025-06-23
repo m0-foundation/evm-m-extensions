@@ -162,6 +162,13 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mEarnerManager.setAccountInfo(alice, true, 10_001);
     }
 
+    function test_setAccountInfo_invalidAccountInfo() external {
+        vm.expectRevert(IMEarnerManager.InvalidAccountInfo.selector);
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, false, 9_000);
+    }
+
     function test_setAccountInfo_onlyEarnerManager() external {
         vm.expectRevert(
             abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, EARNER_MANAGER_ROLE)
@@ -255,7 +262,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mEarnerManager.feeRateOf(bob), 1_000);
 
         vm.prank(earnerManager);
-        mEarnerManager.setAccountInfo(alice, false, 1_000);
+        mEarnerManager.setAccountInfo(alice, false, 0);
 
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(bob, true, 1_000);
