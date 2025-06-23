@@ -38,7 +38,8 @@ contract BaseUnitTest is Helpers, Test {
     address public blacklistManager = makeAddr("blacklistManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
-    address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
+
+    address public feeRecipient = makeAddr("feeRecipient");
     address public yieldFeeManager = makeAddr("yieldFeeManager");
     address public claimRecipientManager = makeAddr("claimRecipientManager");
 

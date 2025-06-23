@@ -22,7 +22,6 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
 
     // address public admin = makeAddr("admin");
     address public earnerManager = makeAddr("earnerManager");
-    address public feeRecipient = makeAddr("feeRecipient");
 
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
 
@@ -350,7 +349,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mEarnerManager.setFeeRecipient(address(0));
     }
 
-    function test_setYieldFeeRecipient_noUpdate() external {
+    function test_setFeeRecipient_noUpdate() external {
         assertEq(mEarnerManager.feeRecipient(), feeRecipient);
 
         vm.prank(earnerManager);

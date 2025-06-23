@@ -12,7 +12,7 @@ import { MSpokeYieldFeeHarness } from "../../../harness/MSpokeYieldFeeHarness.so
 import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
 
 contract MSpokeYieldFeeUnitTests is BaseUnitTest {
-    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
 
     MSpokeYieldFeeHarness public mYieldFee;
 
@@ -29,7 +29,7 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
                     address(mToken),
                     address(swapFacility),
                     YIELD_FEE_RATE,
-                    yieldFeeRecipient,
+                    feeRecipient,
                     admin,
                     yieldFeeManager,
                     claimRecipientManager,
@@ -44,10 +44,10 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
     function test_initialize() external view {
         assertEq(mYieldFee.ONE_HUNDRED_PERCENT(), 10_000);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
-        assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
-        assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
+        assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
+        assertEq(mYieldFee.feeRecipient(), feeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(mYieldFee.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
+        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
         assertEq(mYieldFee.rateOracle(), address(rateOracle));
     }
 
@@ -65,7 +65,7 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
                     address(mToken),
                     address(swapFacility),
                     YIELD_FEE_RATE,
-                    yieldFeeRecipient,
+                    feeRecipient,
                     admin,
                     yieldFeeManager,
                     claimRecipientManager,

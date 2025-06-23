@@ -388,7 +388,7 @@ Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] testFuzz_claimYieldFee(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 512813, ~: 509042)
+[PASS] testFuzz_claimFee(bool,uint32,uint16,uint128,uint240,uint240,uint240) (runs: 10000, μ: 512813, ~: 509042)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
@@ -433,12 +433,12 @@ Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_claimYieldFee() (gas: 569599)
+[PASS] test_claimFee() (gas: 569599)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_claimYieldFee_noYield() (gas: 46564)
+[PASS] test_claimFee_noYield() (gas: 46564)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
@@ -533,42 +533,42 @@ Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRate() (gas: 97766)
+[PASS] test_setFeeRate() (gas: 97766)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRate_noUpdate() (gas: 64281)
+[PASS] test_setFeeRate_noUpdate() (gas: 64281)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRate_onlyYieldFeeManager() (gas: 39823)
+[PASS] test_setFeeRate_onlyYieldFeeManager() (gas: 39823)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRate_yieldFeeRateTooHigh() (gas: 40038)
+[PASS] test_setFeeRate_feeRateTooHigh() (gas: 40038)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRecipient() (gas: 59018)
+[PASS] test_setFeeRecipient() (gas: 59018)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRecipient_noUpdate() (gas: 66554)
+[PASS] test_setFeeRecipient_noUpdate() (gas: 66554)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRecipient_onlyYieldFeeManager() (gas: 40107)
+[PASS] test_setFeeRecipient_onlyYieldFeeManager() (gas: 40107)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_setYieldFeeRecipient_zeroYieldFeeRecipient() (gas: 39298)
+[PASS] test_setFeeRecipient_zeroYieldFeeRecipient() (gas: 39298)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
@@ -578,7 +578,7 @@ Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
 
-[PASS] test_totalAccruedYieldFee() (gas: 746971)
+[PASS] test_totalAccruedFee() (gas: 746971)
 Logs:
   npm warn exec The following package was not found and will be installed: @openzeppelin/upgrades-core@1.44.1
 
@@ -671,7 +671,7 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | balanceOf                                                  | 2644            | 2644   | 2644   | 2644   | 13      |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimYieldFee                                              | 74535           | 74535  | 74535  | 74535  | 1       |
+| claimFee                                              | 74535           | 74535  | 74535  | 74535  | 1       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | claimYieldFor                                              | 10102           | 32164  | 32164  | 54226  | 2       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
@@ -699,7 +699,7 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | totalAccruedYield                                          | 6991            | 7624   | 7730   | 7730   | 7       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalAccruedYieldFee                                       | 16322           | 16322  | 16322  | 16325  | 5       |
+| totalAccruedFee                                       | 16322           | 16322  | 16322  | 16325  | 5       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | totalSupply                                                | 2382            | 2382   | 2382   | 2382   | 1       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
@@ -711,9 +711,9 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | wrapWithPermit                                             | 80086           | 122836 | 122836 | 165586 | 2       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldFeeRate                                               | 2406            | 2406   | 2406   | 2406   | 1       |
+| feeRate                                               | 2406            | 2406   | 2406   | 2406   | 1       |
 |------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldFeeRecipient                                          | 2394            | 2394   | 2394   | 2394   | 1       |
+| feeRecipient                                          | 2394            | 2394   | 2394   | 2394   | 1       |
 ╰------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
 
 ╭----------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
@@ -819,7 +819,7 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | balanceWithYieldOf                                                                | 9528            | 9899   | 10267  | 10270  | 1267    |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| claimYieldFee                                                                     | 12540           | 71104  | 70009  | 88587  | 259     |
+| claimFee                                                                     | 12540           | 71104  | 70009  | 88587  | 259     |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | claimYieldFor                                                                     | 440             | 19064  | 19310  | 37149  | 260     |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
@@ -861,13 +861,13 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | setTotalSupply                                                                    | 2520            | 19903  | 22420  | 22420  | 2060    |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setYieldFeeRate                                                                   | 2820            | 12506  | 11227  | 22889  | 2309    |
+| setFeeRate                                                                   | 2820            | 12506  | 11227  | 22889  | 2309    |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| setYieldFeeRecipient                                                              | 2755            | 4869   | 3825   | 9073   | 4       |
+| setFeeRecipient                                                              | 2755            | 4869   | 3825   | 9073   | 4       |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | totalAccruedYield                                                                 | 7753            | 7753   | 7753   | 7753   | 24      |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| totalAccruedYieldFee                                                              | 12468           | 12816  | 12471  | 13210  | 524     |
+| totalAccruedFee                                                              | 12468           | 12816  | 12471  | 13210  | 524     |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | totalPrincipal                                                                    | 2386            | 2386   | 2386   | 2386   | 2664    |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
@@ -881,9 +881,9 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | wrap                                                                              | 10908           | 60688  | 59586  | 110886 | 261     |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldFeeRate                                                                      | 2429            | 2429   | 2429   | 2429   | 238     |
+| feeRate                                                                      | 2429            | 2429   | 2429   | 2429   | 238     |
 |-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldFeeRecipient                                                                 | 2417            | 2417   | 2417   | 2417   | 4       |
+| feeRecipient                                                                 | 2417            | 2417   | 2417   | 2417   | 4       |
 ╰-----------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
 
 ╭---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╮
@@ -911,9 +911,9 @@ Suite result: ok. 52 passed; 0 failed; 0 skipped; finished in 11.72s (22.53s CPU
 |---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
 | rateOracle                                                                                  | 2397            | 2397   | 2397   | 2397   | 1       |
 |---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldFeeRate                                                                                | 2451            | 2451   | 2451   | 2451   | 1       |
+| feeRate                                                                                | 2451            | 2451   | 2451   | 2451   | 1       |
 |---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------|
-| yieldFeeRecipient                                                                           | 2394            | 2394   | 2394   | 2394   | 1       |
+| feeRecipient                                                                           | 2394            | 2394   | 2394   | 2394   | 1       |
 ╰---------------------------------------------------------------------------------------------+-----------------+--------+--------+--------+---------╯
 
 ╭-------------------------------------+-----------------+-------+--------+-------+---------╮

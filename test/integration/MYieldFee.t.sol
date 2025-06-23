@@ -30,7 +30,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
                     address(mToken),
                     address(swapFacility),
                     YIELD_FEE_RATE,
-                    yieldFeeRecipient,
+                    feeRecipient,
                     admin,
                     yieldFeeManager,
                     claimRecipientManager
@@ -46,10 +46,10 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.mToken(), address(mToken));
         assertEq(mYieldFee.ONE_HUNDRED_PERCENT(), 10_000);
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
-        assertEq(mYieldFee.yieldFeeRate(), YIELD_FEE_RATE);
-        assertEq(mYieldFee.yieldFeeRecipient(), yieldFeeRecipient);
+        assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
+        assertEq(mYieldFee.feeRecipient(), feeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(mYieldFee.hasRole(YIELD_FEE_MANAGER_ROLE, yieldFeeManager));
+        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
     }
 
     function test_yieldAccumulationAndClaim() external {
@@ -80,7 +80,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         uint256 yieldFee = _getYieldFee(totalYield, YIELD_FEE_RATE);
 
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
-        assertEq(mYieldFee.totalAccruedYieldFee(), yieldFee);
+        assertEq(mYieldFee.totalAccruedFee(), yieldFee);
 
         // transfers do not affect yield (except for rounding error)
         vm.prank(alice);
@@ -91,53 +91,53 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         // yield accrual
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
-        assertEq(mYieldFee.totalAccruedYieldFee(), yieldFee);
+        assertEq(mYieldFee.totalAccruedFee(), yieldFee);
 
         // unwraps
         _swapMOut(address(mYieldFee), alice, alice, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
-        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 1); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 1); // May round down
 
         _swapMOut(address(mYieldFee), bob, bob, amount / 2);
 
         // yield stays basically the same (except rounding up error on transfer)
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 1); // May round down
-        assertApproxEqAbs(mYieldFee.totalAccruedYieldFee(), yieldFee, 2); // May round down
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 2); // May round down
 
         assertEq(mYieldFee.balanceOf(bob), 0);
         assertEq(mYieldFee.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(bob), amount + amount / 2);
         assertEq(mToken.balanceOf(alice), amount / 2);
 
-        assertEq(mToken.balanceOf(yieldFeeRecipient), 0);
+        assertEq(mToken.balanceOf(feeRecipient), 0);
 
         // claim yield
         uint256 aliceYield = mYieldFee.claimYieldFor(alice);
-        yieldFee = mYieldFee.claimYieldFee();
+        yieldFee = mYieldFee.claimFee();
         mYieldFee.claimYieldFor(bob);
 
         assertEq(mYieldFee.balanceOf(alice), aliceYield);
         assertEq(mYieldFee.balanceOf(bob), 0); // Bob's yield is 0 cause he received and unwrapped in the same block
 
-        assertEq(mYieldFee.balanceOf(yieldFeeRecipient), yieldFee);
+        assertEq(mYieldFee.balanceOf(feeRecipient), yieldFee);
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), aliceYield + yieldFee, 1); // May round up
         assertEq(mYieldFee.totalSupply(), aliceYield + yieldFee);
         assertEq(mYieldFee.totalAccruedYield(), 0);
-        assertEq(mYieldFee.totalAccruedYieldFee(), 0);
+        assertEq(mYieldFee.totalAccruedFee(), 0);
 
         // Alice and yield fee recipient unwraps
         _swapMOut(address(mYieldFee), alice, alice, aliceYield);
-        _swapMOut(address(mYieldFee), yieldFeeRecipient, yieldFeeRecipient, yieldFee);
+        _swapMOut(address(mYieldFee), feeRecipient, feeRecipient, yieldFee);
 
         assertEq(mYieldFee.accruedYieldOf(alice), 0);
         assertEq(mYieldFee.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(alice), amount / 2 + aliceYield);
 
-        assertEq(mYieldFee.accruedYieldOf(yieldFeeRecipient), 0);
-        assertEq(mYieldFee.balanceOf(yieldFeeRecipient), 0);
-        assertEq(mToken.balanceOf(yieldFeeRecipient), yieldFee);
+        assertEq(mYieldFee.accruedYieldOf(feeRecipient), 0);
+        assertEq(mYieldFee.balanceOf(feeRecipient), 0);
+        assertEq(mToken.balanceOf(feeRecipient), yieldFee);
         assertEq(mToken.balanceOf(address(mYieldFee)), 0);
 
         // wrap from earner account

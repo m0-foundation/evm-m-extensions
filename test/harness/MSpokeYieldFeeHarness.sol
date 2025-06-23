@@ -15,8 +15,8 @@ contract MSpokeYieldFeeHarness is MSpokeYieldFee {
         string memory symbol,
         address mToken,
         address swapFacility,
-        uint16 yieldFeeRate,
-        address yieldFeeRecipient,
+        uint16 feeRate,
+        address feeRecipient,
         address admin,
         address yieldFeeManager,
         address claimRecipientManager,
@@ -27,8 +27,8 @@ contract MSpokeYieldFeeHarness is MSpokeYieldFee {
             symbol,
             mToken,
             swapFacility,
-            yieldFeeRate,
-            yieldFeeRecipient,
+            feeRate,
+            feeRecipient,
             admin,
             yieldFeeManager,
             claimRecipientManager,
@@ -37,7 +37,7 @@ contract MSpokeYieldFeeHarness is MSpokeYieldFee {
     }
 
     function currentBlockTimestamp() external view returns (uint40) {
-        return _currentBlockTimestamp();
+        return _latestEarnerRateAccrualTimestamp();
     }
 
     function currentEarnerRate() external view returns (uint32) {

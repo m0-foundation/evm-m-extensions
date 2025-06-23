@@ -37,7 +37,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
-    bytes32 public constant YIELD_FEE_MANAGER_ROLE = keccak256("YIELD_FEE_MANAGER_ROLE");
+    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
@@ -51,7 +51,6 @@ contract BaseIntegrationTest is Helpers, Test {
     address public blacklistManager = makeAddr("blacklistManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
-    address public yieldFeeRecipient = makeAddr("yieldFeeRecipient");
     address public yieldFeeManager = makeAddr("yieldFeeManager");
     address public claimRecipientManager = makeAddr("claimRecipientManager");
     address public earnerManager = makeAddr("earnerManager");
@@ -103,7 +102,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
         swapFacility.grantRole(M_SWAPPER_ROLE, alice);
         swapFacility.grantRole(M_SWAPPER_ROLE, bob);
-        swapFacility.grantRole(M_SWAPPER_ROLE, yieldFeeRecipient);
+        swapFacility.grantRole(M_SWAPPER_ROLE, feeRecipient);
 
         vm.stopPrank();
     }
