@@ -74,18 +74,50 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(USER), amount);
     }
 
-    function test_swapInMWithPermit_VRS() public {
+    function test_swapInMWithPermit_vrs() public {
         uint256 amount = 1_000_000;
-
-        assertEq(mYieldToOne.balanceOf(USER), 0);
 
         vm.prank(USER);
         IERC20(address(mToken)).transfer(alice, amount);
 
-        vm.prank(alice);
-        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
 
-        _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, amount, 0, block.timestamp);
+        (uint8 v, bytes32 r, bytes32 s) = _getPermit(
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        vm.prank(alice);
+        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+    }
+
+    function test_swapInMWithPermit_signature() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount);
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
+
+        (uint8 v, bytes32 r, bytes32 s) = _getPermit(
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        vm.prank(alice);
+        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
@@ -127,6 +159,24 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertApproxEqAbs(wrappedMBalanceAfter, wrappedMBalanceBefore + amountIn, 1000);
     }
 
+    function test_swapInToken_USDC_to_mYieldToOne() public {
+        uint256 amountIn = 1_000_000;
+        uint256 minAmountOut = 997_000;
+
+        uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(USER);
+        uint256 mYieldToOneBalanceBefore = mYieldToOne.balanceOf(USER);
+
+        vm.startPrank(USER);
+        IERC20(USDC).approve(address(swapFacility), amountIn);
+        swapFacility.swapInToken(USDC, amountIn, address(mYieldToOne), minAmountOut, USER, "");
+
+        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
+        uint256 mYieldToOneBalanceAfter = mYieldToOne.balanceOf(USER);
+
+        assertEq(usdcBalanceAfter, usdcBalanceBefore - amountIn);
+        assertApproxEqAbs(mYieldToOneBalanceAfter, mYieldToOneBalanceBefore + amountIn, 1000);
+    }
+
     function test_swapOutToken_wrappedM_to_USDC() public {
         uint256 amountIn = 1_000_000;
         uint256 minAmountOut = 997_000;
@@ -135,6 +185,22 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         vm.startPrank(USER);
         IERC20(WRAPPED_M).approve(address(swapFacility), amountIn);
         swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, USER, "");
+
+        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
+        assertApproxEqAbs(usdcBalanceAfter, usdcBalanceBefore + amountIn, 1000);
+    }
+
+    function test_swapOutToken_mYieldToOne_to_USDC() public {
+        uint256 amountIn = 1_000_000;
+        uint256 minAmountOut = 997_000;
+        uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(USER);
+
+        vm.startPrank(USER);
+        IERC20(address(mToken)).approve(address(swapFacility), amountIn);
+        swapFacility.swapInM(address(mYieldToOne), amountIn, USER);
+
+        mYieldToOne.approve(address(swapFacility), amountIn);
+        swapFacility.swapOutToken(address(mYieldToOne), amountIn, USDC, minAmountOut, USER, "");
 
         uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
         assertApproxEqAbs(usdcBalanceAfter, usdcBalanceBefore + amountIn, 1000);
