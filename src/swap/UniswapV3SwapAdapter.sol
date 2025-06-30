@@ -91,7 +91,7 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
         } else {
             IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
                 path: path,
-                recipient: msg.sender,
+                recipient: recipient,
                 amountIn: inputAmount,
                 amountOutMinimum: minBaseAmount
             });
