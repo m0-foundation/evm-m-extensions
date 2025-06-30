@@ -7,6 +7,9 @@ import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC2
 import {
     AccessControlUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import { Lock } from "../../lib/universal-router/contracts/base/Lock.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
@@ -21,7 +24,7 @@ import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
+contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock, UUPSUpgradeable {
     using SafeERC20 for IERC20;
 
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
@@ -211,7 +214,10 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         return _getLocker();
     }
 
-    /* ============ Private Interactive Functions ============ */
+    /* ============ Internal/Private Interactive Functions ============ */
+
+    /// @dev Called by `upgradeToAndCall` function of UUPSUpgradeable
+    function _authorizeUpgrade(address /* newImplementation */) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     /**
      * @notice Swaps one $M Extension to another.
