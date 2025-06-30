@@ -34,6 +34,7 @@ abstract contract MYieldFeeStorageLayout {
         address feeRecipient;
         uint40 latestUpdateTimestamp;
         uint32 latestRate;
+        bool isEarningEnabled;
         // NOTE: Slot 4
         mapping(address account => uint256 balance) balanceOf;
         // NOTE: Slot 5
@@ -163,7 +164,11 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMExtension
     function enableEarning() external override {
-        if (isEarningEnabled()) revert EarningIsEnabled();
+        MYieldFeeStorageStruct storage $ = _getMYieldFeeStorageLocation();
+
+        if ($.isEarningEnabled) revert EarningIsEnabled();
+
+        $.isEarningEnabled = true;
 
         // NOTE: update the index to store the latest state, current index won't accrue since `latestRate` is 0.
         emit EarningEnabled(updateIndex());
@@ -173,24 +178,31 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMExtension
     function disableEarning() external override {
-        if (!isEarningEnabled()) revert EarningIsDisabled();
+        MYieldFeeStorageStruct storage $ = _getMYieldFeeStorageLocation();
+
+        if (!$.isEarningEnabled) revert EarningIsDisabled();
 
         // NOTE: update the index to store the latest state.
         emit EarningDisabled(updateIndex());
 
-        // NOTE: `latestRate` is set to 0 to indicate that earning is disabled.
-        delete _getMYieldFeeStorageLocation().latestRate;
+        // NOTE: disable earning by resetting values to their defaults.
+        delete $.isEarningEnabled;
+        delete $.latestRate;
 
         IMTokenLike(mToken()).stopEarning(address(this));
     }
 
     /// @inheritdoc IContinuousIndexing
     function updateIndex() public virtual returns (uint128 currentIndex_) {
+        MYieldFeeStorageStruct storage $ = _getMYieldFeeStorageLocation();
+
+        // NOTE: return early if earning is disabled, no need to update the index.
+        if (!$.isEarningEnabled) return $.latestIndex;
+
         // NOTE: Read the current M token rate adjusted by fee rate split.
         uint32 rate_ = earnerRate();
 
-        MYieldFeeStorageStruct storage $ = _getMYieldFeeStorageLocation();
-
+        // NOTE: Return early if the index has already been updated in the current block and the rate has not changed.
         if ($.latestUpdateTimestamp == block.timestamp && $.latestRate == rate_) return $.latestIndex;
 
         // NOTE: `currentIndex()` depends on `_latestRate`, so only update it after this.
@@ -266,7 +278,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
     function currentIndex() public view virtual override(IContinuousIndexing, MExtension) returns (uint128) {
         MYieldFeeStorageStruct storage $ = _getMYieldFeeStorageLocation();
 
-        if (!isEarningEnabled()) return $.latestIndex;
+        if (!$.isEarningEnabled) return $.latestIndex;
 
         // NOTE: Safe to use unchecked here, since `block.timestamp` is always greater than `latestUpdateTimestamp`.
         unchecked {
@@ -291,7 +303,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMExtension
     function isEarningEnabled() public view override returns (bool) {
-        return _getMYieldFeeStorageLocation().latestRate != 0;
+        return _getMYieldFeeStorageLocation().isEarningEnabled;
     }
 
     /// @inheritdoc IContinuousIndexing

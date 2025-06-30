@@ -123,7 +123,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mToken.balanceOf(address(mYieldToOne)), 11373 + amount);
 
         // Disable earning for the contract
-        _removeFomList(EARNERS_LIST, address(mYieldToOne));
+        _removeFromList(EARNERS_LIST, address(mYieldToOne));
         mYieldToOne.disableEarning();
 
         assertFalse(mYieldToOne.isEarningEnabled());

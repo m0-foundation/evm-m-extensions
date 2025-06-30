@@ -52,6 +52,8 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
     }
 
+    /* ============ yield accrual ============ */
+
     function test_yieldAccumulationAndClaim() external {
         uint256 amount = 10e6;
 
@@ -153,7 +155,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 1);
 
         // Disable earning for the contract
-        _removeFomList(EARNERS_LIST, address(mYieldFee));
+        _removeFromList(EARNERS_LIST, address(mYieldFee));
         mYieldFee.disableEarning();
 
         assertFalse(mYieldFee.isEarningEnabled());
@@ -173,6 +175,43 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         assertApproxEqAbs(mYieldFee.totalAccruedYield(), totalYield - yieldFee, 3); // May round down
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount + totalYield, 1);
+    }
+
+    function test_updateIndex_earningDisabled() public {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        // enableEarning should call updateIndex and set the latest rate
+        assertNotEq(mYieldFee.latestRate(), 0);
+
+        vm.warp(block.timestamp + 1 weeks);
+
+        _removeFromList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.disableEarning();
+
+        // Latest rate should be zero and earning disabled
+        assertFalse(mYieldFee.isEarningEnabled());
+        assertEq(mYieldFee.latestRate(), 0);
+
+        uint256 prevIndex = mYieldFee.currentIndex();
+
+        // Move forward by 5 blocks
+        vm.warp(block.timestamp + 5 * (12 seconds));
+
+        uint256 index = mYieldFee.currentIndex();
+
+        // The index should not grow
+        assertEq(prevIndex, index);
+
+        mYieldFee.updateIndex();
+
+        // Earning should not be re-activated and the index should not grow after being updated
+        assertFalse(mYieldFee.isEarningEnabled());
+        assertEq(mYieldFee.latestRate(), 0);
+        assertEq(index, mYieldFee.currentIndex());
+
+        vm.warp(block.timestamp + 5 * (12 seconds));
+        assertEq(index, mYieldFee.currentIndex());
     }
 
     /* ============ enableEarning ============ */

@@ -49,6 +49,10 @@ contract MYieldFeeHarness is MYieldFee {
         $.principalOf[account] = principal;
     }
 
+    function setIsEarningEnabled(bool isEarningEnabled_) external {
+        _getMYieldFeeStorageLocation().isEarningEnabled = isEarningEnabled_;
+    }
+
     function setLatestIndex(uint256 latestIndex_) external {
         _getMYieldFeeStorageLocation().latestIndex = uint128(latestIndex_);
     }

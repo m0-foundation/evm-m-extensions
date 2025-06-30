@@ -112,7 +112,7 @@ contract BaseIntegrationTest is Helpers, Test {
         IRegistrarLike(registrar).addToList(list, account);
     }
 
-    function _removeFomList(bytes32 list, address account) internal {
+    function _removeFromList(bytes32 list, address account) internal {
         vm.prank(standardGovernor);
         IRegistrarLike(registrar).removeFromList(list, account);
     }
