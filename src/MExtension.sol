@@ -6,6 +6,10 @@ import { ERC20ExtendedUpgradeable } from "../lib/common/src/ERC20ExtendedUpgrade
 
 import { IERC20 } from "../lib/common/src/interfaces/IERC20.sol";
 
+import {
+    UUPSUpgradeable
+} from "../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+
 import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 import { ISwapFacility } from "./swap/interfaces/ISwapFacility.sol";
@@ -29,11 +33,11 @@ abstract contract MExtensionStorageLayout {
 }
 
 /**
- * @title MExtension
+ * @title  MExtension
  * @notice Upgradeable ERC20 Token contract for wrapping M into a non-rebasing token.
  * @author M0 Labs
  */
-abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20ExtendedUpgradeable {
+abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20ExtendedUpgradeable, UUPSUpgradeable {
     /* ============ Modifiers ============ */
 
     /// @dev Modifier to check if caller is SwapFacility.
@@ -306,4 +310,13 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
     function _revertIfInsufficientBalance(address account, uint256 balance, uint256 amount) internal pure {
         if (balance < amount) revert InsufficientBalance(account, balance, amount);
     }
+
+    /* ============ Internal Upgrade function ============ */
+
+    /**
+     * @dev Called by {upgradeToAndCall} to authorize the upgrade.
+     *      MUST revert if `msg.sender` is not authorized to upgrade the contract.
+     *      Needs to be overridden in the contract inheriting from this one.
+     */
+    function _authorizeUpgrade(address newImplementation) internal virtual override {}
 }
