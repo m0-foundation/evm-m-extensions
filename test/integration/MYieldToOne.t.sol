@@ -32,7 +32,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
                     yieldRecipient,
                     admin,
                     blacklistManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    upgrader
                 )
             )
         );

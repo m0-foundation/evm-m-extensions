@@ -8,8 +8,6 @@ import {
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MockM } from "../../utils/Mocks.sol";
-
 import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
 
 import { IBlacklistable } from "../../../src/components/IBlacklistable.sol";
@@ -20,12 +18,9 @@ import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
+import { MExtensionUpgrade } from "../../utils/Mocks.sol";
 
 contract MYieldToOneUnitTests is BaseUnitTest {
-    // Roles
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
-    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
-
     MYieldToOne public mYieldToOne;
 
     string public constant NAME = "HALO USD";
@@ -46,7 +41,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     yieldRecipient,
                     admin,
                     blacklistManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -63,9 +59,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.mToken(), address(mToken));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(mYieldToOne.hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
+        assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(UPGRADER_ROLE, upgrader));
     }
 
     function test_initialize_zeroMToken() external {
@@ -84,7 +81,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(yieldRecipient),
                     admin,
                     blacklistManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -106,7 +104,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(0),
                     admin,
                     blacklistManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -128,7 +127,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(yieldRecipient),
                     address(0),
                     blacklistManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -150,7 +150,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(yieldRecipient),
                     admin,
                     address(0),
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -172,6 +173,30 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(yieldRecipient),
                     admin,
                     blacklistManager,
+                    address(0),
+                    upgrader
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroUpgrader() external {
+        address implementation = address(new MYieldToOne());
+
+        vm.expectRevert(IMYieldToOne.ZeroUpgrader.selector);
+        MYieldToOne(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    address(mToken),
+                    address(swapFacility),
+                    address(yieldRecipient),
+                    admin,
+                    blacklistManager,
+                    yieldRecipientManager,
                     address(0)
                 )
             )
@@ -660,5 +685,27 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.setYieldRecipient(alice);
 
         assertEq(mYieldToOne.yieldRecipient(), alice);
+    }
+
+    /* ============ upgrade ============ */
+
+    function test_upgrade_onlyUpgrader() external {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, UPGRADER_ROLE)
+        );
+
+        vm.prank(alice);
+        mYieldToOne.upgradeToAndCall(v2implementation, "");
+    }
+
+    function test_upgrade() public {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.prank(upgrader);
+        mYieldToOne.upgradeToAndCall(v2implementation, "");
+
+        assertEq(MExtensionUpgrade(address(mYieldToOne)).bar(), 1);
     }
 }

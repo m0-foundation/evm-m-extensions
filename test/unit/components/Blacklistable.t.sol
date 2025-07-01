@@ -15,9 +15,6 @@ import { BlacklistableHarness } from "../../harness/BlacklistableHarness.sol";
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
 contract BlacklistableUnitTests is BaseUnitTest {
-    // Roles
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
-
     BlacklistableHarness public blacklistable;
 
     function setUp() public override {

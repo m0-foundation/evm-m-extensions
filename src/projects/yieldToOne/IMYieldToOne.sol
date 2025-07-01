@@ -35,6 +35,9 @@ interface IMYieldToOne {
     /// @notice Emitted in constructor if Admin is 0x0.
     error ZeroAdmin();
 
+    /// @notice Emitted if the upgrader is 0x0.
+    error ZeroUpgrader();
+
     /* ============ Interactive Functions ============ */
 
     /// @notice Claims accrued yield to yield recipient.
@@ -50,6 +53,9 @@ interface IMYieldToOne {
     function setYieldRecipient(address yieldRecipient) external;
 
     /* ============ View/Pure Functions ============ */
+
+    /// @notice Returns the upgrader role hash.
+    function UPGRADER_ROLE() external returns (bytes32);
 
     /// @notice The role that can manage the yield recipient.
     function YIELD_RECIPIENT_MANAGER_ROLE() external view returns (bytes32);

@@ -38,20 +38,24 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     /* ============ Variables ============ */
 
     /// @inheritdoc IMYieldToOne
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
+    /// @inheritdoc IMYieldToOne
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
 
     /* ============ Initializer ============ */
 
     /**
      * @dev   Initializes the M extension token with yield claimable by a single recipient.
-     * @param name                   The name of the token (e.g. "M Yield to One").
-     * @param symbol                 The symbol of the token (e.g. "MYO").
-     * @param mToken                 The address of the M Token.
-     * @param swapFacility           The address of the Swap Facility.
-     * @param yieldRecipient_        The address of an yield destination.
-     * @param admin           The address of a admin.
-     * @param blacklistManager       The address of a blacklist manager.
-     * @param yieldRecipientManager  The address of a yield recipient setter.
+     * @param name                  The name of the token (e.g. "M Yield to One").
+     * @param symbol                The symbol of the token (e.g. "MYO").
+     * @param mToken                The address of the M Token.
+     * @param swapFacility          The address of the Swap Facility.
+     * @param yieldRecipient_       The address of an yield destination.
+     * @param admin                 The address of a admin.
+     * @param blacklistManager      The address of a blacklist manager.
+     * @param yieldRecipientManager The address of a yield recipient setter.
+     * @param upgrader              The address allowed to upgrade the implementation.
      */
     function initialize(
         string memory name,
@@ -61,10 +65,12 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         address yieldRecipient_,
         address admin,
         address blacklistManager,
-        address yieldRecipientManager
+        address yieldRecipientManager,
+        address upgrader
     ) public initializer {
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (admin == address(0)) revert ZeroAdmin();
+        if (upgrader == address(0)) revert ZeroUpgrader();
 
         __MExtension_init(name, symbol, mToken, swapFacility);
         __Blacklistable_init(blacklistManager);
@@ -73,6 +79,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager);
+        _grantRole(UPGRADER_ROLE, upgrader);
     }
 
     /* ============ Interactive Functions ============ */
@@ -237,4 +244,12 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
 
         emit YieldRecipientSet(yieldRecipient_);
     }
+
+    /* ============ Internal Upgrade function ============ */
+
+    /**
+     * @dev Called by {upgradeToAndCall} to authorize the upgrade.
+     *      Will revert if `msg.sender` does not have the `UPGRADER_ROLE`.
+     */
+    function _authorizeUpgrade(address) internal override onlyRole(UPGRADER_ROLE) {}
 }
