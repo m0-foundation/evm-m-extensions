@@ -2,18 +2,22 @@
 
 pragma solidity 0.8.26;
 
+import {
+    IAccessControl
+} from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
 import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
+import { MYieldFee } from "../../../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { IContinuousIndexing } from "../../../../src/projects/yieldToAllWithFee/interfaces/IContinuousIndexing.sol";
 import { IRateOracle } from "../../../../src/projects/yieldToAllWithFee/interfaces/IRateOracle.sol";
 import { IMSpokeYieldFee } from "../../../../src/projects/yieldToAllWithFee/interfaces/IMSpokeYieldFee.sol";
 
 import { MSpokeYieldFeeHarness } from "../../../harness/MSpokeYieldFeeHarness.sol";
 import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
+import { MExtensionUpgrade } from "../../../utils/Mocks.sol";
 
 contract MSpokeYieldFeeUnitTests is BaseUnitTest {
-    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
-
     MSpokeYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
@@ -24,15 +28,18 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
                 "MSpokeYieldFeeHarness.sol:MSpokeYieldFeeHarness",
                 abi.encodeWithSelector(
                     MSpokeYieldFeeHarness.initialize.selector,
-                    "MSpokeYieldFee",
-                    "MSYF",
-                    address(mToken),
-                    address(swapFacility),
-                    YIELD_FEE_RATE,
-                    feeRecipient,
-                    admin,
-                    yieldFeeManager,
-                    claimRecipientManager,
+                    MYieldFee.MYieldFeeInitParams({
+                        name: "MSpokeYieldFee",
+                        symbol: "MSYF",
+                        mToken: address(mToken),
+                        swapFacility: address(swapFacility),
+                        feeRate: YIELD_FEE_RATE,
+                        feeRecipient: feeRecipient,
+                        admin: admin,
+                        feeManager: yieldFeeManager,
+                        claimRecipientManager: claimRecipientManager,
+                        upgrader: upgrader
+                    }),
                     address(rateOracle)
                 )
             )
@@ -42,12 +49,6 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
     /* ============ initialize ============ */
 
     function test_initialize() external view {
-        assertEq(mYieldFee.ONE_HUNDRED_PERCENT(), 10_000);
-        assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
-        assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
-        assertEq(mYieldFee.feeRecipient(), feeRecipient);
-        assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
         assertEq(mYieldFee.rateOracle(), address(rateOracle));
     }
 
@@ -60,15 +61,18 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
                 implementation,
                 abi.encodeWithSelector(
                     MSpokeYieldFeeHarness.initialize.selector,
-                    "MSpokeYieldFee",
-                    "MSYF",
-                    address(mToken),
-                    address(swapFacility),
-                    YIELD_FEE_RATE,
-                    feeRecipient,
-                    admin,
-                    yieldFeeManager,
-                    claimRecipientManager,
+                    MYieldFee.MYieldFeeInitParams({
+                        name: "MSpokeYieldFee",
+                        symbol: "MSYF",
+                        mToken: address(mToken),
+                        swapFacility: address(swapFacility),
+                        feeRate: YIELD_FEE_RATE,
+                        feeRecipient: feeRecipient,
+                        admin: admin,
+                        feeManager: yieldFeeManager,
+                        claimRecipientManager: claimRecipientManager,
+                        upgrader: upgrader
+                    }),
                     address(0)
                 )
             )
@@ -101,5 +105,27 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
         );
 
         assertEq(mYieldFee.currentEarnerRate(), earnerRate);
+    }
+
+    /* ============ upgrade ============ */
+
+    function test_upgrade_onlyUpgrader() external {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, UPGRADER_ROLE)
+        );
+
+        vm.prank(alice);
+        mYieldFee.upgradeToAndCall(v2implementation, "");
+    }
+
+    function test_upgrade() public {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.prank(upgrader);
+        mYieldFee.upgradeToAndCall(v2implementation, "");
+
+        assertEq(MExtensionUpgrade(address(mYieldFee)).bar(), 1);
     }
 }

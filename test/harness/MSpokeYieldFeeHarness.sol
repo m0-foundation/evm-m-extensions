@@ -10,30 +10,8 @@ contract MSpokeYieldFeeHarness is MSpokeYieldFee {
         _disableInitializers();
     }
 
-    function initialize(
-        string memory name,
-        string memory symbol,
-        address mToken,
-        address swapFacility,
-        uint16 feeRate,
-        address feeRecipient,
-        address admin,
-        address yieldFeeManager,
-        address claimRecipientManager,
-        address rateOracle
-    ) public override initializer {
-        super.initialize(
-            name,
-            symbol,
-            mToken,
-            swapFacility,
-            feeRate,
-            feeRecipient,
-            admin,
-            yieldFeeManager,
-            claimRecipientManager,
-            rateOracle
-        );
+    function initialize(MYieldFeeInitParams memory initParams, address rateOracle) public override initializer {
+        super.initialize(initParams, rateOracle);
     }
 
     function currentBlockTimestamp() external view returns (uint40) {

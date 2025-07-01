@@ -15,21 +15,15 @@ import { ContinuousIndexingMath } from "../../../../lib/common/src/libs/Continuo
 import { IMExtension } from "../../../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../../../src/interfaces/IMTokenLike.sol";
 import { IMYieldFee } from "../../../../src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
-import { ISwapFacility } from "../../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { IERC20 } from "../../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import { MYieldFeeHarness } from "../../../harness/MYieldFeeHarness.sol";
 import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
-import { console2 } from "../../../../lib/forge-std/src/Test.sol";
+import { MExtensionUpgrade } from "../../../utils/Mocks.sol";
 
 contract MYieldFeeUnitTests is BaseUnitTest {
-    // Roles
-    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
-    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
-    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
-
     MYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
@@ -48,7 +42,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     yieldFeeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -66,6 +61,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
         assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
+        assertTrue(mYieldFee.hasRole(UPGRADER_ROLE, upgrader));
     }
 
     function test_initialize_zeroMToken() external {
@@ -85,7 +81,32 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     yieldFeeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    upgrader
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroSwapFacility() external {
+        address implementation = address(new MYieldFeeHarness());
+
+        vm.expectRevert(IMExtension.ZeroSwapFacility.selector);
+        MYieldFeeHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    address(0),
+                    YIELD_FEE_RATE,
+                    feeRecipient,
+                    admin,
+                    yieldFeeManager,
+                    claimRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -108,7 +129,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     address(0),
                     admin,
                     yieldFeeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -131,7 +153,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     address(0),
                     yieldFeeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -154,7 +177,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     address(0),
-                    claimRecipientManager
+                    claimRecipientManager,
+                    upgrader
                 )
             )
         );
@@ -177,6 +201,31 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     yieldFeeManager,
+                    address(0),
+                    upgrader
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroUpgrader() external {
+        address implementation = address(new MYieldFeeHarness());
+
+        vm.expectRevert(IMYieldFee.ZeroUpgrader.selector);
+        MYieldFeeHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MYieldFeeHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    address(mToken),
+                    address(swapFacility),
+                    YIELD_FEE_RATE,
+                    feeRecipient,
+                    admin,
+                    yieldFeeManager,
+                    claimRecipientManager,
                     address(0)
                 )
             )
@@ -1678,5 +1727,27 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         }
 
         return mYieldFee.currentIndex();
+    }
+
+    /* ============ upgrade ============ */
+
+    function test_upgrade_onlyUpgrader() external {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, UPGRADER_ROLE)
+        );
+
+        vm.prank(alice);
+        mYieldFee.upgradeToAndCall(v2implementation, "");
+    }
+
+    function test_upgrade() public {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.prank(upgrader);
+        mYieldFee.upgradeToAndCall(v2implementation, "");
+
+        assertEq(MExtensionUpgrade(address(mYieldFee)).bar(), 1);
     }
 }

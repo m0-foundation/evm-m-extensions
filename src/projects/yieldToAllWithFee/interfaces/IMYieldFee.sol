@@ -71,6 +71,9 @@ interface IMYieldFee {
     /// @notice Emitted if the account is 0x0.
     error ZeroAccount();
 
+    /// @notice Emitted if the upgrader is 0x0.
+    error ZeroUpgrader();
+
     /* ============ Interactive Functions ============ */
 
     /**
@@ -123,6 +126,9 @@ interface IMYieldFee {
 
     /// @notice Returns the claim recipient manager role hash.
     function CLAIM_RECIPIENT_MANAGER_ROLE() external returns (bytes32);
+
+    /// @notice Returns the upgrader role hash.
+    function UPGRADER_ROLE() external returns (bytes32);
 
     /**
      * @notice Returns the yield accrued for `account`, which is claimable.

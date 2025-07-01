@@ -19,7 +19,8 @@ contract MYieldFeeHarness is MYieldFee {
         address feeRecipient,
         address admin,
         address yieldFeeManager,
-        address claimRecipientManager
+        address claimRecipientManager,
+        address upgrader
     ) public override initializer {
         super.initialize(
             name,
@@ -30,7 +31,8 @@ contract MYieldFeeHarness is MYieldFee {
             feeRecipient,
             admin,
             yieldFeeManager,
-            claimRecipientManager
+            claimRecipientManager,
+            upgrader
         );
     }
 
