@@ -68,17 +68,21 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     /// @inheritdoc IMEarnerManager
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
 
+    /// @inheritdoc IMEarnerManager
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+
     /* ============ Initializer ============ */
 
     /**
      * @dev   Initializes the M extension token with earner manager role and different fee tiers.
-     * @param name               The name of the token (e.g. "M Earner Manager").
-     * @param symbol             The symbol of the token (e.g. "MEM").
-     * @param mToken             The address of an M Token.
-     * @param swapFacility       The address of the Swap Facility.
-     * @param admin              The address administrating the M extension. Can grant and revoke roles.
-     * @param earnerManager      The address of earner manager
-     * @param feeRecipient_      The address that will receive the fees from all the earners.
+     * @param name           The name of the token (e.g. "M Earner Manager").
+     * @param symbol         The symbol of the token (e.g. "MEM").
+     * @param mToken         The address of an M Token.
+     * @param swapFacility   The address of the Swap Facility.
+     * @param admin          The address administrating the M extension. Can grant and revoke roles.
+     * @param earnerManager  The address of earner manager
+     * @param upgrader       The address allowed to upgrade the implementation.
+     * @param feeRecipient_  The address that will receive the fees from all the earners.
      */
     function initialize(
         string memory name,
@@ -87,10 +91,12 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         address swapFacility,
         address admin,
         address earnerManager,
+        address upgrader,
         address feeRecipient_
     ) public virtual initializer {
         if (admin == address(0)) revert ZeroAdmin();
         if (earnerManager == address(0)) revert ZeroEarnerManager();
+        if (upgrader == address(0)) revert ZeroUpgrader();
 
         __MExtension_init(name, symbol, mToken, swapFacility);
 
@@ -98,6 +104,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(EARNER_MANAGER_ROLE, earnerManager);
+        _grantRole(UPGRADER_ROLE, upgrader);
     }
 
     /* ============ Interactive Functions ============ */
@@ -452,4 +459,12 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     function _revertIfNotWhitelisted(MEarnerManagerStorageStruct storage $, address account) internal view {
         if (!$.accounts[account].isWhitelisted) revert NotWhitelisted(account);
     }
+
+    /* ============ Internal Upgrade function ============ */
+
+    /**
+     * @dev Called by {upgradeToAndCall} to authorize the upgrade.
+     *      Will revert if `msg.sender` does not have the `UPGRADER_ROLE`.
+     */
+    function _authorizeUpgrade(address) internal override onlyRole(UPGRADER_ROLE) {}
 }

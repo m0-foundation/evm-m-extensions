@@ -24,6 +24,7 @@ contract BaseUnitTest is Helpers, Test {
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
     MockM public mToken;
     MockRateOracle public rateOracle;
@@ -36,6 +37,7 @@ contract BaseUnitTest is Helpers, Test {
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
+    address public upgrader = makeAddr("upgrader");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
 

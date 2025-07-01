@@ -46,6 +46,9 @@ interface IMEarnerManager {
     /// @notice Emitted in constructor if earner manager is 0x0.
     error ZeroEarnerManager();
 
+    /// @notice Emitted in constructor if upgrader is 0x0.
+    error ZeroUpgrader();
+
     /// @notice Emitted in constructor if default admin is 0x0.
     error ZeroAdmin();
 
@@ -148,4 +151,7 @@ interface IMEarnerManager {
 
     /// @notice The role that can manage the yield recipient.
     function EARNER_MANAGER_ROLE() external view returns (bytes32);
+
+    /// @notice The role that can upgrade the implementation.
+    function UPGRADER_ROLE() external view returns (bytes32);
 }

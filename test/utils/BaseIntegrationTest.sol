@@ -40,6 +40,7 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
 
     address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
@@ -49,6 +50,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
+    address public upgrader = makeAddr("upgrader");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
     address public yieldFeeManager = makeAddr("yieldFeeManager");

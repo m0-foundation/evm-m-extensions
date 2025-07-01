@@ -29,6 +29,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
                     address(swapFacility),
                     admin,
                     earnerManager,
+                    upgrader,
                     feeRecipient
                 )
             )
@@ -44,6 +45,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertEq(mEarnerManager.ONE_HUNDRED_PERCENT(), 10_000);
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
+        assertTrue(mEarnerManager.hasRole(UPGRADER_ROLE, upgrader));
     }
 
     function test_yieldAccumulationAndClaim() external {
@@ -147,7 +149,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertEq(mEarnerManager.balanceOf(feeRecipient), aliceFee + bobFee + carolFee + feeRecipientYield);
     }
 
-    function test_fieldRecipient() external {
+    function test_yieldRecipient() external {
         // Enable earning for the contract
         _addToList(EARNERS_LIST, address(mEarnerManager));
         mEarnerManager.enableEarning();

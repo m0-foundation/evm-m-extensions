@@ -16,6 +16,7 @@ import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extende
 
 import { MEarnerManagerHarness } from "../../harness/MEarnerManagerHarness.sol";
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
+import { MExtensionUpgrade } from "../../utils/Mocks.sol";
 
 contract MEarnerManagerUnitTests is BaseUnitTest {
     MEarnerManagerHarness public mEarnerManager;
@@ -41,6 +42,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     address(swapFacility),
                     admin,
                     earnerManager,
+                    upgrader,
                     feeRecipient
                 )
             )
@@ -60,6 +62,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mEarnerManager.feeRecipient(), feeRecipient);
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
+        assertTrue(mEarnerManager.hasRole(UPGRADER_ROLE, upgrader));
     }
 
     function test_initialize_zeroMToken() external {
@@ -77,6 +80,29 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     address(swapFacility),
                     admin,
                     earnerManager,
+                    upgrader,
+                    feeRecipient
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroSwapFacility() external {
+        address implementation = address(new MEarnerManagerHarness());
+
+        vm.expectRevert(IMExtension.ZeroSwapFacility.selector);
+        MEarnerManagerHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MEarnerManagerHarness.initialize.selector,
+                    "MEarnerManager",
+                    "MEM",
+                    address(mToken),
+                    address(0),
+                    admin,
+                    earnerManager,
+                    upgrader,
                     feeRecipient
                 )
             )
@@ -98,6 +124,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     address(swapFacility),
                     address(0),
                     earnerManager,
+                    upgrader,
                     feeRecipient
                 )
             )
@@ -118,6 +145,29 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     address(mToken),
                     address(swapFacility),
                     admin,
+                    address(0),
+                    upgrader,
+                    feeRecipient
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroUpgrader() external {
+        address implementation = address(new MEarnerManagerHarness());
+
+        vm.expectRevert(IMEarnerManager.ZeroUpgrader.selector);
+        MEarnerManagerHarness(
+            UnsafeUpgrades.deployUUPSProxy(
+                implementation,
+                abi.encodeWithSelector(
+                    MEarnerManagerHarness.initialize.selector,
+                    "MEarnerManager",
+                    "MEM",
+                    address(mToken),
+                    address(swapFacility),
+                    admin,
+                    earnerManager,
                     address(0),
                     feeRecipient
                 )
@@ -140,6 +190,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     address(swapFacility),
                     admin,
                     earnerManager,
+                    upgrader,
                     address(0)
                 )
             )
@@ -856,5 +907,27 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mEarnerManager.disableEarning();
 
         assertEq(mEarnerManager.isEarningEnabled(), false);
+    }
+
+    /* ============ upgrade ============ */
+
+    function test_upgrade_onlyUpgrader() public {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, UPGRADER_ROLE)
+        );
+
+        vm.prank(alice);
+        mEarnerManager.upgradeToAndCall(v2implementation, "");
+    }
+
+    function test_upgrade() public {
+        address v2implementation = address(new MExtensionUpgrade());
+
+        vm.prank(upgrader);
+        mEarnerManager.upgradeToAndCall(v2implementation, "");
+
+        assertEq(MExtensionUpgrade(address(mEarnerManager)).bar(), 1);
     }
 }

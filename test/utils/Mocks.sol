@@ -2,6 +2,10 @@
 
 pragma solidity 0.8.26;
 
+import {
+    UUPSUpgradeable
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
+
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 contract MockM {
@@ -198,8 +202,21 @@ contract MockMExtension is MockERC20 {
         _mint(recipient, uint240(mToken.balanceOf(address(this)) - startingBalance));
     }
 
-    function unwrap(address recipient, uint256 amount) external {
+    function unwrap(address /* recipient */, uint256 amount) external {
         _burn(ISwapFacility(swapFacility).msgSender(), amount);
         mToken.transfer(swapFacility, amount);
     }
+}
+
+contract MExtensionUpgrade is UUPSUpgradeable {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function bar() external pure returns (uint256) {
+        return 1;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal virtual override {}
 }

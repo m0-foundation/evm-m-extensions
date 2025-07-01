@@ -17,9 +17,10 @@ contract MEarnerManagerHarness is MEarnerManager {
         address swapFacility,
         address admin,
         address earnerManager,
+        address upgrader,
         address feeRecipient_
     ) public override initializer {
-        super.initialize(name, symbol, mToken, swapFacility, admin, earnerManager, feeRecipient_);
+        super.initialize(name, symbol, mToken, swapFacility, admin, earnerManager, upgrader, feeRecipient_);
     }
 
     function setAccountOf(
