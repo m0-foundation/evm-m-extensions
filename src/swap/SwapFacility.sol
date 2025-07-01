@@ -10,7 +10,7 @@ import {
 import {
     UUPSUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
-import { Lock } from "../../lib/universal-router/contracts/base/Lock.sol";
+import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
@@ -24,7 +24,7 @@ import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock, UUPSUpgradeable {
+contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock, UUPSUpgradeable {
     using SafeERC20 for IERC20;
 
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
