@@ -46,6 +46,13 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
         _;
     }
 
+    /* ============ Constructor ============ */
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /* ============ Initializer ============ */
 
     /**

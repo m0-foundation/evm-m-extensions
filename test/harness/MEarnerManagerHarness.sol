@@ -45,6 +45,4 @@ contract MEarnerManagerHarness is MEarnerManager {
     function setTotalPrincipal(uint112 totalPrincipal_) external {
         _getMEarnerManagerStorageLocation().totalPrincipal = totalPrincipal_;
     }
-
-    // function setFeeRecipient
 }
