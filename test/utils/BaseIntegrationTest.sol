@@ -143,7 +143,7 @@ contract BaseIntegrationTest is Helpers, Test {
         uint256 nonce,
         uint256 deadline
     ) internal {
-        (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getMPermit(
             address(swapFacility),
             account,
             signerPrivateKey,
@@ -182,7 +182,7 @@ contract BaseIntegrationTest is Helpers, Test {
         (, key_) = makeAddrAndKey(name_);
     }
 
-    function _getPermit(
+    function _getMPermit(
         address spender,
         address account,
         uint256 signerPrivateKey,
@@ -198,6 +198,28 @@ contract BaseIntegrationTest is Helpers, Test {
                         "\x19\x01",
                         mToken.DOMAIN_SEPARATOR(),
                         keccak256(abi.encode(mToken.PERMIT_TYPEHASH(), account, spender, amount, nonce, deadline))
+                    )
+                )
+            );
+    }
+
+    function _getExtensionPermit(
+        address extension,
+        address spender,
+        address account,
+        uint256 signerPrivateKey,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal view returns (uint8 v_, bytes32 r_, bytes32 s_) {
+        return
+            vm.sign(
+                signerPrivateKey,
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        IMExtension(extension).DOMAIN_SEPARATOR(),
+                        keccak256(abi.encode(IMExtension(extension).PERMIT_TYPEHASH(), account, spender, amount, nonce, deadline))
                     )
                 )
             );
