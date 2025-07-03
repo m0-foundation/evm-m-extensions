@@ -211,7 +211,7 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
         // NOTE: Add extension-specific checks before unwrapping.
         _beforeUnwrap(account, amount);
 
-        _revertIfInsufficientBalance(account, balanceOf(account), amount);
+        _revertIfInsufficientBalance(msg.sender, balanceOf(msg.sender), amount);
 
         // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
         // NOTE: Computes the actual decrease in the $M balance of the $M Extension contract.
@@ -220,7 +220,8 @@ abstract contract MExtension is IMExtension, MExtensionStorageLayout, ERC20Exten
         //       In both cases, 0, 1, or XX extra wei may be deducted from the $M Extension contract's $M balance compared to the burned amount of $M Extension token.
         //
         // This method will be overridden by the inheriting M Extension contract.
-        _burn(account, amount);
+        // NOTE: Always burn from SwapFacility as it is the only contract that can call this function.
+        _burn(msg.sender, amount);
 
         // NOTE: The behavior of `IMTokenLike.transfer` is known, so its return can be ignored.
         IMTokenLike(mToken()).transfer(swapFacility(), amount);

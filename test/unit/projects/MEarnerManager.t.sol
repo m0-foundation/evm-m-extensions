@@ -643,17 +643,18 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mToken.setBalanceOf(alice, 1000);
         mEarnerManager.setAccountOf(alice, 0, 0, true, 1_000);
 
-        vm.prank(alice);
+        vm.startPrank(alice);
         swapFacility.swapInM(address(mEarnerManager), 1000, alice);
 
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(mEarnerManager.balanceOf(alice), 1_000);
         assertEq(mEarnerManager.totalSupply(), 1_000);
 
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 1);
+        mEarnerManager.approve(address(swapFacility), 1_000);
 
-        vm.prank(alice);
+        vm.expectEmit();
+        emit IERC20.Transfer(address(swapFacility), address(0), 1);
+
         swapFacility.swapOutM(address(mEarnerManager), 1, alice);
 
         assertEq(mEarnerManager.totalSupply(), 999);
@@ -661,9 +662,8 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(alice), 1);
 
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 499);
+        emit IERC20.Transfer(address(swapFacility), address(0), 499);
 
-        vm.prank(alice);
         swapFacility.swapOutM(address(mEarnerManager), 499, alice);
 
         assertEq(mEarnerManager.totalSupply(), 500);
@@ -671,9 +671,8 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         assertEq(mToken.balanceOf(alice), 500);
 
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 500);
+        emit IERC20.Transfer(address(swapFacility), address(0), 500);
 
-        vm.prank(alice);
         swapFacility.swapOutM(address(mEarnerManager), 500, alice);
 
         assertEq(mEarnerManager.totalSupply(), 0);
