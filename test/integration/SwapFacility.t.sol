@@ -77,7 +77,8 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), amount);
         assertEq(IERC20(WRAPPED_M).balanceOf(alice), 0);
 
-        (uint8 v, bytes32 r, bytes32 s) = _getPermit(
+        (uint8 v, bytes32 r, bytes32 s) = _getExtensionPermit(
+            address(mYieldToOne),
             address(swapFacility),
             alice,
             aliceKey,
@@ -86,13 +87,11 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
             block.timestamp
         );
         
-        // TODO: Permit doesn't work. Fails with InsufficientAllowance
-        /*
         // Swap mYieldToOne to Wrapped M
         swapFacility.swapWithPermit(address(mYieldToOne), WRAPPED_M, amount, alice, block.timestamp, v, r, s);
 
         assertApproxEqAbs(IERC20(WRAPPED_M).balanceOf(alice), amount, 2);
-        assertEq(mYieldToOne.balanceOf(alice), 0);*/
+        assertEq(mYieldToOne.balanceOf(alice), 0);
     }
 
     function test_swapInM() public {
@@ -116,7 +115,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), 0);
         assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
 
-        (uint8 v, bytes32 r, bytes32 s) = _getPermit(
+        (uint8 v, bytes32 r, bytes32 s) = _getMPermit(
             address(swapFacility),
             alice,
             aliceKey,
@@ -140,7 +139,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), 0);
         assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
 
-        (uint8 v, bytes32 r, bytes32 s) = _getPermit(
+        (uint8 v, bytes32 r, bytes32 s) = _getMPermit(
             address(swapFacility),
             alice,
             aliceKey,
@@ -174,6 +173,39 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(USER), 0);
         assertEq(mBalanceAfter - mBalanceBefore, amount);
     }
+
+    function test_swapOutMWithPermit_vrs() public {
+        uint256 amount = 1_000_000;
+
+        // Transfer $M to Alice
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount);
+
+        // Swap $M to mYieldToOne
+        vm.startPrank(alice);
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(address(mToken)).balanceOf(alice), 0);
+
+        (uint8 v, bytes32 r, bytes32 s) = _getExtensionPermit(
+            address(mYieldToOne),
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+        
+        // Swap mYieldToOne to M
+        swapFacility.swapOutMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+
+        assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+    }
+
 
     function test_swapInToken_USDC_to_wrappedM() public {
         uint256 amountIn = 1_000_000;
