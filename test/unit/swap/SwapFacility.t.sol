@@ -86,6 +86,8 @@ contract SwapFacilityUnitTests is Test {
         assertEq(extensionA.balanceOf(alice), amount);
         assertEq(extensionB.balanceOf(alice), 0);
 
+        extensionA.approve(address(swapFacility), amount);
+
         vm.expectEmit(true, true, true, true);
         emit ISwapFacility.Swapped(address(extensionA), address(extensionB), amount, alice);
 

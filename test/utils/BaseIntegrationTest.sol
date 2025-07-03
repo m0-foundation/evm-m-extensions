@@ -190,7 +190,7 @@ contract BaseIntegrationTest is Helpers, Test {
     }
 
     function _getPermit(
-        address mExtension,
+        address spender,
         address account,
         uint256 signerPrivateKey,
         uint256 amount,
@@ -204,7 +204,7 @@ contract BaseIntegrationTest is Helpers, Test {
                     abi.encodePacked(
                         "\x19\x01",
                         mToken.DOMAIN_SEPARATOR(),
-                        keccak256(abi.encode(mToken.PERMIT_TYPEHASH(), account, mExtension, amount, nonce, deadline))
+                        keccak256(abi.encode(mToken.PERMIT_TYPEHASH(), account, spender, amount, nonce, deadline))
                     )
                 )
             );

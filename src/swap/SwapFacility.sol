@@ -72,6 +72,52 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         _revertIfNotApprovedExtension(extensionIn);
         _revertIfNotApprovedExtension(extensionOut);
 
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+
+        _swap(extensionIn, extensionOut, amount, recipient);
+
+        emit Swapped(extensionIn, extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapWithPermit(
+        address extensionIn,
+        address extensionOut,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedExtension(extensionOut);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+
+        _swap(extensionIn, extensionOut, amount, recipient);
+
+        emit Swapped(extensionIn, extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapWithPermit(
+        address extensionIn,
+        address extensionOut,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        bytes calldata signature
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedExtension(extensionOut);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
+
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+
         _swap(extensionIn, extensionOut, amount, recipient);
 
         emit Swapped(extensionIn, extensionOut, amount, recipient);
@@ -97,7 +143,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        try IMTokenLike(mToken).permit(msgSender(), address(this), amount, deadline, v, r, s) {} catch {}
+        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
     }
@@ -112,7 +158,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
 
-        try IMTokenLike(mToken).permit(msgSender(), address(this), amount, deadline, signature) {} catch {}
+        try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
     }
@@ -121,7 +167,41 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
         // NOTE: Amount and recipient validation is performed in Extensions.
         _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(msgSender());
+        _revertIfNotApprovedSwapper(msg.sender);
+
+        _swapOutM(extensionIn, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapOutMWithPermit(
+        address extensionIn,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedSwapper(msg.sender);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+
+        _swapOutM(extensionIn, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapOutMWithPermit(
+        address extensionIn,
+        uint256 amount,
+        address recipient,
+        uint256 deadline,
+        bytes calldata signature
+    ) external isNotLocked {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedSwapper(msg.sender);
+
+        try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swapOutM(extensionIn, amount, recipient);
     }
@@ -175,14 +255,14 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionIn);
 
+        IERC20(extensionIn).safeTransferFrom(msg.sender, address(this), amountIn);
+
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
-        if (extensionIn == baseToken) {
-            // If extensionIn is baseToken (Wrapped $M), transfer it to SwapFacility
-            IERC20(baseToken).safeTransferFrom(msgSender(), address(this), amountIn);
-        } else {
+
+        // Swap the extensionIn to baseToken
+        if (extensionIn != baseToken) {
             uint256 balanceBefore = IERC20(baseToken).balanceOf(address(this));
 
-            // Otherwise, swap the extensionIn to baseToken
             _swap(extensionIn, baseToken, amountIn, address(this));
 
             // Calculate amountIn as the difference in balance to account for rounding errors
@@ -240,7 +320,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swapInM(address extensionOut, uint256 amount, address recipient) private {
-        IERC20(mToken).transferFrom(msgSender(), address(this), amount);
+        IERC20(mToken).transferFrom(msg.sender, address(this), amount);
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
 
@@ -254,6 +334,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
      * @param  recipient   The address to receive $M tokens.
      */
     function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+
         uint256 balanceBefore = _mBalanceOf(address(this));
 
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.

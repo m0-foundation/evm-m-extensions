@@ -203,8 +203,8 @@ contract MockMExtension is MockERC20 {
     }
 
     function unwrap(address recipient, uint256 amount) external {
-        _burn(ISwapFacility(swapFacility).msgSender(), amount);
-        mToken.transfer(swapFacility, amount);
+        _burn(msg.sender, amount);
+        mToken.transfer(msg.sender, amount);
     }
 }
 
