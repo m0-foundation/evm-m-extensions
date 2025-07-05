@@ -68,8 +68,6 @@ contract BaseUnitTest is Helpers, Test {
             )
         );
 
-        mToken.setEarnerRate(M_EARNER_RATE);
-
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, charlie, david];
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import { IERC712 } from "lib/common/src/interfaces/IERC712.sol";
 
-import { IContinuousIndexing } from "lib/common/src/interfaces/IContinuousIndexing.sol";
+import { IContinuousIndexing } from "test/fuzzing/lifeSupport/IContinuousIndexing.sol";
 import { ContinuousIndexingMath } from "lib/common/src/libs/ContinuousIndexingMath.sol";
 
 /**

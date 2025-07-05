@@ -1,12 +1,12 @@
 [profile.default]
-evm_version = "cancun"
 gas_reports = ["*"]
 gas_reports_ignore = []
 ignored_error_codes = []
-optimizer = true
-optimizer_runs = 999999
-solc_version = "0.8.26"
-verbosity = 3
+optimizer = false
+optimizer_runs = 0
+solc = "0.8.26"
+# evm_version = "paris"
+verbosity = 4
 # Used to deploy UUPS proxies
 ffi = true
 ast = true

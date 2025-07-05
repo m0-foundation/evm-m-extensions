@@ -20,7 +20,6 @@ import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 import { Helpers } from "./Helpers.sol";
 
 contract BaseIntegrationTest is Helpers, Test {
-    // TODO: remove this
     address public constant standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
     address public constant registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 

@@ -2,12 +2,12 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
-import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { IERC20 } from "lib/common/src/interfaces/IERC20.sol";
+import { Upgrades } from "lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
-import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
-import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+import { MYieldFee } from "src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { MYieldToOne } from "src/projects/yieldToOne/MYieldToOne.sol";
+import { SwapFacility } from "src/swap/SwapFacility.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 

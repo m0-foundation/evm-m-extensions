@@ -1,0 +1,47 @@
+contractAddr: "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496" ## From cryticToFoundry.toml
+cryticArgs: ["--foundry-compile-all", "--ignore-compile"]
+
+# cryticArgs: ["--solc-remaps", "@synthetixio/=node_modules/@synthetixio/ @openzeppelin/=node_modules/@openzeppelin/ lib/=lib/ @perimetersec/=node_modules/@perimetersec/"]
+workers: 8
+
+testMode: assertion
+disableSlither: true
+corpusDir: echidna-corpus
+
+testLimit: 100000000000
+# testLimit: 1000000
+codeSize: 0xffffff
+
+shrinkLimit: 1000
+
+seqLen: 100
+
+propMaxGas: 1000000000
+testMaxGas: 1000000000
+
+deployer: "0xfffff"
+sender: ["0x10000", "0x20000", "0x30000"]
+# Initial Ether balance of contractAddr
+balanceContract: 0xffffffffffffffffffffffffffffffffffffffffffffffff
+# maximum value to send to payable functions
+maxValue: 100000000000000000000000000000 # 100000000000 eth
+
+# maxTimeDelay: 6
+format: text
+
+filterBlacklist: true
+filterFunctions:
+  [
+    "Fuzz.targetArtifactSelectors()",
+    "Fuzz.targetArtifacts()",
+    "Fuzz.targetSelectors()",
+    "Fuzz.excludeSelectors()",
+    "Fuzz.excludeArtifacts()",
+    "Fuzz.failed()",
+    "Fuzz.excludeContracts()",
+    "Fuzz.IS_TEST()",
+    "Fuzz.excludeSenders()",
+    "Fuzz.targetInterfaces()",
+    "Fuzz.targetSenders()",
+    "Fuzz.targetContracts()",
+  ]

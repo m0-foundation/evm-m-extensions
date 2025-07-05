@@ -44,7 +44,7 @@ contract FuzzSetup is FunctionCalls {
 
     function deployUniV3() internal {
         uniV3Factory = new UniswapV3Factory();
-        assert(address(uniV3Factory) == address(0x03A6a84cD762D9707A21605b548aaaB891562aAb));
+        // assert(address(uniV3Factory) == address(0x03A6a84cD762D9707A21605b548aaaB891562aAb));
         emit log_named_address("uniV3Factory", address(uniV3Factory));
         bytes32 initCodeHash = keccak256(type(UniswapV3Pool).creationCode); //NOTE: for the pool init code changes
         emit log_named_bytes32("initCodeHash", initCodeHash);

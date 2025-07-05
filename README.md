@@ -1,3 +1,23 @@
+# Fuzz install
+
+`npm install @openzeppelin/contracts-v4@npm:@openzeppelin/contracts@4.9.6`
+`npm i @uniswap/v3-periphery`
+`forge install Uniswap/universal-router@main`
+
+add
+
+```
+    error AccessControlUnauthorizedAccount(address account, bytes32 role);
+    error AccessControlBadConfirmation();
+```
+
+to
+lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol
+
+del lib/openzeppelin-foundry-upgrades/src/Upgrades.sol
+
+run `forge clean && forge build test/fuzzing/Fuzz.sol && /echidna . --contract Fuzz --config echidna.yaml`
+
 # Foundry template
 
 Template to kickstart a Foundry project.

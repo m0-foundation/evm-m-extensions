@@ -8,7 +8,7 @@ import "./PropertiesDescriptions.sol";
 import "../helpers/BeforeAfter.sol";
 import "../utils/FuzzConstants.sol";
 
-import {stdMath} from "forge-std/StdMath.sol";
+import { stdMath } from "forge-std/StdMath.sol";
 
 contract PropertiesBase is PropertiesDescriptions, BeforeAfter, FuzzConstants {
     // ==============================================================
@@ -51,9 +51,12 @@ contract PropertiesBase is PropertiesDescriptions, BeforeAfter, FuzzConstants {
         }
     }
 
-    function greaterThanOrEqualWithToleranceWei(uint256 a, uint256 b, uint256 maxWeiDiff, string memory reason)
-        internal
-    {
+    function greaterThanOrEqualWithToleranceWei(
+        uint256 a,
+        uint256 b,
+        uint256 maxWeiDiff,
+        string memory reason
+    ) internal {
         if (a >= b) {
             fl.t(true, "Invariant ok, checked for: ");
             fl.log(reason);
