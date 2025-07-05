@@ -21,6 +21,8 @@ import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 
 import { MExtension } from "../../MExtension.sol";
 
+import "forge-std/console.sol";
+
 abstract contract MYieldFeeStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldFee
     struct MYieldFeeStorageStruct {
@@ -104,7 +106,10 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
         __MExtension_init(name, symbol, mToken, swapFacility);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        console.log("feeManager", feeManager);
         _grantRole(FEE_MANAGER_ROLE, feeManager);
+        console.log("feeManager hasRole", hasRole(FEE_MANAGER_ROLE, feeManager));
+
         _grantRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager);
 
         _setFeeRate(feeRate_);
@@ -211,6 +216,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMYieldFee
     function setFeeRecipient(address feeRecipient_) external onlyRole(FEE_MANAGER_ROLE) {
+        console.log("Role check passed");
         // Claim fee for the previous fee recipient.
         claimFee();
 

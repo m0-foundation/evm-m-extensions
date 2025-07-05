@@ -16,6 +16,8 @@ import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 
+import "forge-std/console.sol";
+
 /**
  * @title  Swap Facility
  * @notice A contract responsible for swapping between $M Extensions.
@@ -153,6 +155,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
         );
 
         address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
+        console.log("extensionOut", extensionOut);
+
         // If extensionOut is baseToken, transfer to the recipient directly
         if (extensionOut == baseToken) {
             IERC20(baseToken).transfer(recipient, amountOut);
@@ -222,7 +226,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, Lock {
      */
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
         uint256 balanceBefore = _mBalanceOf(address(this));
-
+        console.log("extensionIn", extensionIn);
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
         IMExtension(extensionIn).unwrap(address(this), amount);
 
