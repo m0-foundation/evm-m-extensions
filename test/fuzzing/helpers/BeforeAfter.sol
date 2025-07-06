@@ -194,6 +194,7 @@ contract BeforeAfter is FuzzSetup {
         uint256 totalAccruedFee;
         uint256 balanceOfM0;
         uint256 principalBalanceOf;
+        uint256 projectedTotalSupply;
     }
 
     struct mEarnerManagerStruct {
@@ -207,6 +208,7 @@ contract BeforeAfter is FuzzSetup {
         mapping(address => mYieldToOneStruct) mYieldToOne; // YTO
         mapping(address => mYieldFeeStruct) mYieldFee; // YFEE
         mapping(address => mEarnerManagerStruct) mEarnerManager; // MEARN
+        uint256 swapFacilityBalanceOfM0;
     }
 
     struct ActorStates {
@@ -253,6 +255,7 @@ contract BeforeAfter is FuzzSetup {
         _updateYieldToOneState(callNum);
         _updateYieldFeeState(callNum);
         _updateEarnerManagerState(callNum);
+        _updateSwapFacilityState(callNum);
         _logicalCoverage(callNum);
     }
 
@@ -270,6 +273,7 @@ contract BeforeAfter is FuzzSetup {
             states[callNum].mYieldFee[extAddress].principalBalanceOf = mToken.principalBalanceOf(extAddress);
             states[callNum].mYieldFee[extAddress].totalAccruedYield = IMYieldFee(extAddress).totalAccruedYield();
             states[callNum].mYieldFee[extAddress].totalAccruedFee = IMYieldFee(extAddress).totalAccruedFee();
+            states[callNum].mYieldFee[extAddress].projectedTotalSupply = IMYieldFee(extAddress).projectedTotalSupply();
         }
     }
 
@@ -282,6 +286,10 @@ contract BeforeAfter is FuzzSetup {
             states[callNum].mEarnerManager[extAddress].totalSupply = totalSupply;
             states[callNum].mEarnerManager[extAddress].yield = mBalance > totalSupply ? mBalance - totalSupply : 0;
         }
+    }
+
+    function _updateSwapFacilityState(uint8 callNum) private {
+        states[callNum].swapFacilityBalanceOfM0 = mToken.balanceOf(address(swapFacility));
     }
 
     function _logicalCoverage(uint8 callNum) private {

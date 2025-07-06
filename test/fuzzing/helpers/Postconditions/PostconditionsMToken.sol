@@ -30,4 +30,14 @@ contract PostconditionsMToken is PostconditionsBase {
             onFailInvariantsGeneral(returnData);
         }
     }
+
+    function warpDaysPostconditions() internal {
+        _after();
+        onSuccessInvariantsGeneral(bytes(""));
+    }
+
+    function warpWeeksPostconditions(uint256 weeks_) internal {
+        _after();
+        onSuccessInvariantsGeneral(bytes(""));
+    }
 }

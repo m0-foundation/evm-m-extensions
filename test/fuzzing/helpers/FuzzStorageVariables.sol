@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import "../utils/FuzzActors.sol";
 
-import { SampleContract } from "test/fuzzing/SampleContract.sol";
-
 import { ContinuousIndexingMath } from "lib/common/src/libs/ContinuousIndexingMath.sol";
 import { IndexingMath } from "lib/common/src/libs/IndexingMath.sol";
 import { Upgrades, UnsafeUpgrades } from "lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
@@ -93,7 +91,6 @@ contract FuzzStorageVariables is FuzzActors {
     // M0 CONTRACTS
     // ==============================================================
 
-    SampleContract internal sampleContract; //TODO: remove
     WrappedMToken internal wMToken;
     MockERC20 internal USDC;
     WETH internal weth;

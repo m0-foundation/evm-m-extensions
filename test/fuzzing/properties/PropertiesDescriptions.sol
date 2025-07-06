@@ -12,13 +12,13 @@ contract PropertiesDescriptions {
 
     string constant MYF_01 =
         "MYF_01: Entire yield the extension itself earned from underlying M0 should be equal to distributed yield to users + fee";
+    string constant MYF_02 =
+        "MYF_02: MYieldFee extension mToken Balance must be greater or equal than projectedSupply + fee";
 
     // ==============================================================
     // Invariant Properties (INV)
     // These properties define invariants that must hold true as a sample
     // ==============================================================
-
-    string constant INV_01 = "INV_01: Sample Invariant";
 
     string constant ERR_01 = "ERR_01: Unexpected Error";
 }

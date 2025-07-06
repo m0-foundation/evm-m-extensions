@@ -28,4 +28,8 @@ contract Properties_SWAP is Properties_ERR {
             fl.eq(yieldExtB, yieldExtBAfter, SWAP_03);
         }
     }
+
+    function invariant_SWAP_02() internal returns (bool) {
+        fl.eq(states[1].swapFacilityBalanceOfM0, 0, SWAP_02);
+    }
 }

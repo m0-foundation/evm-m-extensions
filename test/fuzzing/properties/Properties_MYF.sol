@@ -21,5 +21,15 @@ contract Properties_MYF is Properties_ERR {
         }
     }
 
-    // Invariant Definition: (mYieldFee.projectedTotalSupply + mYieldFee.totalAccruedFee() ) <= mToken.balanceOf(mYieldFee)
+    function invariant_MYF_02() internal returns (bool) {
+        for (uint256 i = 0; i < mYieldFeeArray.length; i++) {
+            address extAddress = mYieldFeeArray[i];
+            greaterThanOrEqualWithToleranceWei(
+                states[1].mYieldFee[extAddress].balanceOfM0,
+                states[1].mYieldFee[extAddress].projectedTotalSupply + states[1].mYieldFee[extAddress].totalAccruedFee,
+                1,
+                MYF_02
+            );
+        }
+    }
 }

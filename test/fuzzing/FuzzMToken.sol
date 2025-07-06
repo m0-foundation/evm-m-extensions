@@ -32,14 +32,18 @@ contract FuzzMToken is PreconditionsMToken, PostconditionsMToken {
     }
 
     function fuzz_warpDays(uint256 days_) public {
+        _before();
         days_ = fl.clamp(days_, 1, 365);
         vm.warp(block.timestamp + days_ * 1 days);
         vm.roll(block.number + days_ * 1000);
+        warpDaysPostconditions();
     }
 
     function fuzz_warpWeeks(uint256 weeks_) public {
+        _before();
         weeks_ = fl.clamp(weeks_, 1, 10);
         vm.warp(block.timestamp + weeks_ * 1 weeks);
         vm.roll(block.number + weeks_ * 1000);
+        warpWeeksPostconditions(weeks_);
     }
 }

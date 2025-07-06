@@ -14,7 +14,7 @@ contract FoundryPlayground is FuzzGuided {
     }
 
     function test_coverage_mint() public {
-        fuzz_mint(1e6);
+        fuzz_mint(2e6);
         setActor(USER2);
         fuzz_warpWeeks(1);
         setActor(USER2);
@@ -22,6 +22,15 @@ contract FoundryPlayground is FuzzGuided {
         fuzz_warpDays(1);
         setActor(USER2);
         fuzz_swapOutM(1e6);
+    }
+
+    function test_coverage_noSwapOut() public {
+        fuzz_mint(2e6);
+        setActor(USER2);
+        fuzz_warpWeeks(1);
+        setActor(USER2);
+        fuzz_swapInM(1e6);
+        fuzz_warpWeeks(1);
     }
 
     function test_swapInToken() public {
