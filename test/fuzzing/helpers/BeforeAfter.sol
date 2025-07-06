@@ -191,6 +191,9 @@ contract BeforeAfter is FuzzSetup {
 
     struct mYieldFeeStruct {
         uint256 totalAccruedYield;
+        uint256 totalAccruedFee;
+        uint256 balanceOfM0;
+        uint256 principalBalanceOf;
     }
 
     struct mEarnerManagerStruct {
@@ -263,7 +266,10 @@ contract BeforeAfter is FuzzSetup {
     function _updateYieldFeeState(uint8 callNum) private {
         for (uint256 i = 0; i < mYieldFeeArray.length; i++) {
             address extAddress = mYieldFeeArray[i];
+            states[callNum].mYieldFee[extAddress].balanceOfM0 = mToken.balanceOf(extAddress);
+            states[callNum].mYieldFee[extAddress].principalBalanceOf = mToken.principalBalanceOf(extAddress);
             states[callNum].mYieldFee[extAddress].totalAccruedYield = IMYieldFee(extAddress).totalAccruedYield();
+            states[callNum].mYieldFee[extAddress].totalAccruedFee = IMYieldFee(extAddress).totalAccruedFee();
         }
     }
 

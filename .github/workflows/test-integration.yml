@@ -1,0 +1,26 @@
+name: Forge Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: write-all
+
+jobs:
+  check:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Run Forge integration tests
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+        run: make integration profile=ci

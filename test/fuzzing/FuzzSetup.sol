@@ -44,7 +44,6 @@ contract FuzzSetup is FunctionCalls {
 
     function deployUniV3() internal {
         uniV3Factory = new UniswapV3Factory();
-        // assert(address(uniV3Factory) == address(0x03A6a84cD762D9707A21605b548aaaB891562aAb));
         emit log_named_address("uniV3Factory", address(uniV3Factory));
         bytes32 initCodeHash = keccak256(type(UniswapV3Pool).creationCode); //NOTE: for the pool init code changes
         emit log_named_bytes32("initCodeHash", initCodeHash);
@@ -320,7 +319,6 @@ contract FuzzSetup is FunctionCalls {
         registrar.setEarner(address(mYieldFee1), true);
         registrar.setEarner(address(mYieldFee2), true);
         registrar.setEarner(address(mYieldFee3), true);
-        registrar.setEarner(address(USER2), true); //TODO: remove
 
         registrar.set(bytes32("minter_rate_model"), bytes32(uint256(uint160(address(minterRateModel)))));
         registrar.set(bytes32("earner_rate_model"), bytes32(uint256(uint160(address(earnerRateModel)))));
@@ -341,6 +339,10 @@ contract FuzzSetup is FunctionCalls {
         mEarnerManager1.setAccountOf(address(swapFacility), 0, 0, true, 0);
         mEarnerManager2.setAccountOf(address(swapFacility), 0, 0, true, 0);
         mEarnerManager3.setAccountOf(address(swapFacility), 0, 0, true, 0);
+
+        mYieldFee1.enableEarning();
+        mYieldFee2.enableEarning();
+        mYieldFee3.enableEarning();
     }
 
     function setUsers() internal {

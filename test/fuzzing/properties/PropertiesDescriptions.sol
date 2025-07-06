@@ -10,6 +10,9 @@ contract PropertiesDescriptions {
     string constant SWAP_02 = "SWAP_02: MYieldFee yield must not change after swaps between same extension types";
     string constant SWAP_03 = "SWAP_03: MEarnerManager yield must not change after swaps between same extension types";
 
+    string constant MYF_01 =
+        "MYF_01: Entire yield the extension itself earned from underlying M0 should be equal to distributed yield to users + fee";
+
     // ==============================================================
     // Invariant Properties (INV)
     // These properties define invariants that must hold true as a sample
