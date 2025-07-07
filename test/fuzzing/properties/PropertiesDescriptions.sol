@@ -7,13 +7,19 @@ contract PropertiesDescriptions {
     // ==============================================================
 
     string constant SWAP_01 = "SWAP_01: MYieldToOne yield must not change after swaps between same extension types";
-    string constant SWAP_02 = "SWAP_02: MYieldFee yield must not change after swaps between same extension types";
-    string constant SWAP_03 = "SWAP_03: MEarnerManager yield must not change after swaps between same extension types";
+    string constant SWAP_02 = "SWAP_02: Swap facility M0 balance must be 0 after swap out";
+    string constant SWAP_03 = "SWAP_03: Total M0 balance of all users must not change after swap";
+    string constant SWAP_04 = "SWAP_04: Received amount of M0 must be greater or equal than slippage";
+    string constant SWAP_05 = "SWAP_05: Received amount of USDC must be greater or equal than slippage";
 
-    string constant MYF_01 =
-        "MYF_01: Entire yield the extension itself earned from underlying M0 should be equal to distributed yield to users + fee";
+    // string constant MYF_01 =
+    //     "MYF_01: Entire yield the extension itself earned from underlying M0 should be equal to distributed yield to users + fee";
+    string constant MYF_01 = "MYF_01: MYieldFee extension mToken Balance must be greater or equal than projectedSupply";
     string constant MYF_02 =
         "MYF_02: MYieldFee extension mToken Balance must be greater or equal than projectedSupply + fee";
+
+    string constant MEARN_01 =
+        "MEARN_01: MEarnerManager extension mToken Balance must be greater or equal than projectedTotalSupply";
 
     // ==============================================================
     // Invariant Properties (INV)

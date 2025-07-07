@@ -9,7 +9,7 @@ contract PreconditionsSwapFacility is PreconditionsBase {
         params.extensionIn = allExtensions[seed % allExtensions.length];
         params.extensionOut = allExtensions[(seed / 2 + 1) % allExtensions.length];
         params.amount = seed;
-        params.recipient = USERS[seed % USERS.length];
+        params.recipient = currentActor;
         params.swapType = uint8(_getSwapType(params.extensionIn, params.extensionOut));
     }
 
@@ -17,33 +17,33 @@ contract PreconditionsSwapFacility is PreconditionsBase {
         params.instance = address(swapFacility);
         params.extensionOut = allExtensions[seed % allExtensions.length];
         params.amount = seed;
-        params.recipient = USERS[seed % USERS.length];
+        params.recipient = currentActor;
     }
 
     function swapOutMPreconditions(uint256 seed) internal returns (SwapOutMParams memory params) {
         params.instance = address(swapFacility);
         params.extensionIn = allExtensions[seed % allExtensions.length];
         params.amount = seed;
-        params.recipient = USERS[seed % USERS.length];
+        params.recipient = currentActor;
     }
 
     function swapInTokenPreconditions(uint256 seed) internal returns (SwapInTokenParams memory params) {
         params.instance = address(swapFacility);
         params.tokenIn = address(USDC);
-        params.amountIn = seed;
+        params.amountIn = fl.clamp(seed, 0, USDC.balanceOf(currentActor));
         params.extensionOut = allExtensions[seed % allExtensions.length];
-        params.minAmountOut = 0;
-        params.recipient = USERS[seed % USERS.length];
+        params.minAmountOut = params.amountIn / 2; //NOTE: revise if needed
+        params.recipient = currentActor;
         params.path = new bytes(0);
     }
 
     function swapOutTokenPreconditions(uint256 seed) internal returns (SwapOutTokenParams memory params) {
         params.instance = address(swapFacility);
         params.extensionIn = allExtensions[seed % allExtensions.length];
-        params.amountIn = seed;
+        params.amountIn = fl.clamp(seed, 0, IMTokenLike(params.extensionIn).balanceOf(currentActor));
         params.tokenOut = address(USDC);
-        params.minAmountOut = 0;
-        params.recipient = USERS[seed % USERS.length];
+        params.minAmountOut = params.amountIn / 2;
+        params.recipient = currentActor;
         params.path = new bytes(0);
     }
 

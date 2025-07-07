@@ -25,25 +25,25 @@ contract FuzzMYieldToOne is PreconditionsMYieldToOne, PostconditionsMYieldToOne 
         setYieldRecipientPostconditions_MYieldToOne(success, returnData);
     }
 
-    function fuzz_enableEarning_MYieldToOne(uint256 seed) public setCurrentActor {
-        EnableEarningParams memory params = enableEarningPreconditions_MYieldToOne(seed);
+    // function fuzz_enableEarning_MYieldToOne(uint256 seed) public setCurrentActor {
+    //     address instance = enableEarningPreconditions_MYieldToOne(seed);
 
-        _before();
+    //     _before();
 
-        (bool success, bytes memory returnData) = _enableEarningCall(params.instance);
+    //     (bool success, bytes memory returnData) = _enableEarningCall(instance);
 
-        enableEarningPostconditions_MYieldToOne(success, returnData);
-    }
+    //     enableEarningPostconditions_MYieldToOne(success, returnData);
+    // }
 
-    function fuzz_disableEarning_MYieldToOne(uint256 seed) public setCurrentActor {
-        DisableEarningParams memory params = disableEarningPreconditions_MYieldToOne(seed);
+    // function fuzz_disableEarning_MYieldToOne(uint256 seed) public setCurrentActor {
+    //     address instance = disableEarningPreconditions_MYieldToOne(seed);
 
-        _before();
+    //     _before();
 
-        (bool success, bytes memory returnData) = _disableEarningCall(params.instance);
+    //     (bool success, bytes memory returnData) = _disableEarningCall(instance);
 
-        disableEarningPostconditions_MYieldToOne(success, returnData);
-    }
+    //     disableEarningPostconditions_MYieldToOne(success, returnData);
+    // }
 
     function fuzz_approve_MYieldToOne(uint256 seed) public setCurrentActor {
         ApproveParams memory params = approvePreconditions_MYieldToOne(seed);

@@ -63,11 +63,11 @@ contract PreconditionsMYieldFee is PreconditionsBase {
         params.recipient = USERS[seed % USERS.length];
         params.amount = fl.clamp(seed, 0, IERC20(params.instance).balanceOf(currentActor));
     }
-    function enableEarningPreconditions_MYieldFee(uint256 seed) internal returns (EnableEarningParams memory params) {
-        params.instance = mYieldFeeArray[seed % mYieldFeeArray.length];
+    function enableEarningPreconditions_MYieldFee(uint256 seed) internal returns (address) {
+        return mYieldFeeArray[seed % mYieldFeeArray.length];
     }
 
-    function disableEarningPreconditions_MYieldFee(uint256 seed) internal returns (DisableEarningParams memory params) {
-        params.instance = mYieldFeeArray[seed % mYieldFeeArray.length];
+    function disableEarningPreconditions_MYieldFee(uint256 seed) internal returns (address) {
+        return mYieldFeeArray[seed % mYieldFeeArray.length];
     }
 }

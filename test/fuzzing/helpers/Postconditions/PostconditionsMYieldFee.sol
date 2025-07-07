@@ -58,24 +58,6 @@ contract PostconditionsMYieldFee is PostconditionsBase {
         }
     }
 
-    function enableEarningPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
-    function disableEarningPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
     function approvePostconditions_MYieldFee(bool success, bytes memory returnData) internal {
         if (success) {
             _after();
@@ -113,6 +95,24 @@ contract PostconditionsMYieldFee is PostconditionsBase {
     }
 
     function unwrapPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
+        if (success) {
+            _after();
+            onSuccessInvariantsGeneral(returnData);
+        } else {
+            onFailInvariantsGeneral(returnData);
+        }
+    }
+
+    function enableEarningPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
+        if (success) {
+            _after();
+            onSuccessInvariantsGeneral(returnData);
+        } else {
+            onFailInvariantsGeneral(returnData);
+        }
+    }
+
+    function disableEarningPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);

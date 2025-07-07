@@ -101,18 +101,6 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
         );
     }
 
-    function _enableEarningCall(address instance) internal returns (bool success, bytes memory returnData) {
-        emit EnableEarningCall(instance);
-        vm.prank(currentActor);
-        (success, returnData) = address(instance).call(abi.encodeWithSelector(MExtension.enableEarning.selector));
-    }
-
-    function _disableEarningCall(address instance) internal returns (bool success, bytes memory returnData) {
-        emit DisableEarningCall(instance);
-        vm.prank(currentActor);
-        (success, returnData) = address(instance).call(abi.encodeWithSelector(MExtension.disableEarning.selector));
-    }
-
     function _approveCall(
         address instance,
         address spender,
@@ -416,5 +404,17 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
         (success, returnData) = address(mToken).call(
             abi.encodeWithSelector(bytes4(keccak256("stopEarning(address)")), account)
         );
+    }
+
+    function _enableEarningCall(address instance) internal returns (bool success, bytes memory returnData) {
+        emit EnableEarningCall(instance);
+        vm.prank(currentActor);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(MYieldFee.enableEarning.selector));
+    }
+
+    function _disableEarningCall(address instance) internal returns (bool success, bytes memory returnData) {
+        emit DisableEarningCall(instance);
+        vm.prank(currentActor);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(MYieldFee.disableEarning.selector));
     }
 }

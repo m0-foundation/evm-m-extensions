@@ -5,6 +5,7 @@ import { IMYieldToOne } from "src/projects/yieldToOne/IMYieldToOne.sol";
 import { IMYieldFee } from "src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
 import { IMEarnerManager } from "src/projects/earnerManager/IMEarnerManager.sol";
 import { IERC20 } from "@openzeppelin/contracts-v4/token/ERC20/IERC20.sol";
+import { IMTokenLike } from "src/interfaces/IMTokenLike.sol";
 
 contract BeforeAfter is FuzzSetup {
     // MYieldToOne parameter structs
@@ -15,14 +16,6 @@ contract BeforeAfter is FuzzSetup {
     struct SetYieldRecipientParams {
         address instance;
         address yieldRecipient;
-    }
-
-    struct EnableEarningParams {
-        address instance;
-    }
-
-    struct DisableEarningParams {
-        address instance;
     }
 
     struct ApproveParams {
@@ -201,6 +194,7 @@ contract BeforeAfter is FuzzSetup {
         uint256 mBalanceOf;
         uint256 totalSupply;
         uint256 yield;
+        uint256 projectedTotalSupply;
     }
 
     struct State {
@@ -212,7 +206,12 @@ contract BeforeAfter is FuzzSetup {
     }
 
     struct ActorStates {
-        uint256 userEthBalance;
+        uint256 mTokenBalance;
+        uint256 allMEarnTokens;
+        uint256 allYieldFeeTokens;
+        uint256 allYieldToOneTokens;
+        uint256 totalM0Balance;
+        uint256 usdcBalance;
     }
 
     function _before(address[] memory actors) internal {
@@ -285,6 +284,8 @@ contract BeforeAfter is FuzzSetup {
             states[callNum].mEarnerManager[extAddress].mBalanceOf = mBalance;
             states[callNum].mEarnerManager[extAddress].totalSupply = totalSupply;
             states[callNum].mEarnerManager[extAddress].yield = mBalance > totalSupply ? mBalance - totalSupply : 0;
+            states[callNum].mEarnerManager[extAddress].projectedTotalSupply = MEarnerManager(extAddress)
+                .projectedTotalSupply();
         }
     }
 
@@ -296,7 +297,34 @@ contract BeforeAfter is FuzzSetup {
         // Implement logical coverage here.
     }
 
-    function _setActorState(uint8 callNum, address actor) internal virtual {}
+    function _setActorState(uint8 callNum, address actor) internal virtual {
+        delete states[callNum].actorStates[actor].mTokenBalance;
+        delete states[callNum].actorStates[actor].allMEarnTokens;
+        delete states[callNum].actorStates[actor].allYieldFeeTokens;
+        delete states[callNum].actorStates[actor].allYieldToOneTokens;
+        delete states[callNum].actorStates[actor].totalM0Balance;
+        delete states[callNum].actorStates[actor].usdcBalance;
+
+        states[callNum].actorStates[actor].mTokenBalance = mToken.balanceOf(actor);
+        states[callNum].actorStates[actor].usdcBalance = USDC.balanceOf(actor);
+        for (uint256 i = 0; i < mEarnerManagerArray.length; i++) {
+            address extAddress = mEarnerManagerArray[i];
+            states[callNum].actorStates[actor].allMEarnTokens += IMTokenLike(extAddress).balanceOf(actor);
+        }
+        for (uint256 i = 0; i < mYieldFeeArray.length; i++) {
+            address extAddress = mYieldFeeArray[i];
+            states[callNum].actorStates[actor].allYieldFeeTokens += IMTokenLike(extAddress).balanceOf(actor);
+        }
+        for (uint256 i = 0; i < mYieldToOneArray.length; i++) {
+            address extAddress = mYieldToOneArray[i];
+            states[callNum].actorStates[actor].allYieldToOneTokens += IMTokenLike(extAddress).balanceOf(actor);
+        }
+        states[callNum].actorStates[actor].totalM0Balance =
+            states[callNum].actorStates[actor].mTokenBalance +
+            states[callNum].actorStates[actor].allMEarnTokens +
+            states[callNum].actorStates[actor].allYieldFeeTokens +
+            states[callNum].actorStates[actor].allYieldToOneTokens;
+    }
 
     function min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a < b ? a : b;

@@ -16,7 +16,7 @@ lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControl
 
 del lib/openzeppelin-foundry-upgrades/src/Upgrades.sol
 
-run `forge clean && forge build test/fuzzing/Fuzz.sol && /echidna . --contract Fuzz --config echidna.yaml`
+run `forge clean && forge build test/fuzzing/Fuzz.sol && ./echidna . --contract Fuzz --config echidna.yaml`
 
 # Foundry template
 

@@ -8,6 +8,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
         if (success) {
             _after();
             invariant_SWAP_01(params);
+            invariant_SWAP_03();
             onSuccessInvariantsGeneral(returnData);
         } else {
             onFailInvariantsGeneral(returnData);
@@ -17,6 +18,8 @@ contract PostconditionsSwapFacility is PostconditionsBase {
     function swapInMPostconditions(bool success, bytes memory returnData, SwapInMParams memory params) internal {
         if (success) {
             _after();
+            invariant_SWAP_03();
+
             onSuccessInvariantsGeneral(returnData);
         } else {
             onFailInvariantsGeneral(returnData);
@@ -26,6 +29,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
     function swapOutMPostconditions(bool success, bytes memory returnData, SwapOutMParams memory params) internal {
         if (success) {
             _after();
+            invariant_SWAP_03();
 
             onSuccessInvariantsGeneral(returnData);
         } else {
@@ -40,7 +44,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
     ) internal {
         if (success) {
             _after();
-
+            invariant_SWAP_04(params);
             onSuccessInvariantsGeneral(returnData);
         } else {
             onFailInvariantsGeneral(returnData);
@@ -54,7 +58,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
     ) internal {
         if (success) {
             _after();
-
+            invariant_SWAP_05(params);
             onSuccessInvariantsGeneral(returnData);
         } else {
             onFailInvariantsGeneral(returnData);

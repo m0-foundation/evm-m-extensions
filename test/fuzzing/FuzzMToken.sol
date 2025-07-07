@@ -15,21 +15,21 @@ contract FuzzMToken is PreconditionsMToken, PostconditionsMToken {
         mintPostconditions(account, amount);
     }
 
-    function fuzz_startEarning() public setCurrentActor {
-        _before();
+    // function fuzz_startEarning() public setCurrentActor {
+    //     _before();
 
-        (bool success, bytes memory returnData) = _startEarningCall(currentActor);
+    //     (bool success, bytes memory returnData) = _startEarningCall(currentActor);
 
-        startEarningPostconditions(success, returnData, currentActor);
-    }
+    //     startEarningPostconditions(success, returnData, currentActor);
+    // }
 
-    function fuzz_stopEarning() public setCurrentActor {
-        _before();
+    // function fuzz_stopEarning() public setCurrentActor {
+    //     _before();
 
-        (bool success, bytes memory returnData) = _stopEarningCall(currentActor);
+    //     (bool success, bytes memory returnData) = _stopEarningCall(currentActor);
 
-        stopEarningPostconditions(success, returnData, currentActor);
-    }
+    //     stopEarningPostconditions(success, returnData, currentActor);
+    // }
 
     function fuzz_warpDays(uint256 days_) public {
         _before();

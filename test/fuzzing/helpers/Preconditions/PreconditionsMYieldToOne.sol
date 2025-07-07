@@ -15,14 +15,12 @@ contract PreconditionsMYieldToOne is PreconditionsBase {
         params.yieldRecipient = USERS[seed % USERS.length];
     }
 
-    function enableEarningPreconditions_MYieldToOne(uint256 seed) internal returns (EnableEarningParams memory params) {
-        params.instance = mYieldToOneArray[seed % mYieldToOneArray.length];
+    function enableEarningPreconditions_MYieldToOne(uint256 seed) internal returns (address) {
+        return mYieldToOneArray[seed % mYieldToOneArray.length];
     }
 
-    function disableEarningPreconditions_MYieldToOne(
-        uint256 seed
-    ) internal returns (DisableEarningParams memory params) {
-        params.instance = mYieldToOneArray[seed % mYieldToOneArray.length];
+    function disableEarningPreconditions_MYieldToOne(uint256 seed) internal returns (address) {
+        return mYieldToOneArray[seed % mYieldToOneArray.length];
     }
 
     function approvePreconditions_MYieldToOne(uint256 seed) internal returns (ApproveParams memory params) {
