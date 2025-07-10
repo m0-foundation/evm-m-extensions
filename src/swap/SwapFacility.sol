@@ -16,12 +16,29 @@ import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
 
+abstract contract SwapFacilityStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.MEarnerManager
+    struct SwapFacilityStorageStruct {
+        mapping(address token => bool whitelisted) whitelistedTokens;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.SwapFacility")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _SWAP_FACILITY_STORAGE_LOCATION =
+        0x2f6671d90ec6fb8a38d5fa4043e503b2789e716b6e5219d1b20da9c6434dde00;
+
+    function _getSwapFacilityStorageLocation() internal pure returns (SwapFacilityStorageStruct storage $) {
+        assembly {
+            $.slot := _SWAP_FACILITY_STORAGE_LOCATION
+        }
+    }
+}
+
 /**
  * @title  Swap Facility
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock {
+contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilityStorageLayout, ReentrancyLock {
     using SafeERC20 for IERC20;
 
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
@@ -43,9 +60,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     /// @inheritdoc ISwapFacility
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable swapRouter;
-
-    /// @inheritdoc ISwapFacility
-    mapping(address token => bool whitelisted) public whitelistedTokens;
 
     /// @notice Fee for Uniswap V3 swap router (0.01%)
     uint24 internal constant UNISWAP_V3_FEE = 100;
@@ -357,6 +371,11 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         return _getLocker();
     }
 
+    /// @inheritdoc ISwapFacility
+    function whitelistedTokens(address token) public view returns (bool isWhitelisted) {
+        return _getSwapFacilityStorageLocation().whitelistedTokens[token];
+    }
+
     /* ============ Private Interactive Functions ============ */
     /**
      * @notice Swaps one $M Extension to another.
@@ -417,7 +436,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
 
     function _whitelistToken(address token, bool isWhitelisted) private {
         if (token == address(0)) revert ZeroToken();
-        whitelistedTokens[token] = isWhitelisted;
+        _getSwapFacilityStorageLocation().whitelistedTokens[token] = isWhitelisted;
 
         emit TokenWhitelisted(token, isWhitelisted);
     }
@@ -491,7 +510,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
      * @param token Address of a token.
      */
     function _revertIfNotWhitelistedToken(address token) internal view {
-        if (token != wrappedMToken && !whitelistedTokens[token]) revert NotWhitelistedToken(token);
+        if (token != wrappedMToken && !whitelistedTokens(token)) revert NotWhitelistedToken(token);
     }
 
     /**

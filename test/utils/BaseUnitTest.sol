@@ -73,9 +73,11 @@ contract BaseUnitTest is Helpers, Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new SwapFacility(address(mToken), address(registrar), makeAddr("swapAdapter"))),
+                address(
+                    new SwapFacility(address(mToken), address(registrar), makeAddr("wrappedM"), makeAddr("swapRouter"))
+                ),
                 admin,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin, new address[](0))
             )
         );
 

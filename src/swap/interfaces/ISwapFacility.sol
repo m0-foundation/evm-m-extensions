@@ -258,10 +258,10 @@ interface ISwapFacility {
 
     /**
      * @notice Returns true if the token is whitelisted for swapping via Uniswap pool.
-     * @param  token       The address of the token.
-     * @return whitelisted True if the token is whitelisted, false otherwise.
+     * @param  token         The address of the token.
+     * @return isWhitelisted True if the token is whitelisted, false otherwise.
      */
-    function whitelistedTokens(address token) external view returns (bool whitelisted);
+    function whitelistedTokens(address token) external view returns (bool isWhitelisted);
 
     /**
      * @notice Returns the address that called `swap` or `swapM`
