@@ -97,7 +97,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new SwapFacility(address(mToken), address(registrar), address(swapAdapter))),
+                address(new SwapFacility(address(mToken), address(registrar))),
                 admin,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
             )
@@ -226,7 +226,16 @@ contract BaseIntegrationTest is Helpers, Test {
                     abi.encodePacked(
                         "\x19\x01",
                         IMExtension(extension).DOMAIN_SEPARATOR(),
-                        keccak256(abi.encode(IMExtension(extension).PERMIT_TYPEHASH(), account, spender, amount, nonce, deadline))
+                        keccak256(
+                            abi.encode(
+                                IMExtension(extension).PERMIT_TYPEHASH(),
+                                account,
+                                spender,
+                                amount,
+                                nonce,
+                                deadline
+                            )
+                        )
                     )
                 )
             );

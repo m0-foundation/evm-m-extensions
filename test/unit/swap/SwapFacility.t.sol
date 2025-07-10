@@ -28,7 +28,6 @@ contract SwapFacilityUnitTests is Test {
     MockRegistrar public registrar;
     MockMExtension public extensionA;
     MockMExtension public extensionB;
-    address public swapAdapter = makeAddr("swapAdapter");
 
     address public owner = makeAddr("owner");
     address public alice = makeAddr("alice");
@@ -39,7 +38,7 @@ contract SwapFacilityUnitTests is Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new SwapFacility(address(mToken), address(registrar), swapAdapter)),
+                address(new SwapFacility(address(mToken), address(registrar))),
                 owner,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, owner)
             )
@@ -61,17 +60,12 @@ contract SwapFacilityUnitTests is Test {
 
     function test_constructor_zeroMToken() external {
         vm.expectRevert(ISwapFacility.ZeroMToken.selector);
-        new SwapFacility(address(0), address(registrar), swapAdapter);
+        new SwapFacility(address(0), address(registrar));
     }
 
     function test_constructor_zeroRegistrar() external {
         vm.expectRevert(ISwapFacility.ZeroRegistrar.selector);
-        new SwapFacility(address(mToken), address(0), swapAdapter);
-    }
-
-    function test_constructor_zeroSwapAdapter() external {
-        vm.expectRevert(ISwapFacility.ZeroSwapAdapter.selector);
-        new SwapFacility(address(mToken), address(registrar), address(0));
+        new SwapFacility(address(mToken), address(0));
     }
 
     function test_swap() external {

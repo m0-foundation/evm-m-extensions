@@ -14,7 +14,6 @@ import { IMExtension } from "../interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
-import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 
 /**
  * @title  Swap Facility
@@ -36,22 +35,17 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable registrar;
 
-    /// @inheritdoc ISwapFacility
-    address public immutable swapAdapter;
-
     /**
      * @notice Constructs SwapFacility Implementation contract
      * @dev    Sets immutable storage.
      * @param  mToken_      The address of $M token.
      * @param  registrar_   The address of Registrar.
-     * @param  swapAdapter_ The address of Uniswap swap adapter.
      */
-    constructor(address mToken_, address registrar_, address swapAdapter_) {
+    constructor(address mToken_, address registrar_) {
         _disableInitializers();
 
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
-        if ((swapAdapter = swapAdapter_) == address(0)) revert ZeroSwapAdapter();
     }
 
     /* ============ Initializer ============ */
@@ -204,84 +198,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swapOutM(extensionIn, amount, recipient);
-    }
-
-    /// @inheritdoc ISwapFacility
-    function swapInToken(
-        address tokenIn,
-        uint256 amountIn,
-        address extensionOut,
-        uint256 minAmountOut,
-        address recipient,
-        bytes calldata path
-    ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionOut);
-
-        // Transfer input token to SwapFacility for future transfer to Swap Adapter.
-        IERC20(tokenIn).safeTransferFrom(msgSender(), address(this), amountIn);
-
-        // Approve Swap Adapter to spend input token.
-        IERC20(tokenIn).forceApprove(swapAdapter, amountIn);
-
-        // Swap input token for base token in Uniswap pool
-        uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapIn(
-            tokenIn,
-            amountIn,
-            minAmountOut,
-            address(this),
-            path
-        );
-
-        address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
-        // If extensionOut is baseToken, transfer to the recipient directly
-        if (extensionOut == baseToken) {
-            IERC20(baseToken).transfer(recipient, amountOut);
-        } else {
-            // Otherwise, swap the baseToken to extensionOut
-            _swap(baseToken, extensionOut, amountOut, recipient);
-        }
-
-        emit Swapped(tokenIn, extensionOut, amountOut, recipient);
-    }
-
-    /// @inheritdoc ISwapFacility
-    function swapOutToken(
-        address extensionIn,
-        uint256 amountIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        address recipient,
-        bytes calldata path
-    ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-
-        IERC20(extensionIn).safeTransferFrom(msg.sender, address(this), amountIn);
-
-        address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
-
-        // Swap the extensionIn to baseToken
-        if (extensionIn != baseToken) {
-            uint256 balanceBefore = IERC20(baseToken).balanceOf(address(this));
-
-            _swap(extensionIn, baseToken, amountIn, address(this));
-
-            // Calculate amountIn as the difference in balance to account for rounding errors
-            amountIn = IERC20(baseToken).balanceOf(address(this)) - balanceBefore;
-        }
-
-        // Approve Swap Adapter to spend baseToken (Wrapped $M).
-        IERC20(baseToken).forceApprove(swapAdapter, amountIn);
-
-        // Swap baseToken in Uniswap pool for output token
-        uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapOut(
-            tokenOut,
-            amountIn,
-            minAmountOut,
-            recipient,
-            path
-        );
-
-        emit Swapped(extensionIn, tokenOut, amountOut, recipient);
     }
 
     /* ============ View/Pure Functions ============ */
