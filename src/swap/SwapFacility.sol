@@ -262,6 +262,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         _revertIfInvalidSwapInPath(tokenIn, path);
         _revertIfZeroRecipient(recipient);
 
+        uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
+
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         IERC20(tokenIn).forceApprove(swapRouter, amountIn);
 
@@ -298,6 +300,14 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
             _swap(wrappedMToken, extensionOut, amountOut, recipient);
         }
 
+        // NOTE: UniswapV3 router allows exactInput or exactInputSingle operations to not fully utilize
+        //       the given input token amount if the pool does not have sufficient liquidity.
+        //       Refund any remaining input token balance to the caller.
+        uint256 remainingBalance = IERC20(tokenIn).balanceOf(address(this)) - tokenInBalanceBefore;
+        if (remainingBalance > 0) {
+            IERC20(tokenIn).safeTransfer(msg.sender, remainingBalance);
+        }
+
         emit Swapped(tokenIn, extensionOut, amountOut, recipient);
     }
 
@@ -316,6 +326,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         _revertIfInvalidSwapOutPath(tokenOut, path);
         _revertIfZeroRecipient(recipient);
 
+        uint256 extensionInBalanceBefore = IERC20(extensionIn).balanceOf(address(this));
         IERC20(extensionIn).safeTransferFrom(msg.sender, address(this), amountIn);
 
         // Swap the extensionIn to Wrapped $M token
@@ -354,6 +365,14 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
             });
 
             amountOut = IV3SwapRouter(swapRouter).exactInput(params);
+        }
+
+        // NOTE: UniswapV3 router allows exactInput or exactInputSingle operations to not fully utilize
+        //       the given input token amount if the pool does not have sufficient liquidity.
+        //       Refund any remaining input token balance to the caller.
+        uint256 remainingBalance = IERC20(extensionIn).balanceOf(address(this)) - extensionInBalanceBefore;
+        if (remainingBalance > 0) {
+            IERC20(extensionIn).transfer(msg.sender, remainingBalance);
         }
 
         emit Swapped(extensionIn, tokenOut, amountOut, recipient);
