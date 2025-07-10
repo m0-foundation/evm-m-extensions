@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
 import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
@@ -16,11 +17,13 @@ import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
 contract SwapFacilityIntegrationTest is BaseIntegrationTest {
+    using SafeERC20 for IERC20;
+
     // Holds USDC, USDT and wM
     address constant USER = 0x77BAB32F75996de8075eBA62aEa7b1205cf7E004;
 
     function setUp() public override {
-        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_751_329);
+        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_757_587);
 
         super.setUp();
 
@@ -50,18 +53,13 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
         address earnerManager = address(new Proxy(earnerManagerImplementation));
         address wrappedMTokenImplementationV2 = address(
-            new WrappedMToken(
-                address(mToken),
-                registrar,
-                earnerManager,
-                admin,
-                address(swapFacility),
-                admin
-            )
+            new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
         );
 
         // Ignore earners migration
-        address wrappedMTokenMigratorV1 = address(new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0)));
+        address wrappedMTokenMigratorV1 = address(
+            new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
+        );
 
         vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
         WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
@@ -110,7 +108,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
             0,
             block.timestamp
         );
-        
+
         // Swap mYieldToOne to Wrapped M
         swapFacility.swapWithPermit(address(mYieldToOne), WRAPPED_M, amount, alice, block.timestamp, v, r, s);
 
@@ -222,14 +220,13 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
             0,
             block.timestamp
         );
-        
+
         // Swap mYieldToOne to M
         swapFacility.swapOutMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
 
         assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
         assertEq(mYieldToOne.balanceOf(alice), 0);
     }
-
 
     function test_swapInToken_USDC_to_wrappedM() public {
         uint256 amountIn = 1_000_000;
@@ -267,6 +264,32 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertApproxEqAbs(mYieldToOneBalanceAfter, mYieldToOneBalanceBefore + amountIn, 1000);
     }
 
+    function test_swapInToken_USDT_to_mYieldToOne() public {
+        uint256 amountIn = 1_000_000;
+        uint256 minAmountOut = 997_000;
+        uint256 usdtBalanceBefore = IERC20(USDT).balanceOf(USER);
+        uint256 mYieldToOneBalanceBefore = mYieldToOne.balanceOf(USER);
+
+        // Encode path for USDT -> USDC -> Wrapped M
+        bytes memory path = abi.encodePacked(
+            USDT,
+            uint24(100), // 0.01% fee
+            USDC,
+            uint24(100), // 0.01% fee
+            WRAPPED_M
+        );
+
+        vm.startPrank(USER);
+        IERC20(USDT).forceApprove(address(swapFacility), amountIn);
+        swapFacility.swapInToken(USDT, amountIn, address(mYieldToOne), minAmountOut, USER, path);
+
+        uint256 usdtBalanceAfter = IERC20(USDT).balanceOf(USER);
+        uint256 mYieldToOneBalanceAfter = mYieldToOne.balanceOf(USER);
+
+        assertEq(usdtBalanceAfter, usdtBalanceBefore - amountIn);
+        assertApproxEqAbs(mYieldToOneBalanceAfter, mYieldToOneBalanceBefore + amountIn, 1000);
+    }
+
     function test_swapOutToken_wrappedM_to_USDC() public {
         uint256 amountIn = 1_000_000;
         uint256 minAmountOut = 997_000;
@@ -294,5 +317,35 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
         assertApproxEqAbs(usdcBalanceAfter, usdcBalanceBefore + amountIn, 1000);
+    }
+
+    function test_swapOutToken_mYieldToOne_to_USDT() public {
+        uint256 amountIn = 1_000_000;
+        uint256 minAmountOut = 997_000;
+
+        vm.startPrank(USER);
+        IERC20(address(mToken)).approve(address(swapFacility), amountIn);
+        swapFacility.swapInM(address(mYieldToOne), amountIn, USER);
+
+        uint256 usdtBalanceBefore = IERC20(USDT).balanceOf(USER);
+        uint256 mYieldToOneBalanceBefore = mYieldToOne.balanceOf(USER);
+
+        // Encode path for USDT -> USDC -> Wrapped M
+        bytes memory path = abi.encodePacked(
+            WRAPPED_M,
+            uint24(100), // 0.01% fee
+            USDC,
+            uint24(100), // 0.01% fee
+            USDT
+        );
+
+        mYieldToOne.approve(address(swapFacility), amountIn);
+        swapFacility.swapOutToken(address(mYieldToOne), amountIn, USDT, minAmountOut, USER, path);
+
+        uint256 usdtBalanceAfter = IERC20(USDT).balanceOf(USER);
+        uint256 mYieldToOneBalanceAfter = mYieldToOne.balanceOf(USER);
+
+        assertEq(mYieldToOneBalanceAfter, mYieldToOneBalanceBefore - amountIn);
+        assertApproxEqAbs(usdtBalanceAfter, usdtBalanceBefore + amountIn, 1000);
     }
 }

@@ -17,7 +17,6 @@ import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
-import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -72,7 +71,6 @@ contract BaseIntegrationTest is Helpers, Test {
     MYieldFee public mYieldFee;
     MEarnerManager public mEarnerManager;
     SwapFacility public swapFacility;
-    UniswapV3SwapAdapter public swapAdapter;
 
     string public constant NAME = "M USD Extension";
     string public constant SYMBOL = "MUSDE";
@@ -83,23 +81,15 @@ contract BaseIntegrationTest is Helpers, Test {
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, carol, charlie, david];
 
-        address[] memory whitelistedTokens = new address[](3);
-        whitelistedTokens[0] = WRAPPED_M;
-        whitelistedTokens[1] = USDC;
-        whitelistedTokens[2] = USDT;
-
-        swapAdapter = new UniswapV3SwapAdapter(
-            WRAPPED_M, // baseToken (wrapped M)
-            UNISWAP_V3_ROUTER,
-            admin,
-            whitelistedTokens
-        );
+        address[] memory whitelistedTokens = new address[](2);
+        whitelistedTokens[0] = USDC;
+        whitelistedTokens[1] = USDT;
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new SwapFacility(address(mToken), address(registrar), address(swapAdapter))),
+                address(new SwapFacility(address(mToken), address(registrar), WRAPPED_M, UNISWAP_V3_ROUTER)),
                 admin,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin, whitelistedTokens)
             )
         );
 
@@ -226,7 +216,16 @@ contract BaseIntegrationTest is Helpers, Test {
                     abi.encodePacked(
                         "\x19\x01",
                         IMExtension(extension).DOMAIN_SEPARATOR(),
-                        keccak256(abi.encode(IMExtension(extension).PERMIT_TYPEHASH(), account, spender, amount, nonce, deadline))
+                        keccak256(
+                            abi.encode(
+                                IMExtension(extension).PERMIT_TYPEHASH(),
+                                account,
+                                spender,
+                                amount,
+                                nonce,
+                                deadline
+                            )
+                        )
                     )
                 )
             );

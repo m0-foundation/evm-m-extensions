@@ -15,22 +15,50 @@ interface ISwapFacility {
 
     event SwappedOutM(address indexed extensionIn, uint256 amount, address recipient);
 
+    /**
+     * @notice Emitted when a token is added or removed from the whitelist.
+     * @param token The address of the token.
+     * @param isWhitelisted True if the token is whitelisted, false otherwise.
+     */
+    event TokenWhitelisted(address indexed token, bool isWhitelisted);
+
     /* ============ Custom Errors ============ */
 
     /// @notice Thrown in the constructor if $M Token is 0x0.
     error ZeroMToken();
 
+    /// @notice Thrown in the constructor if Wrapped $M Token is 0x0.
+    error ZeroWrappedMToken();
+
     /// @notice Thrown in the constructor if Registrar is 0x0.
     error ZeroRegistrar();
 
-    /// @notice Thrown in the constructor if SwapAdapter is 0x0.
-    error ZeroSwapAdapter();
+    /// @notice Thrown in the constructor if SwapRouter is 0x0.
+    error ZeroSwapRouter();
+
+    /// @notice Thrown token address is 0x0.
+    error ZeroToken();
+
+    /// @notice Thrown if swap amount is 0.
+    error ZeroAmount();
+
+    /// @notice Thrown if recipient address is 0x0.
+    error ZeroRecipient();
 
     /// @notice Thrown in `swap` and `swapM` functions if the extension is not TTG approved earner.
     error NotApprovedExtension(address extension);
 
     /// @notice Thrown in `swapOutM` and `swapOutMWithPermit` functions if the caller is not approved swapper.
     error NotApprovedSwapper(address account);
+
+    /// @notice Thrown if an external token is not whitelisted for swapping via Uniswap pool.
+    error NotWhitelistedToken(address token);
+
+    /// @notice Invalid path
+    error InvalidPath();
+
+    /// @notice Invalid path format
+    error InvalidPathFormat();
 
     /* ============ Interactive Functions ============ */
 
@@ -207,6 +235,13 @@ interface ISwapFacility {
         bytes calldata signature
     ) external;
 
+    /**
+     * @notice Adds or removes a token from the list of tokens that can be swapped to M Extension via Uniswap Pool.
+     * @param  token         The address of the token.
+     * @param  isWhitelisted True to whitelist the token, false otherwise.
+     */
+    function whitelistToken(address token, bool isWhitelisted) external;
+
     /* ============ View/Pure Functions ============ */
 
     /// @notice The address of the $M Token contract.
@@ -215,8 +250,18 @@ interface ISwapFacility {
     /// @notice The address of the Registrar.
     function registrar() external view returns (address registrar);
 
-    /// @notice The address of the UniswapV3 Swap Adapter contract.
-    function swapAdapter() external view returns (address registrar);
+    /// @notice The address of the Wrapped $M Token contract.
+    function wrappedMToken() external view returns (address wrappedMToken);
+
+    /// @notice The address of the UniswapV3 Swap Router contract.
+    function swapRouter() external view returns (address swapRouter);
+
+    /**
+     * @notice Returns true if the token is whitelisted for swapping via Uniswap pool.
+     * @param  token       The address of the token.
+     * @return whitelisted True if the token is whitelisted, false otherwise.
+     */
+    function whitelistedTokens(address token) external view returns (bool whitelisted);
 
     /**
      * @notice Returns the address that called `swap` or `swapM`

@@ -14,7 +14,7 @@ import { IMExtension } from "../interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
-import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
+import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
 
 /**
  * @title  Swap Facility
@@ -37,21 +37,43 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     address public immutable registrar;
 
     /// @inheritdoc ISwapFacility
-    address public immutable swapAdapter;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable wrappedMToken;
+
+    /// @inheritdoc ISwapFacility
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable swapRouter;
+
+    /// @inheritdoc ISwapFacility
+    mapping(address token => bool whitelisted) public whitelistedTokens;
+
+    /// @notice Fee for Uniswap V3 swap router (0.01%)
+    uint24 internal constant UNISWAP_V3_FEE = 100;
+
+    /// @notice Path address size
+    uint256 internal constant PATH_ADDR_SIZE = 20;
+
+    /// @notice Path fee size
+    uint256 internal constant PATH_FEE_SIZE = 3;
+
+    /// @notice Path next offset
+    uint256 internal constant PATH_NEXT_OFFSET = PATH_ADDR_SIZE + PATH_FEE_SIZE;
 
     /**
      * @notice Constructs SwapFacility Implementation contract
      * @dev    Sets immutable storage.
-     * @param  mToken_      The address of $M token.
-     * @param  registrar_   The address of Registrar.
-     * @param  swapAdapter_ The address of Uniswap swap adapter.
+     * @param  mToken_        The address of $M token.
+     * @param  registrar_     The address of Registrar.
+     * @param  wrappedMToken_ The address of base token.
+     * @param  swapRouter_    The address of the Uniswap V3 swap router.
      */
-    constructor(address mToken_, address registrar_, address swapAdapter_) {
+    constructor(address mToken_, address registrar_, address wrappedMToken_, address swapRouter_) {
         _disableInitializers();
 
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
-        if ((swapAdapter = swapAdapter_) == address(0)) revert ZeroSwapAdapter();
+        if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
+        if ((swapRouter = swapRouter_) == address(0)) revert ZeroSwapRouter();
     }
 
     /* ============ Initializer ============ */
@@ -59,9 +81,14 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     /**
      * @notice Initializes SwapFacility Proxy.
      * @param  admin Address of the SwapFacility admin.
+     * @param  tokens The list of whitelisted tokens.
      */
-    function initialize(address admin) external initializer {
+    function initialize(address admin, address[] memory tokens) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
+
+        for (uint256 i; i < tokens.length; i++) {
+            _whitelistToken(tokens[i], true);
+        }
     }
 
     /* ============ Interactive Functions ============ */
@@ -214,31 +241,47 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         uint256 minAmountOut,
         address recipient,
         bytes calldata path
-    ) external isNotLocked {
+    ) external {
         _revertIfNotApprovedExtension(extensionOut);
+        _revertIfNotWhitelistedToken(tokenIn);
+        _revertIfZeroAmount(amountIn);
+        _revertIfInvalidSwapInPath(tokenIn, path);
+        _revertIfZeroRecipient(recipient);
 
-        // Transfer input token to SwapFacility for future transfer to Swap Adapter.
-        IERC20(tokenIn).safeTransferFrom(msgSender(), address(this), amountIn);
-
-        // Approve Swap Adapter to spend input token.
-        IERC20(tokenIn).forceApprove(swapAdapter, amountIn);
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).forceApprove(swapRouter, amountIn);
 
         // Swap input token for base token in Uniswap pool
-        uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapIn(
-            tokenIn,
-            amountIn,
-            minAmountOut,
-            address(this),
-            path
-        );
+        uint256 amountOut;
+        if (path.length == 0) {
+            IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
+                tokenIn: tokenIn,
+                tokenOut: wrappedMToken,
+                fee: UNISWAP_V3_FEE,
+                recipient: address(this),
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut,
+                sqrtPriceLimitX96: 0
+            });
 
-        address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
-        // If extensionOut is baseToken, transfer to the recipient directly
-        if (extensionOut == baseToken) {
-            IERC20(baseToken).transfer(recipient, amountOut);
+            amountOut = IV3SwapRouter(swapRouter).exactInputSingle(params);
         } else {
-            // Otherwise, swap the baseToken to extensionOut
-            _swap(baseToken, extensionOut, amountOut, recipient);
+            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
+                path: path,
+                recipient: address(this),
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut
+            });
+
+            amountOut = IV3SwapRouter(swapRouter).exactInput(params);
+        }
+
+        // If extensionOut is Wrapped $M, transfer to the recipient directly
+        if (extensionOut == wrappedMToken) {
+            IERC20(wrappedMToken).transfer(recipient, amountOut);
+        } else {
+            // Otherwise, swap the Wrapped $M to extensionOut
+            _swap(wrappedMToken, extensionOut, amountOut, recipient);
         }
 
         emit Swapped(tokenIn, extensionOut, amountOut, recipient);
@@ -254,34 +297,57 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         bytes calldata path
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotWhitelistedToken(tokenOut);
+        _revertIfZeroAmount(amountIn);
+        _revertIfInvalidSwapOutPath(tokenOut, path);
+        _revertIfZeroRecipient(recipient);
 
         IERC20(extensionIn).safeTransferFrom(msg.sender, address(this), amountIn);
 
-        address baseToken = IUniswapV3SwapAdapter(swapAdapter).baseToken();
+        // Swap the extensionIn to Wrapped $M token
+        if (extensionIn != wrappedMToken) {
+            uint256 balanceBefore = IERC20(wrappedMToken).balanceOf(address(this));
 
-        // Swap the extensionIn to baseToken
-        if (extensionIn != baseToken) {
-            uint256 balanceBefore = IERC20(baseToken).balanceOf(address(this));
-
-            _swap(extensionIn, baseToken, amountIn, address(this));
+            _swap(extensionIn, wrappedMToken, amountIn, address(this));
 
             // Calculate amountIn as the difference in balance to account for rounding errors
-            amountIn = IERC20(baseToken).balanceOf(address(this)) - balanceBefore;
+            amountIn = IERC20(wrappedMToken).balanceOf(address(this)) - balanceBefore;
         }
 
-        // Approve Swap Adapter to spend baseToken (Wrapped $M).
-        IERC20(baseToken).forceApprove(swapAdapter, amountIn);
+        // Approve Swap Router to spend wrappedMToken (Wrapped $M)
+        IERC20(wrappedMToken).approve(swapRouter, amountIn);
 
-        // Swap baseToken in Uniswap pool for output token
-        uint256 amountOut = IUniswapV3SwapAdapter(swapAdapter).swapOut(
-            tokenOut,
-            amountIn,
-            minAmountOut,
-            recipient,
-            path
-        );
+        // Swap wrappedMToken in Uniswap pool for output token
+        uint256 amountOut;
+        if (path.length == 0) {
+            IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
+                tokenIn: wrappedMToken,
+                tokenOut: tokenOut,
+                fee: UNISWAP_V3_FEE,
+                recipient: recipient,
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut,
+                sqrtPriceLimitX96: 0
+            });
+
+            amountOut = IV3SwapRouter(swapRouter).exactInputSingle(params);
+        } else {
+            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
+                path: path,
+                recipient: recipient,
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut
+            });
+
+            amountOut = IV3SwapRouter(swapRouter).exactInput(params);
+        }
 
         emit Swapped(extensionIn, tokenOut, amountOut, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function whitelistToken(address token, bool isWhitelisted) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _whitelistToken(token, isWhitelisted);
     }
 
     /* ============ View/Pure Functions ============ */
@@ -349,6 +415,41 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         emit SwappedOutM(extensionIn, amount, recipient);
     }
 
+    function _whitelistToken(address token, bool isWhitelisted) private {
+        if (token == address(0)) revert ZeroToken();
+        whitelistedTokens[token] = isWhitelisted;
+
+        emit TokenWhitelisted(token, isWhitelisted);
+    }
+
+    /**
+     * @notice Decode input and output tokens
+     * @param  path Swap path
+     * @return tokenInput Address of the input token
+     * @return tokenOutput Address if the output token
+     */
+    function _decodeInputAndOutputTokens(
+        bytes calldata path
+    ) internal pure returns (address tokenInput, address tokenOutput) {
+        // Validate path format
+        if (
+            (path.length < PATH_ADDR_SIZE + PATH_FEE_SIZE + PATH_ADDR_SIZE) ||
+            ((path.length - PATH_ADDR_SIZE) % PATH_NEXT_OFFSET != 0)
+        ) {
+            revert InvalidPathFormat();
+        }
+
+        tokenInput = address(bytes20(path[:PATH_ADDR_SIZE]));
+
+        // Calculate position of output token
+        uint256 numHops = (path.length - PATH_ADDR_SIZE) / PATH_NEXT_OFFSET;
+        uint256 outputTokenIndex = numHops * PATH_NEXT_OFFSET;
+
+        tokenOutput = address(bytes20(path[outputTokenIndex:outputTokenIndex + PATH_ADDR_SIZE]));
+    }
+
+    /* ============ Internal View/Pure Functions ============ */
+
     /**
      * @dev    Returns the M Token balance of `account`.
      * @param  account The account being queried.
@@ -356,24 +457,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
      */
     function _mBalanceOf(address account) internal view returns (uint256) {
         return IMTokenLike(mToken).balanceOf(account);
-    }
-
-    /* ============ Private View/Pure Functions ============ */
-
-    /**
-     * @dev   Reverts if `extension` is not an approved earner.
-     * @param extension Address of an extension.
-     */
-    function _revertIfNotApprovedExtension(address extension) private view {
-        if (!_isApprovedEarner(extension)) revert NotApprovedExtension(extension);
-    }
-
-    /**
-     * @dev   Reverts if `account` is not an approved M token swapper.
-     * @param account Address of an extension.
-     */
-    function _revertIfNotApprovedSwapper(address account) private view {
-        if (!hasRole(M_SWAPPER_ROLE, account)) revert NotApprovedSwapper(account);
     }
 
     /**
@@ -385,5 +468,69 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         return
             IRegistrarLike(registrar).get(EARNERS_LIST_IGNORED_KEY) != bytes32(0) ||
             IRegistrarLike(registrar).listContains(EARNERS_LIST_NAME, extension);
+    }
+
+    /**
+     * @dev   Reverts if `extension` is not an approved earner.
+     * @param extension Address of an extension.
+     */
+    function _revertIfNotApprovedExtension(address extension) internal view {
+        if (!_isApprovedEarner(extension)) revert NotApprovedExtension(extension);
+    }
+
+    /**
+     * @dev   Reverts if `account` is not an approved M token swapper.
+     * @param account Address of an extension.
+     */
+    function _revertIfNotApprovedSwapper(address account) internal view {
+        if (!hasRole(M_SWAPPER_ROLE, account)) revert NotApprovedSwapper(account);
+    }
+
+    /**
+     * @dev   Reverts if not whitelisted token.
+     * @param token Address of a token.
+     */
+    function _revertIfNotWhitelistedToken(address token) internal view {
+        if (token != wrappedMToken && !whitelistedTokens[token]) revert NotWhitelistedToken(token);
+    }
+
+    /**
+     * @dev   Reverts if `recipient` is address(0).
+     * @param recipient Address of a recipient.
+     */
+    function _revertIfZeroRecipient(address recipient) internal pure {
+        if (recipient == address(0)) revert ZeroRecipient();
+    }
+
+    /**
+     * @dev   Reverts if `amount` is equal to 0.
+     * @param amount Amount of token.
+     */
+    function _revertIfZeroAmount(uint256 amount) internal pure {
+        if (amount == 0) revert ZeroAmount();
+    }
+
+    /**
+     * @notice Reverts if the swap path is invalid for swapping in.
+     * @param  tokenInput Address of the input token.
+     * @param  path Swap path.
+     */
+    function _revertIfInvalidSwapInPath(address tokenInput, bytes calldata path) internal view {
+        if (path.length != 0) {
+            (address tokenInput_, address tokenOutput) = _decodeInputAndOutputTokens(path);
+            if (tokenInput_ != tokenInput || tokenOutput != wrappedMToken) revert InvalidPath();
+        }
+    }
+
+    /**
+     * @notice Reverts if the swap path is invalid for swapping out.
+     * @param  tokenOutput Address of the output token.
+     * @param  path Swap path.
+     */
+    function _revertIfInvalidSwapOutPath(address tokenOutput, bytes calldata path) internal view {
+        if (path.length != 0) {
+            (address tokenInput, address tokenOutput_) = _decodeInputAndOutputTokens(path);
+            if (tokenInput != wrappedMToken || tokenOutput_ != tokenOutput) revert InvalidPath();
+        }
     }
 }
