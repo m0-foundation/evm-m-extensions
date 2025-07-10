@@ -46,7 +46,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    address constant UNIVERSAL_ROUTER = 0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af;
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
@@ -87,7 +87,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new SwapFacility(address(mToken), address(registrar), WRAPPED_M, UNISWAP_V3_ROUTER)),
+                address(new SwapFacility(address(mToken), address(registrar), WRAPPED_M, UNIVERSAL_ROUTER)),
                 admin,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, admin, whitelistedTokens)
             )

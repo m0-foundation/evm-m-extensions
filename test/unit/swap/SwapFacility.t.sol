@@ -25,7 +25,7 @@ contract SwapFacilityUnitTests is Test {
     address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    address constant UNIVERSAL_ROUTER = 0x66a9893cC07D91D95644AEDD05D03f95e1dBA8Af;
 
     SwapFacility public swapFacility;
 
@@ -48,7 +48,7 @@ contract SwapFacilityUnitTests is Test {
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new SwapFacility(address(mToken), address(registrar), WRAPPED_M, UNISWAP_V3_ROUTER)),
+                address(new SwapFacility(address(mToken), address(registrar), WRAPPED_M, UNIVERSAL_ROUTER)),
                 owner,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, owner, whitelistedTokens)
             )
@@ -71,21 +71,21 @@ contract SwapFacilityUnitTests is Test {
 
     function test_constructor_zeroMToken() external {
         vm.expectRevert(ISwapFacility.ZeroMToken.selector);
-        new SwapFacility(address(0), address(registrar), WRAPPED_M, UNISWAP_V3_ROUTER);
+        new SwapFacility(address(0), address(registrar), WRAPPED_M, UNIVERSAL_ROUTER);
     }
 
     function test_constructor_zeroRegistrar() external {
         vm.expectRevert(ISwapFacility.ZeroRegistrar.selector);
-        new SwapFacility(address(mToken), address(0), WRAPPED_M, UNISWAP_V3_ROUTER);
+        new SwapFacility(address(mToken), address(0), WRAPPED_M, UNIVERSAL_ROUTER);
     }
 
     function test_constructor_zeroWrappedMToken() external {
         vm.expectRevert(ISwapFacility.ZeroWrappedMToken.selector);
-        new SwapFacility(address(mToken), address(registrar), address(0), UNISWAP_V3_ROUTER);
+        new SwapFacility(address(mToken), address(registrar), address(0), UNIVERSAL_ROUTER);
     }
 
-    function test_constructor_zeroSwapRouter() external {
-        vm.expectRevert(ISwapFacility.ZeroSwapRouter.selector);
+    function test_constructor_zeroUniversalRouter() external {
+        vm.expectRevert(ISwapFacility.ZeroUniversalRouter.selector);
         new SwapFacility(address(mToken), address(registrar), WRAPPED_M, address(0));
     }
 
@@ -187,7 +187,7 @@ contract SwapFacilityUnitTests is Test {
 
     function test_swapInToken_zeroAmount() public {
         vm.expectRevert(ISwapFacility.ZeroAmount.selector);
-        swapFacility.swapInToken(USDC, 0, address(extensionA), 0, alice, "");
+        swapFacility.swapInToken(USDC, 0, address(extensionA), 0, alice, "", block.timestamp);
     }
 
     function test_swapInToken_zeroRecipient() public {
@@ -195,7 +195,7 @@ contract SwapFacilityUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(ISwapFacility.ZeroRecipient.selector);
-        swapFacility.swapInToken(USDC, amountIn, address(extensionA), minAmountOut, address(0), "");
+        swapFacility.swapInToken(USDC, amountIn, address(extensionA), minAmountOut, address(0), "", block.timestamp);
     }
 
     function test_swapInToken_invalidPath() public {
@@ -209,7 +209,7 @@ contract SwapFacilityUnitTests is Test {
         );
 
         vm.expectRevert(ISwapFacility.InvalidPath.selector);
-        swapFacility.swapInToken(USDC, amountIn, address(extensionA), minAmountOut, alice, path);
+        swapFacility.swapInToken(USDC, amountIn, address(extensionA), minAmountOut, alice, path, block.timestamp);
     }
 
     function test_swapInToken_invalidPathFormat() public {
@@ -217,7 +217,7 @@ contract SwapFacilityUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(ISwapFacility.InvalidPathFormat.selector);
-        swapFacility.swapInToken(USDC, amountIn, address(extensionA), minAmountOut, alice, "path");
+        swapFacility.swapInToken(USDC, amountIn, address(extensionA), minAmountOut, alice, "path", block.timestamp);
     }
 
     function test_swapInToken_notWhitelistedToken() public {
@@ -226,12 +226,12 @@ contract SwapFacilityUnitTests is Test {
         address token = makeAddr("token");
 
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotWhitelistedToken.selector, token));
-        swapFacility.swapInToken(token, amountIn, address(extensionA), minAmountOut, alice, "");
+        swapFacility.swapInToken(token, amountIn, address(extensionA), minAmountOut, alice, "", block.timestamp);
     }
 
     function test_swapOutToken_zeroAmount() public {
         vm.expectRevert(ISwapFacility.ZeroAmount.selector);
-        swapFacility.swapOutToken(WRAPPED_M, 0, USDC, 0, alice, "");
+        swapFacility.swapOutToken(WRAPPED_M, 0, USDC, 0, alice, "", block.timestamp);
     }
 
     function test_swapOutToken_zeroRecipient() public {
@@ -239,7 +239,7 @@ contract SwapFacilityUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(ISwapFacility.ZeroRecipient.selector);
-        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, address(0), "");
+        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, address(0), "", block.timestamp);
     }
 
     function test_swapOutToken_invalidPath() public {
@@ -253,7 +253,7 @@ contract SwapFacilityUnitTests is Test {
         );
 
         vm.expectRevert(ISwapFacility.InvalidPath.selector);
-        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, alice, path);
+        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, alice, path, block.timestamp);
     }
 
     function test_swapOutToken_invalidPathFormat() public {
@@ -261,7 +261,7 @@ contract SwapFacilityUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(ISwapFacility.InvalidPathFormat.selector);
-        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, alice, "path");
+        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, alice, "path", block.timestamp);
     }
 
     function test_swapOut_notWhitelistedToken() public {
@@ -270,7 +270,7 @@ contract SwapFacilityUnitTests is Test {
         address token = makeAddr("token");
 
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotWhitelistedToken.selector, token));
-        swapFacility.swapOutToken(WRAPPED_M, amountIn, token, minAmountOut, alice, "");
+        swapFacility.swapOutToken(WRAPPED_M, amountIn, token, minAmountOut, alice, "", block.timestamp);
     }
 
     function test_upgrade() external {

@@ -8,13 +8,14 @@ import {
     AccessControlUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
+import { Commands } from "../../lib/uniswap-universal-router/contracts/libraries/Commands.sol";
+import { IUniversalRouter } from "../../lib/uniswap-universal-router/contracts/interfaces/IUniversalRouter.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
-import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
 
 abstract contract SwapFacilityStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MEarnerManager
@@ -59,7 +60,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
 
     /// @inheritdoc ISwapFacility
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address public immutable swapRouter;
+    address public immutable universalRouter;
 
     /// @notice Fee for Uniswap V3 swap router (0.01%)
     uint24 internal constant UNISWAP_V3_FEE = 100;
@@ -76,18 +77,18 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
     /**
      * @notice Constructs SwapFacility Implementation contract
      * @dev    Sets immutable storage.
-     * @param  mToken_        The address of $M token.
-     * @param  registrar_     The address of Registrar.
-     * @param  wrappedMToken_ The address of base token.
-     * @param  swapRouter_    The address of the Uniswap V3 swap router.
+     * @param  mToken_           The address of $M token.
+     * @param  registrar_        The address of Registrar.
+     * @param  wrappedMToken_    The address of base token.
+     * @param  universalRouter_  The address of the Uniswap Universal Router.
      */
-    constructor(address mToken_, address registrar_, address wrappedMToken_, address swapRouter_) {
+    constructor(address mToken_, address registrar_, address wrappedMToken_, address universalRouter_) {
         _disableInitializers();
 
         if ((mToken = mToken_) == address(0)) revert ZeroMToken();
         if ((registrar = registrar_) == address(0)) revert ZeroRegistrar();
         if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
-        if ((swapRouter = swapRouter_) == address(0)) revert ZeroSwapRouter();
+        if ((universalRouter = universalRouter_) == address(0)) revert ZeroUniversalRouter();
     }
 
     /* ============ Initializer ============ */
@@ -254,7 +255,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         address extensionOut,
         uint256 minAmountOut,
         address recipient,
-        bytes calldata path
+        bytes calldata path,
+        uint256 deadline
     ) external {
         _revertIfNotApprovedExtension(extensionOut);
         _revertIfNotWhitelistedToken(tokenIn);
@@ -263,34 +265,29 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         _revertIfZeroRecipient(recipient);
 
         uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
+        uint256 wrappedMBalanceBefore = IERC20(wrappedMToken).balanceOf(address(this));
 
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
-        IERC20(tokenIn).forceApprove(swapRouter, amountIn);
+        IERC20(tokenIn).forceApprove(universalRouter, amountIn);
 
-        // Swap input token for base token in Uniswap pool
-        uint256 amountOut;
+        // Execute swap via Universal Router
+        bytes[] memory inputs = new bytes[](1);
+
         if (path.length == 0) {
-            IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: tokenIn,
-                tokenOut: wrappedMToken,
-                fee: UNISWAP_V3_FEE,
-                recipient: address(this),
-                amountIn: amountIn,
-                amountOutMinimum: minAmountOut,
-                sqrtPriceLimitX96: 0
-            });
-
-            amountOut = IV3SwapRouter(swapRouter).exactInputSingle(params);
+            // If no path is provided, assume tokenIn - Wrapped $M pool with 0.01% fee
+            bytes memory defaultPath = abi.encodePacked(tokenIn, UNISWAP_V3_FEE, wrappedMToken);
+            inputs[0] = abi.encode(address(this), amountIn, minAmountOut, defaultPath, true);
         } else {
-            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
-                path: path,
-                recipient: address(this),
-                amountIn: amountIn,
-                amountOutMinimum: minAmountOut
-            });
-
-            amountOut = IV3SwapRouter(swapRouter).exactInput(params);
+            inputs[0] = abi.encode(address(this), amountIn, minAmountOut, path, true);
         }
+
+        IUniversalRouter(universalRouter).execute(
+            abi.encodePacked(bytes1(uint8(Commands.V3_SWAP_EXACT_IN))),
+            inputs,
+            deadline
+        );
+
+        uint256 amountOut = IERC20(wrappedMToken).balanceOf(address(this)) - wrappedMBalanceBefore;
 
         // If extensionOut is Wrapped $M, transfer to the recipient directly
         if (extensionOut == wrappedMToken) {
@@ -318,7 +315,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         address tokenOut,
         uint256 minAmountOut,
         address recipient,
-        bytes calldata path
+        bytes calldata path,
+        uint256 deadline
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionIn);
         _revertIfNotWhitelistedToken(tokenOut);
@@ -327,6 +325,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         _revertIfZeroRecipient(recipient);
 
         uint256 extensionInBalanceBefore = IERC20(extensionIn).balanceOf(address(this));
+        uint256 tokenOutBalanceBefore = IERC20(tokenOut).balanceOf(address(this));
+
         IERC20(extensionIn).safeTransferFrom(msg.sender, address(this), amountIn);
 
         // Swap the extensionIn to Wrapped $M token
@@ -340,32 +340,24 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         }
 
         // Approve Swap Router to spend wrappedMToken (Wrapped $M)
-        IERC20(wrappedMToken).approve(swapRouter, amountIn);
+        IERC20(wrappedMToken).approve(universalRouter, amountIn);
 
-        // Swap wrappedMToken in Uniswap pool for output token
-        uint256 amountOut;
+        // Execute swap via Universal Router
+        bytes memory commands = abi.encodePacked(bytes1(uint8(Commands.V3_SWAP_EXACT_IN)));
+        bytes[] memory inputs = new bytes[](1);
+
         if (path.length == 0) {
-            IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: wrappedMToken,
-                tokenOut: tokenOut,
-                fee: UNISWAP_V3_FEE,
-                recipient: recipient,
-                amountIn: amountIn,
-                amountOutMinimum: minAmountOut,
-                sqrtPriceLimitX96: 0
-            });
-
-            amountOut = IV3SwapRouter(swapRouter).exactInputSingle(params);
+            // If no path is provided, assume tokenIn - Wrapped $M pool with 0.01% fee
+            bytes memory defaultPath = abi.encodePacked(wrappedMToken, UNISWAP_V3_FEE, tokenOut);
+            inputs[0] = abi.encode(address(this), amountIn, minAmountOut, defaultPath, true);
         } else {
-            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
-                path: path,
-                recipient: recipient,
-                amountIn: amountIn,
-                amountOutMinimum: minAmountOut
-            });
-
-            amountOut = IV3SwapRouter(swapRouter).exactInput(params);
+            inputs[0] = abi.encode(address(this), amountIn, minAmountOut, path, true);
         }
+
+        inputs[0] = abi.encode(recipient, amountIn, minAmountOut, path, true);
+        IUniversalRouter(universalRouter).execute(commands, inputs, deadline);
+
+        uint256 amountOut = IERC20(tokenOut).balanceOf(address(this)) - tokenOutBalanceBefore;
 
         // NOTE: UniswapV3 router allows exactInput or exactInputSingle operations to not fully utilize
         //       the given input token amount if the pool does not have sufficient liquidity.
