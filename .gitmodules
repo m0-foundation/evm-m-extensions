@@ -19,3 +19,6 @@
 	path = lib/wrapped-m-token
 	url = git@github.com:m0-foundation/wrapped-m-token.git
 	branch = feat/swap-facility-support
+[submodule "uniswap-universal-router"]
+	path = lib/uniswap-universal-router
+	url = git@github.com:Uniswap/universal-router.git
