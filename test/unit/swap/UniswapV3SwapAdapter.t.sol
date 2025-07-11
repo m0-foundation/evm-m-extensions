@@ -19,39 +19,40 @@ contract UniswapV3SwapAdapterUnitTests is Test {
     address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
 
+    address public swapFacility = makeAddr("swapFacility");
+
     UniswapV3SwapAdapter public swapAdapter;
-    address[] public whitelistedTokens = new address[](3);
+    address[] public whitelistedTokens = new address[](2);
 
     function setUp() public {
-        whitelistedTokens[0] = WRAPPED_M;
-        whitelistedTokens[1] = USDC;
-        whitelistedTokens[2] = USDT;
+        whitelistedTokens[0] = USDC;
+        whitelistedTokens[1] = USDT;
 
-        swapAdapter = new UniswapV3SwapAdapter(
-            WRAPPED_M, // baseToken (wrapped M)
-            UNISWAP_V3_ROUTER,
-            admin,
-            whitelistedTokens
-        );
+        swapAdapter = new UniswapV3SwapAdapter(WRAPPED_M, swapFacility, UNISWAP_V3_ROUTER, admin, whitelistedTokens);
     }
 
     function test_initialState() public {
-        assertEq(swapAdapter.baseToken(), WRAPPED_M);
+        assertEq(swapAdapter.wrappedMToken(), WRAPPED_M);
+        assertEq(swapAdapter.swapFacility(), swapFacility);
         assertEq(swapAdapter.swapRouter(), UNISWAP_V3_ROUTER);
         assertTrue(swapAdapter.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(swapAdapter.whitelistedTokens(WRAPPED_M));
         assertTrue(swapAdapter.whitelistedTokens(USDC));
         assertTrue(swapAdapter.whitelistedTokens(USDT));
     }
 
-    function test_constructor_zeroBaseToken() external {
-        vm.expectRevert(IUniswapV3SwapAdapter.ZeroBaseToken.selector);
-        new UniswapV3SwapAdapter(address(0), UNISWAP_V3_ROUTER, admin, whitelistedTokens);
+    function test_constructor_zeroWrappedMToken() external {
+        vm.expectRevert(IUniswapV3SwapAdapter.ZeroWrappedMToken.selector);
+        new UniswapV3SwapAdapter(address(0), swapFacility, UNISWAP_V3_ROUTER, admin, whitelistedTokens);
+    }
+
+    function test_constructor_zerSwapFacility() external {
+        vm.expectRevert(IUniswapV3SwapAdapter.ZeroSwapFacility.selector);
+        new UniswapV3SwapAdapter(WRAPPED_M, address(0), UNISWAP_V3_ROUTER, admin, whitelistedTokens);
     }
 
     function test_constructor_zeroSwapAdapter() external {
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroSwapRouter.selector);
-        new UniswapV3SwapAdapter(WRAPPED_M, address(0), admin, whitelistedTokens);
+        new UniswapV3SwapAdapter(WRAPPED_M, swapFacility, address(0), admin, whitelistedTokens);
     }
 
     function test_whitelistToken() external {
@@ -78,7 +79,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
 
     function test_swapIn_zeroAmount() public {
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroAmount.selector);
-        swapAdapter.swapIn(USDC, 0, 0, alice, "");
+        swapAdapter.swapIn(USDC, 0, WRAPPED_M, 0, alice, "");
     }
 
     function test_swapIn_zeroRecipient() public {
@@ -86,7 +87,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroRecipient.selector);
-        swapAdapter.swapIn(USDC, amountIn, minAmountOut, address(0), "");
+        swapAdapter.swapIn(USDC, amountIn, WRAPPED_M, minAmountOut, address(0), "");
     }
 
     function test_swapIn_invalidPath() public {
@@ -100,7 +101,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         );
 
         vm.expectRevert(IUniswapV3SwapAdapter.InvalidPath.selector);
-        swapAdapter.swapIn(WRAPPED_M, amountIn, minAmountOut, alice, path);
+        swapAdapter.swapIn(WRAPPED_M, amountIn, WRAPPED_M, minAmountOut, alice, path);
     }
 
     function test_swapIn_invalidPathFormat() public {
@@ -108,7 +109,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(IUniswapV3SwapAdapter.InvalidPathFormat.selector);
-        swapAdapter.swapIn(USDC, amountIn, minAmountOut, alice, "invalidPath");
+        swapAdapter.swapIn(USDC, amountIn, WRAPPED_M, minAmountOut, alice, "invalidPath");
     }
 
     function test_swapIn_notWhitelistedToken() public {
@@ -117,12 +118,12 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         address token = makeAddr("token");
 
         vm.expectRevert(abi.encodeWithSelector(IUniswapV3SwapAdapter.NotWhitelistedToken.selector, token));
-        swapAdapter.swapIn(token, amountIn, minAmountOut, alice, "");
+        swapAdapter.swapIn(token, amountIn, WRAPPED_M, minAmountOut, alice, "");
     }
 
     function test_swapOut_zeroAmount() public {
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroAmount.selector);
-        swapAdapter.swapOut(WRAPPED_M, 0, 0, alice, "");
+        swapAdapter.swapOut(WRAPPED_M, 0, USDC, 0, alice, "");
     }
 
     function test_swapOut_zeroRecipient() public {
@@ -130,7 +131,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroRecipient.selector);
-        swapAdapter.swapOut(WRAPPED_M, amountIn, minAmountOut, address(0), "");
+        swapAdapter.swapOut(WRAPPED_M, amountIn, USDC, minAmountOut, address(0), "");
     }
 
     function test_swapOut_invalidPath() public {
@@ -144,7 +145,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         );
 
         vm.expectRevert(IUniswapV3SwapAdapter.InvalidPath.selector);
-        swapAdapter.swapOut(WRAPPED_M, amountIn, minAmountOut, alice, path);
+        swapAdapter.swapOut(WRAPPED_M, amountIn, USDC, minAmountOut, alice, path);
     }
 
     function test_swapOut_invalidPathFormat() public {
@@ -152,7 +153,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         uint256 minAmountOut = 997_000;
 
         vm.expectRevert(IUniswapV3SwapAdapter.InvalidPathFormat.selector);
-        swapAdapter.swapOut(WRAPPED_M, amountIn, minAmountOut, alice, "invalidPath");
+        swapAdapter.swapOut(WRAPPED_M, amountIn, USDC, minAmountOut, alice, "invalidPath");
     }
 
     function test_swapOut_notWhitelistedToken() public {
@@ -161,6 +162,6 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         address token = makeAddr("token");
 
         vm.expectRevert(abi.encodeWithSelector(IUniswapV3SwapAdapter.NotWhitelistedToken.selector, token));
-        swapAdapter.swapOut(token, amountIn, minAmountOut, alice, "");
+        swapAdapter.swapOut(WRAPPED_M, amountIn, token, minAmountOut, alice, "");
     }
 }

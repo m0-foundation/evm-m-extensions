@@ -11,20 +11,36 @@ interface IUniswapV3SwapAdapter {
     /* ============ Events ============ */
 
     /**
-     * @notice Emitted when a token is swapped in for base token.
-     * @param inputToken The address of the input token.
-     * @param inputAmount The amount of the input token swapped.
-     * @param baseOutputAmount The amount of base token received from the swap.
+     * @notice Emitted when a token is swapped in for $M Extension.
+     * @param tokenIn      The address of the input token.
+     * @param amountIn     The amount of the input token swapped.
+     * @param extensionOut The address of the output $M Extension.
+     * @param amountOut    The amount of $M Extension tokens received from the swap.
+     * @param recipient    The address to receive $M Extension tokens.
      */
-    event SwappedIn(address indexed inputToken, uint256 inputAmount, uint256 baseOutputAmount);
+    event SwappedIn(
+        address indexed tokenIn,
+        uint256 amountIn,
+        address indexed extensionOut,
+        uint256 amountOut,
+        address indexed recipient
+    );
 
     /**
-     * @notice Emitted when base token is swapped for the output token.
-     * @param outputToken The address of the output token.
-     * @param baseInputAmount The amount of base token swapped.
-     * @param outputAmount The amount of the output token received from the swap.
+     * @notice Emitted when $M Extension is swapped for a token.
+     * @param extensionIn The address of the input $M Extension.
+     * @param amountIn    The amount of the input $M Extension swapped.
+     * @param tokenOut    The address of the output token.
+     * @param amountOut   The amount of the output tokens received from the swap.
+     * @param recipient   The address to receive output tokens.
      */
-    event SwappedOut(address indexed outputToken, uint256 baseInputAmount, uint256 outputAmount);
+    event SwappedOut(
+        address indexed extensionIn,
+        uint256 amountIn,
+        address indexed tokenOut,
+        uint256 amountOut,
+        address indexed recipient
+    );
 
     /**
      * @notice Emitted when a token is added or removed from the whitelist.
@@ -35,8 +51,11 @@ interface IUniswapV3SwapAdapter {
 
     /* ============ Custom Errors ============ */
 
-    /// @notice Thrown in the constructor if Base Token is 0x0.
-    error ZeroBaseToken();
+    /// @notice Thrown in the constructor if Wrapped M Token is 0x0.
+    error ZeroWrappedMToken();
+
+    /// @notice Thrown in the constructor if SwapFacility is 0x0.
+    error ZeroSwapFacility();
 
     /// @notice Thrown in the constructor if Uniswap SwapRouter is 0x0.
     error ZeroSwapRouter();
@@ -62,36 +81,40 @@ interface IUniswapV3SwapAdapter {
     /* ============ Interactive Functions ============ */
 
     /**
-     * @notice Swaps `inputToken` to base token
-     * @param  inputToken    The address of the input token.
-     * @param  inputAmount   The amount of the input token to swap.
-     * @param  minBaseAmount The minimum amount of base token to receive.
-     * @param  recipient     The address to receive base tokens.
-     * @param  path          The swap path.
+     * @notice Swaps an external token (e.g. USDC) to $M Extension token using Uniswap pool.
+     * @param  tokenIn      The address of the external token to swap from.
+     * @param  amountIn     The amount of external tokens to swap.
+     * @param  extensionOut The address of the $M Extension to swap to.
+     * @param  minAmountOut The minimum amount of $M Extension tokens to receive.
+     * @param  recipient    The address to receive $M Extension tokens.
+     * @param  path         The Uniswap path. Could be empty for direct pairs.
      */
     function swapIn(
-        address inputToken,
-        uint256 inputAmount,
-        uint256 minBaseAmount,
+        address tokenIn,
+        uint256 amountIn,
+        address extensionOut,
+        uint256 minAmountOut,
         address recipient,
         bytes calldata path
-    ) external returns (uint256 baseAmount);
+    ) external;
 
     /**
-     * @notice Swaps base token to `outputToken`
-     * @param  outputToken     The address of the output token.
-     * @param  baseAmount      The amount of base token to swap.
-     * @param  minOutputAmount The minimum amount of output token to receive.
-     * @param  recipient       The address to receive output tokens.
-     * @param  path            The swap path.
+     * @notice Swaps $M Extension token to an external token (e.g. USDC) using Uniswap pool.
+     * @param  extensionIn  The address of the $M Extension to swap from.
+     * @param  amountIn     The amount of $M Extension tokens to swap.
+     * @param  tokenOut     The address of the external token to swap to.
+     * @param  minAmountOut The minimum amount of external tokens to receive.
+     * @param  recipient    The address to receive external tokens.
+     * @param  path         The Uniswap path. Could be empty for direct pairs.
      */
     function swapOut(
-        address outputToken,
-        uint256 baseAmount,
-        uint256 minOutputAmount,
+        address extensionIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 minAmountOut,
         address recipient,
         bytes calldata path
-    ) external returns (uint256 outputAmount);
+    ) external;
 
     /**
      * @notice Adds or removes a token from the whitelist.
@@ -102,8 +125,11 @@ interface IUniswapV3SwapAdapter {
 
     /* ============ View/Pure Functions ============ */
 
-    /// @notice The address of the base token.
-    function baseToken() external view returns (address baseToken);
+    /// @notice The address of Wrapped M token.
+    function wrappedMToken() external view returns (address wrappedMToken);
+
+    /// @notice The address of SwapFacility.
+    function swapFacility() external view returns (address swapFacility);
 
     /// @notice The address of the Uniswap V3 swap router.
     function swapRouter() external view returns (address swapRouter);

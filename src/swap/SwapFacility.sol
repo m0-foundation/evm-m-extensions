@@ -8,6 +8,7 @@ import {
     AccessControlUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
+import { IMsgSender } from "../../lib/uniswap-v4-periphery/src/interfaces/IMsgSender.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
@@ -15,12 +16,29 @@ import { IMExtension } from "../interfaces/IMExtension.sol";
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 
+abstract contract SwapFacilityStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.MEarnerManager
+    struct SwapFacilityStorageStruct {
+        mapping(address routes => bool trusted) trustedRouter;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.SwapFacility")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _SWAP_FACILITY_STORAGE_LOCATION =
+        0x2f6671d90ec6fb8a38d5fa4043e503b2789e716b6e5219d1b20da9c6434dde00;
+
+    function _getSwapFacilityStorageLocation() internal pure returns (SwapFacilityStorageStruct storage $) {
+        assembly {
+            $.slot := _SWAP_FACILITY_STORAGE_LOCATION
+        }
+    }
+}
+
 /**
  * @title  Swap Facility
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock {
+contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilityStorageLayout, ReentrancyLock {
     using SafeERC20 for IERC20;
 
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
@@ -200,11 +218,30 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         _swapOutM(extensionIn, amount, recipient);
     }
 
+    function setTrustedRouter(address router, bool trusted) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (router == address(0)) revert ZeroRouter();
+        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
+        if ($.trustedRouter[router] == trusted) return;
+
+        $.trustedRouter[router] = trusted;
+
+        emit TrustedRouterSet(router, trusted);
+    }
+
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc ISwapFacility
     function msgSender() public view returns (address) {
+        if (trustedRouter(msg.sender)) {
+            // If the caller is a trusted router, return the original sender.
+            return IMsgSender(msg.sender).msgSender();
+        }
         return _getLocker();
+    }
+
+    /// @inheritdoc ISwapFacility
+    function trustedRouter(address router) public view returns (bool trusted) {
+        return _getSwapFacilityStorageLocation().trustedRouter[router];
     }
 
     /* ============ Private Interactive Functions ============ */

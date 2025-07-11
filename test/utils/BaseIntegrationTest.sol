@@ -83,24 +83,25 @@ contract BaseIntegrationTest is Helpers, Test {
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, carol, charlie, david];
 
-        address[] memory whitelistedTokens = new address[](3);
-        whitelistedTokens[0] = WRAPPED_M;
-        whitelistedTokens[1] = USDC;
-        whitelistedTokens[2] = USDT;
-
-        swapAdapter = new UniswapV3SwapAdapter(
-            WRAPPED_M, // baseToken (wrapped M)
-            UNISWAP_V3_ROUTER,
-            admin,
-            whitelistedTokens
-        );
-
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
                 address(new SwapFacility(address(mToken), address(registrar))),
                 admin,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
             )
+        );
+
+        address[] memory whitelistedTokens = new address[](3);
+        whitelistedTokens[0] = WRAPPED_M;
+        whitelistedTokens[1] = USDC;
+        whitelistedTokens[2] = USDT;
+
+        swapAdapter = new UniswapV3SwapAdapter(
+            WRAPPED_M,
+            address(swapFacility),
+            UNISWAP_V3_ROUTER,
+            admin,
+            whitelistedTokens
         );
 
         mExtensionDeployOptions.constructorData = abi.encode(address(mToken), address(swapFacility));
