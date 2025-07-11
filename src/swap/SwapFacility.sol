@@ -80,15 +80,10 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
 
     /// @inheritdoc ISwapFacility
     function swap(address extensionIn, address extensionOut, uint256 amount, address recipient) external isNotLocked {
-        // NOTE: Amount and recipient validation is performed in Extensions.
         _revertIfNotApprovedExtension(extensionIn);
         _revertIfNotApprovedExtension(extensionOut);
 
-        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
-
         _swap(extensionIn, extensionOut, amount, recipient);
-
-        emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
     /// @inheritdoc ISwapFacility
@@ -107,11 +102,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
 
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
-        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
-
         _swap(extensionIn, extensionOut, amount, recipient);
-
-        emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
     /// @inheritdoc ISwapFacility
@@ -128,11 +119,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
 
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
-        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
-
         _swap(extensionIn, extensionOut, amount, recipient);
-
-        emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
     /// @inheritdoc ISwapFacility
@@ -177,7 +164,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
 
     /// @inheritdoc ISwapFacility
     function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
-        // NOTE: Amount and recipient validation is performed in Extensions.
         _revertIfNotApprovedExtension(extensionIn);
         _revertIfNotApprovedSwapper(msg.sender);
 
@@ -253,6 +239,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
+
         uint256 balanceBefore = _mBalanceOf(address(this));
 
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
@@ -263,7 +251,11 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
         amount = _mBalanceOf(address(this)) - balanceBefore;
 
         IERC20(mToken).approve(extensionOut, amount);
+
+        // NOTE: Amount and recipient validation is performed in Extensions.
         IMExtension(extensionOut).wrap(recipient, amount);
+
+        emit Swapped(extensionIn, extensionOut, amount, recipient);
     }
 
     /**
@@ -275,6 +267,8 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, SwapFacilitySt
     function _swapInM(address extensionOut, uint256 amount, address recipient) private {
         IERC20(mToken).transferFrom(msg.sender, address(this), amount);
         IERC20(mToken).approve(extensionOut, amount);
+
+        // NOTE: Amount and recipient validation is performed in Extensions.
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit SwappedInM(extensionOut, amount, recipient);
