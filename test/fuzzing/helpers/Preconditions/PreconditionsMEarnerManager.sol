@@ -6,7 +6,6 @@ import "./PreconditionsBase.sol";
 contract PreconditionsMEarnerManager is PreconditionsBase {
     function setAccountInfoPreconditions(
         uint256 seed,
-        address addressSeed,
         bool statusSeed
     ) internal returns (SetAccountInfoParams memory params) {
         if (seed % 2 == 0) {
@@ -15,7 +14,7 @@ contract PreconditionsMEarnerManager is PreconditionsBase {
             params.status = (seed % 2) == 1;
         } else {
             params.instance = mEarnerManagerArray[seed % mEarnerManagerArray.length];
-            params.account = addressSeed;
+            params.account = USERS[seed % USERS.length];
             params.status = statusSeed;
             params.feeRate = uint16(fl.clamp(seed, 0, type(uint16).max)); // 0 to 10000 bps (100%)
         }

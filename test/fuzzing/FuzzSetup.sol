@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNTITLED
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
 import "./utils/FunctionCalls.sol";
@@ -10,6 +10,7 @@ import { INonfungiblePositionManager } from "uniswapv3/v3-periphery/interfaces/I
 import { UniswapV3Pool } from "uniswapv3/v3-core/UniswapV3Pool.sol";
 import { V3SwapRouter } from "uniswapv3/v3-periphery/V3SwapRouter.sol";
 import { TTGRegistrarReader } from "src/libs/TTGRegistrarReader.sol";
+
 contract FuzzSetup is FunctionCalls {
     uint256 public liquidityTokenId;
 
@@ -36,10 +37,10 @@ contract FuzzSetup is FunctionCalls {
         whitelistedTokens = [address(USDC), address(weth)];
 
         // Mint tokens for liquidity provision
-        USDC.mint(address(this), 2000000 * 1e6); // 2M USDC
+        USDC.mint(address(this), 2_000_000_000_000 * 1e6); // 2T USDC
 
         minterGateway.activateMinter(address(this));
-        mintMToken(address(this), 2000000 * 1e6); // mintMToken(address(this), 2000000 * 1e6); // 2M MToken
+        // mintMToken(address(this), 2000000 * 1e6); // mintMToken(address(this), 2000000 * 1e6); // 2M MToken
     }
 
     function deployUniV3() internal {
@@ -71,6 +72,7 @@ contract FuzzSetup is FunctionCalls {
         emit log_named_address("token1", token1);
         emit log_named_uint("UNISWAP_V3_FEE", UNISWAP_V3_FEE);
         emit log_named_address("uniV3Factory", address(uniV3Factory));
+
         address poolAddress = uniV3Factory.createPool(token0, token1, UNISWAP_V3_FEE);
         emit log_named_address("poolAddress", poolAddress);
 
@@ -88,9 +90,9 @@ contract FuzzSetup is FunctionCalls {
     }
 
     function addLiquidity() internal {
-        mintMToken(address(this), 2000000 * 1e6); // 2M MToken
+        mintMToken(address(this), 2_000_000_000_000 * 1e6); // minting unreasonably large amount of MToken
         mToken.approve(address(wMToken), type(uint256).max);
-        wMToken.wrap(address(this), 2000000 * 1e6);
+        wMToken.wrap(address(this), 2_000_000_000_000 * 1e6);
 
         // Approve tokens to position manager
         USDC.approve(address(positionManager), type(uint256).max);
@@ -100,9 +102,8 @@ contract FuzzSetup is FunctionCalls {
         (, int24 currentTick, , , , , ) = usdcMTokenPool.slot0();
         int24 tickSpacing = usdcMTokenPool.tickSpacing();
 
-        // Set tick range around current price (±10 tick spacings)
-        int24 tickLower = ((currentTick - (10 * tickSpacing)) / tickSpacing) * tickSpacing;
-        int24 tickUpper = ((currentTick + (10 * tickSpacing)) / tickSpacing) * tickSpacing;
+        int24 tickLower = 0;
+        int24 tickUpper = 1;
 
         // Mint liquidity position
         INonfungiblePositionManager.MintParams memory params = INonfungiblePositionManager.MintParams({
@@ -111,8 +112,10 @@ contract FuzzSetup is FunctionCalls {
             fee: UNISWAP_V3_FEE,
             tickLower: tickLower,
             tickUpper: tickUpper,
-            amount0Desired: 1000000 * 1e6, // 1M USDC (6 decimals)
-            amount1Desired: 1000000 * 1e6, // 1M wMToken (6 decimals)
+            // amount0Desired: 1000000 * 1e6, // 1M USDC (6 decimals)
+            // amount1Desired: 1000000 * 1e6, // 1M wMToken (6 decimals) //TODO: UPD: FIXED IN UNISWAP V3 POOL SOURCE, we got problems with echidna memory leak iterating in highest tick
+            amount0Desired: 2_000_000_000_000 * 1e6, // 2T wMToken (6 decimals)
+            amount1Desired: 2_000_000_000_000 * 1e6, // 2T USDC (6 decimals)
             amount0Min: 0,
             amount1Min: 0,
             recipient: address(this),
@@ -120,6 +123,8 @@ contract FuzzSetup is FunctionCalls {
         });
 
         (liquidityTokenId, , , ) = positionManager.mint(params);
+
+        minter = new DirectPoolMinter(address(usdcMTokenPool));
     }
 
     function deployM0() internal {
@@ -323,18 +328,18 @@ contract FuzzSetup is FunctionCalls {
         registrar.set(bytes32("minter_rate_model"), bytes32(uint256(uint160(address(minterRateModel)))));
         registrar.set(bytes32("earner_rate_model"), bytes32(uint256(uint160(address(earnerRateModel)))));
 
-        registrar.updateConfig(MAX_EARNER_RATE, _baseEarnerRate);
-        registrar.updateConfig(BASE_MINTER_RATE, _baseMinterRate);
-        registrar.updateConfig(TTGRegistrarReader.EARNER_RATE_MODEL, address(earnerRateModel));
-        registrar.updateConfig(TTGRegistrarReader.MINTER_RATE_MODEL, address(minterRateModel));
-        registrar.updateConfig(TTGRegistrarReader.UPDATE_COLLATERAL_VALIDATOR_THRESHOLD, 1);
-        registrar.updateConfig(TTGRegistrarReader.UPDATE_COLLATERAL_INTERVAL, _updateInterval);
-        registrar.updateConfig(TTGRegistrarReader.MINT_DELAY, _mintDelay);
-        registrar.updateConfig(TTGRegistrarReader.MINT_TTL, _mintTtl);
-        registrar.updateConfig(TTGRegistrarReader.MINT_RATIO, _mintRatio);
-        registrar.updateConfig(TTGRegistrarReader.PENALTY_RATE, _penaltyRate);
-        registrar.updateConfig(TTGRegistrarReader.MINTER_FREEZE_TIME, _minterFreezeTime);
-        // mToken.setCurrentIndex(11e11); //TODO: recheck starting index
+        //randomizing configs in a separate handler
+        // registrar.updateConfig(MAX_EARNER_RATE, _baseEarnerRate);
+        // registrar.updateConfig(BASE_MINTER_RATE, _baseMinterRate);
+        // registrar.updateConfig(TTGRegistrarReader.EARNER_RATE_MODEL, address(earnerRateModel));
+        // registrar.updateConfig(TTGRegistrarReader.MINTER_RATE_MODEL, address(minterRateModel));
+        // registrar.updateConfig(TTGRegistrarReader.UPDATE_COLLATERAL_VALIDATOR_THRESHOLD, 1);
+        // registrar.updateConfig(TTGRegistrarReader.UPDATE_COLLATERAL_INTERVAL, _updateInterval);
+        // registrar.updateConfig(TTGRegistrarReader.MINT_DELAY, _mintDelay);
+        // registrar.updateConfig(TTGRegistrarReader.MINT_TTL, _mintTtl);
+        // registrar.updateConfig(TTGRegistrarReader.MINT_RATIO, _mintRatio);
+        // registrar.updateConfig(TTGRegistrarReader.PENALTY_RATE, _penaltyRate);
+        // registrar.updateConfig(TTGRegistrarReader.MINTER_FREEZE_TIME, _minterFreezeTime);
 
         mEarnerManager1.setAccountOf(address(swapFacility), 0, 0, true, 0);
         mEarnerManager2.setAccountOf(address(swapFacility), 0, 0, true, 0);

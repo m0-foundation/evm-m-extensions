@@ -32,7 +32,7 @@ contract PreconditionsSwapFacility is PreconditionsBase {
         params.tokenIn = address(USDC);
         params.amountIn = fl.clamp(seed, 0, USDC.balanceOf(currentActor));
         params.extensionOut = allExtensions[seed % allExtensions.length];
-        params.minAmountOut = params.amountIn / 2; //NOTE: revise if needed
+        params.minAmountOut = 0; // params.amountIn / 2; //NOTE: revise if needed
         params.recipient = currentActor;
         params.path = new bytes(0);
     }

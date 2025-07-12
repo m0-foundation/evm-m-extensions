@@ -5,12 +5,8 @@ import "./helpers/preconditions/PreconditionsMEarnerManager.sol";
 import "./helpers/postconditions/PostconditionsMEarnerManager.sol";
 
 contract FuzzMEarnerManager is PreconditionsMEarnerManager, PostconditionsMEarnerManager {
-    function fuzz_setAccountInfo_MEarnerManager(
-        uint256 seed,
-        address addressSeed,
-        bool statusSeed
-    ) public setCurrentActor {
-        SetAccountInfoParams memory params = setAccountInfoPreconditions(seed, addressSeed, statusSeed);
+    function fuzz_setAccountInfo_MEarnerManager(uint256 seed, bool statusSeed) public setCurrentActor {
+        SetAccountInfoParams memory params = setAccountInfoPreconditions(seed, statusSeed);
 
         _before();
 

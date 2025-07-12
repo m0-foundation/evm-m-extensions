@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
 import "../FuzzSetup.sol";
@@ -255,6 +256,7 @@ contract BeforeAfter is FuzzSetup {
         _updateYieldFeeState(callNum);
         _updateEarnerManagerState(callNum);
         _updateSwapFacilityState(callNum);
+        _checkPoolState(callNum);
         _logicalCoverage(callNum);
     }
 
@@ -293,6 +295,13 @@ contract BeforeAfter is FuzzSetup {
         states[callNum].swapFacilityBalanceOfM0 = mToken.balanceOf(address(swapFacility));
     }
 
+    function _checkPoolState(uint8 callNum) private {
+        (uint160 sqrtPriceX96, int24 tick, , , , , ) = usdcMTokenPool.slot0();
+        uint128 liquidity = usdcMTokenPool.liquidity();
+        console.log("sqrtPriceX96", sqrtPriceX96);
+        console.log("tick", tick);
+        console.log("pool liquidity", liquidity);
+    }
     function _logicalCoverage(uint8 callNum) private {
         // Implement logical coverage here.
     }

@@ -651,9 +651,8 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         });
 
         // continue swapping as long as we haven't used the entire input/output and haven't reached the price limit
+        StepComputations memory step; //NOTE: changed by fuzzer, encountered memory leak in echidna
         while (state.amountSpecifiedRemaining != 0 && state.sqrtPriceX96 != sqrtPriceLimitX96) {
-            StepComputations memory step;
-
             step.sqrtPriceStartX96 = state.sqrtPriceX96;
 
             (step.tickNext, step.initialized) = tickBitmap.nextInitializedTickWithinOneWord(

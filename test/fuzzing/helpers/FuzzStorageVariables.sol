@@ -28,6 +28,7 @@ import { IUniswapV3Pool } from "uniswapv3/v3-core/interfaces/IUniswapV3Pool.sol"
 import { EarnerRateModel } from "test/fuzzing/mocks/rateModels/EarnerRateModel.sol";
 import { MinterRateModel } from "test/fuzzing/mocks/rateModels/MinterRateModel.sol";
 import { MinterGateway } from "test/fuzzing/mocks/MinterGateway.f.sol";
+import { DirectPoolMinter } from "test/fuzzing/mocks/DirectPoolMinter.sol";
 
 contract FuzzStorageVariables is FuzzActors {
     // ==============================================================
@@ -41,6 +42,8 @@ contract FuzzStorageVariables is FuzzActors {
     uint256 internal constant SEED = 22;
     uint256 iteration = 1; // fuzzing iteration
     uint256 lastTimestamp;
+
+    bool internal protocolSet;
 
     //==============================================================
     // REVERTS CONFIGURATION
@@ -96,6 +99,7 @@ contract FuzzStorageVariables is FuzzActors {
     WETH internal weth;
 
     IUniswapV3Pool internal usdcMTokenPool;
+    DirectPoolMinter internal minter;
 
     address[] internal whitelistedTokens;
     UniswapV3Factory internal uniV3Factory;

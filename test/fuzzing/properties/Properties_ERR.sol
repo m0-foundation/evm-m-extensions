@@ -24,11 +24,10 @@ abstract contract Properties_ERR is RevertHandler {
      */
 
     function _getAllowedPanicCodes() internal pure virtual override returns (uint256[] memory) {
-        uint256[] memory panicCodes = new uint256[](4);
+        uint256[] memory panicCodes = new uint256[](3);
         panicCodes[0] = PANIC_ENUM_OUT_OF_BOUNDS;
         panicCodes[1] = PANIC_POP_EMPTY_ARRAY;
         panicCodes[2] = PANIC_ARRAY_OUT_OF_BOUNDS;
-        panicCodes[3] = PANIC_ARITHMETIC;
 
         // Add additional codes
         return panicCodes;
@@ -159,7 +158,7 @@ abstract contract Properties_ERR is RevertHandler {
         }
 
         // Check UniswapV3 string errors
-        return _isAllowedUniswapV3Error(returnData);
+        // return _isAllowedUniswapV3Error(returnData);
     }
 
     function _isAllowedUniswapV3Error(bytes memory returnData) internal pure returns (bool) {

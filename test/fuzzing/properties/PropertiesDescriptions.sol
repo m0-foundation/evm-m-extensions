@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
 contract PropertiesDescriptions {
@@ -6,7 +7,9 @@ contract PropertiesDescriptions {
     // These properties define invariants that must hold true across all market states and operations
     // ==============================================================
 
-    string constant SWAP_01 = "SWAP_01: MYieldToOne yield must not change after swaps between same extension types";
+    string constant SWAP_01_00 = "SWAP_01 YTO_TO_YTO: MYieldToOne yield must not change after swaps";
+    string constant SWAP_01_01 = "SWAP_01 YFEE_TO_YFEE: MYieldFee yield must not change after swaps";
+    string constant SWAP_01_02 = "SWAP_01 MEARN_TO_MEARN: MEarnerManager yield must not change after swaps";
     string constant SWAP_02 = "SWAP_02: Swap facility M0 balance must be 0 after swap out";
     string constant SWAP_03 = "SWAP_03: Total M0 balance of all users must not change after swap";
     string constant SWAP_04 = "SWAP_04: Received amount of M0 must be greater or equal than slippage";

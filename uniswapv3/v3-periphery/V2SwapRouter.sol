@@ -1,6 +1,6 @@
-// // SPDX-License-Identifier: GPL-2.0-or-later
-// pragma solidity ^0.8.0;
-// pragma abicoder v2;
+// SPDX-License-Identifier: GPL-2.0-or-later
+pragma solidity ^0.8.0;
+pragma abicoder v2;
 
 // import "./libraries/LowGasSafeMath.sol";
 // import "@openzeppelin/contracts-v4/token/ERC20/IERC20.sol";
