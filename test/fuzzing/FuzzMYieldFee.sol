@@ -123,24 +123,4 @@ contract FuzzMYieldFee is PreconditionsMYieldFee, PostconditionsMYieldFee {
 
         transferFromPostconditions_MYieldFee(success, returnData);
     }
-
-    function fuzz_wrap_MYieldFee(uint256 seed) public setCurrentActor {
-        WrapParams memory params = wrapPreconditions_MYieldFee(seed);
-
-        _before();
-
-        (bool success, bytes memory returnData) = _wrapCall(params.instance, params.recipient, params.amount);
-
-        wrapPostconditions_MYieldFee(success, returnData);
-    }
-
-    function fuzz_unwrap_MYieldFee(uint256 seed) public setCurrentActor {
-        UnwrapParams memory params = unwrapPreconditions_MYieldFee(seed);
-
-        _before();
-
-        (bool success, bytes memory returnData) = _unwrapCall(params.instance, params.recipient, params.amount);
-
-        unwrapPostconditions_MYieldFee(success, returnData);
-    }
 }

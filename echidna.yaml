@@ -28,7 +28,6 @@ maxValue: 100000000000000000000000000000 # 100000000000 eth
 
 # maxTimeDelay: 6
 format: text
-
 # filterBlacklist: true
 # filterFunctions:
 #   [
@@ -84,4 +83,7 @@ filterFunctions:
 "Fuzz.fuzz_claimYield_MYieldToOne(uint256)",
 "Fuzz.fuzz_warpWeeks(uint256)",
 "Fuzz.fuzz_warpDays(uint256)",
+"Fuzz.fuzz_allLiquidityUni(uint256,uint256,int24,int24,uint256)",
+"Fuzz.fuzz_swapZeroToOne(uint256)",
+"Fuzz.fuzz_swapOneToZero(uint256)"
   ]

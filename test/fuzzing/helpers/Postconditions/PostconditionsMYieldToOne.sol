@@ -66,22 +66,4 @@ contract PostconditionsMYieldToOne is PostconditionsBase {
             onFailInvariantsGeneral(returnData);
         }
     }
-
-    function wrapPostconditions_MYieldToOne(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
-    function unwrapPostconditions_MYieldToOne(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
 }

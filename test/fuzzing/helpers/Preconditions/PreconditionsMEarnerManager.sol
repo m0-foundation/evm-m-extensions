@@ -53,17 +53,6 @@ contract PreconditionsMEarnerManager is PreconditionsBase {
         params.amount = fl.clamp(seed, 0, IERC20(params.instance).balanceOf(currentActor));
     }
 
-    function wrapPreconditions_MEarnerManager(uint256 seed) internal returns (WrapParams memory params) {
-        params.instance = mEarnerManagerArray[seed % mEarnerManagerArray.length];
-        params.recipient = USERS[seed % USERS.length];
-        params.amount = fl.clamp(seed, 0, mToken.balanceOf(currentActor));
-    }
-
-    function unwrapPreconditions_MEarnerManager(uint256 seed) internal returns (UnwrapParams memory params) {
-        params.instance = mEarnerManagerArray[seed % mEarnerManagerArray.length];
-        params.recipient = USERS[seed % USERS.length];
-        params.amount = fl.clamp(seed, 0, IERC20(params.instance).balanceOf(currentActor));
-    }
     function enableEarningPreconditions_MEarnerManager(uint256 seed) internal returns (address) {
         return mEarnerManagerArray[seed % mEarnerManagerArray.length];
     }

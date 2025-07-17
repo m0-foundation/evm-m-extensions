@@ -79,24 +79,4 @@ contract FuzzMYieldToOne is PreconditionsMYieldToOne, PostconditionsMYieldToOne 
 
         transferFromPostconditions_MYieldToOne(success, returnData);
     }
-
-    function fuzz_wrap_MYieldToOne(uint256 seed) public setCurrentActor {
-        WrapParams memory params = wrapPreconditions_MYieldToOne(seed);
-
-        _before();
-
-        (bool success, bytes memory returnData) = _wrapCall(params.instance, params.recipient, params.amount);
-
-        wrapPostconditions_MYieldToOne(success, returnData);
-    }
-
-    function fuzz_unwrap_MYieldToOne(uint256 seed) public setCurrentActor {
-        UnwrapParams memory params = unwrapPreconditions_MYieldToOne(seed);
-
-        _before();
-
-        (bool success, bytes memory returnData) = _unwrapCall(params.instance, params.recipient, params.amount);
-
-        unwrapPostconditions_MYieldToOne(success, returnData);
-    }
 }

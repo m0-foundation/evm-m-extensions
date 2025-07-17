@@ -85,24 +85,6 @@ contract PostconditionsMYieldFee is PostconditionsBase {
         }
     }
 
-    function wrapPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
-    function unwrapPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
     function enableEarningPostconditions_MYieldFee(bool success, bytes memory returnData) internal {
         if (success) {
             _after();

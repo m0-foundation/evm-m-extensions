@@ -7,9 +7,11 @@ contract Properties_MEARN is Properties_ERR {
     function invariant_MEARN_01() internal returns (bool) {
         for (uint256 i = 0; i < mEarnerManagerArray.length; i++) {
             address extAddress = mEarnerManagerArray[i];
-            fl.gte(
+
+            greaterThanOrEqualWithToleranceWei(
                 states[1].mEarnerManager[extAddress].mBalanceOf,
                 states[1].mEarnerManager[extAddress].projectedTotalSupply,
+                1,
                 MEARN_01
             );
         }

@@ -6,12 +6,11 @@ import "@perimetersec/fuzzlib/src/FuzzLibString.sol";
 import "@perimetersec/fuzzlib/src/FuzzBase.sol";
 
 import "./PropertiesDescriptions.sol";
-import "../helpers/BeforeAfter.sol";
 import "../utils/FuzzConstants.sol";
-
+import "../logicalCoverage/logicalBase.sol";
 import { stdMath } from "forge-std/StdMath.sol";
 
-contract PropertiesBase is PropertiesDescriptions, BeforeAfter, FuzzConstants {
+contract PropertiesBase is PropertiesDescriptions, LogicalBase, FuzzConstants {
     // ==============================================================
     // Helpers
     // ==============================================================

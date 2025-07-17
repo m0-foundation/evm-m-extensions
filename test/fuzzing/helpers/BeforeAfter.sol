@@ -189,6 +189,11 @@ contract BeforeAfter is FuzzSetup {
         uint256 balanceOfM0;
         uint256 principalBalanceOf;
         uint256 projectedTotalSupply;
+        uint256 currentIndex;
+        uint256 earnerRate;
+        uint256 latestIndex;
+        uint256 latestRate;
+        uint256 feeRate;
     }
 
     struct mEarnerManagerStruct {
@@ -196,6 +201,9 @@ contract BeforeAfter is FuzzSetup {
         uint256 totalSupply;
         uint256 yield;
         uint256 projectedTotalSupply;
+        mapping(address => uint256) accruedYieldOf;
+        mapping(address => uint256) accruedFeeOf;
+        mapping(address => uint256) accruedYieldAndFeeOf;
     }
 
     struct State {
@@ -257,7 +265,6 @@ contract BeforeAfter is FuzzSetup {
         _updateEarnerManagerState(callNum);
         _updateSwapFacilityState(callNum);
         _checkPoolState(callNum);
-        _logicalCoverage(callNum);
     }
 
     function _updateYieldToOneState(uint8 callNum) private {
@@ -275,6 +282,13 @@ contract BeforeAfter is FuzzSetup {
             states[callNum].mYieldFee[extAddress].totalAccruedYield = IMYieldFee(extAddress).totalAccruedYield();
             states[callNum].mYieldFee[extAddress].totalAccruedFee = IMYieldFee(extAddress).totalAccruedFee();
             states[callNum].mYieldFee[extAddress].projectedTotalSupply = IMYieldFee(extAddress).projectedTotalSupply();
+            // ==== logical coverage ====
+            states[callNum].mYieldFee[extAddress].currentIndex = MYieldFee(extAddress).currentIndex();
+            states[callNum].mYieldFee[extAddress].earnerRate = MYieldFee(extAddress).earnerRate();
+            states[callNum].mYieldFee[extAddress].latestIndex = MYieldFee(extAddress).latestIndex();
+            states[callNum].mYieldFee[extAddress].latestRate = MYieldFee(extAddress).latestRate();
+            states[callNum].mYieldFee[extAddress].totalAccruedFee = MYieldFee(extAddress).totalAccruedFee();
+            states[callNum].mYieldFee[extAddress].feeRate = MYieldFee(extAddress).feeRate();
         }
     }
 
@@ -288,6 +302,16 @@ contract BeforeAfter is FuzzSetup {
             states[callNum].mEarnerManager[extAddress].yield = mBalance > totalSupply ? mBalance - totalSupply : 0;
             states[callNum].mEarnerManager[extAddress].projectedTotalSupply = MEarnerManager(extAddress)
                 .projectedTotalSupply();
+            // ==== logical coverage ====
+            for (uint256 j = 0; j < USERS.length; j++) {
+                address user = USERS[j];
+                uint256 accruedYield = MEarnerManager(extAddress).accruedYieldOf(user);
+                uint256 accruedFee = MEarnerManager(extAddress).accruedFeeOf(user);
+                (uint256 yieldWithFee, , ) = MEarnerManager(extAddress).accruedYieldAndFeeOf(user);
+                states[callNum].mEarnerManager[extAddress].accruedYieldOf[user] = accruedYield;
+                states[callNum].mEarnerManager[extAddress].accruedFeeOf[user] = accruedFee;
+                states[callNum].mEarnerManager[extAddress].accruedYieldAndFeeOf[user] = yieldWithFee;
+            }
         }
     }
 
@@ -301,9 +325,6 @@ contract BeforeAfter is FuzzSetup {
         console.log("sqrtPriceX96", sqrtPriceX96);
         console.log("tick", tick);
         console.log("pool liquidity", liquidity);
-    }
-    function _logicalCoverage(uint8 callNum) private {
-        // Implement logical coverage here.
     }
 
     function _setActorState(uint8 callNum, address actor) internal virtual {

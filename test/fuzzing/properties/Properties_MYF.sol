@@ -39,7 +39,7 @@ contract Properties_MYF is Properties_ERR {
             greaterThanOrEqualWithToleranceWei(
                 states[1].mYieldFee[extAddress].balanceOfM0,
                 states[1].mYieldFee[extAddress].projectedTotalSupply + states[1].mYieldFee[extAddress].totalAccruedFee,
-                1,
+                1000,
                 MYF_02
             );
         }

@@ -58,24 +58,6 @@ contract PostconditionsMEarnerManager is PostconditionsBase {
         }
     }
 
-    function wrapPostconditions_MEarnerManager(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
-    function unwrapPostconditions_MEarnerManager(bool success, bytes memory returnData) internal {
-        if (success) {
-            _after();
-            onSuccessInvariantsGeneral(returnData);
-        } else {
-            onFailInvariantsGeneral(returnData);
-        }
-    }
-
     function enableEarningPostconditions_MEarnerManager(bool success, bytes memory returnData) internal {
         if (success) {
             _after();

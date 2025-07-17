@@ -141,7 +141,7 @@ contract PreconditionsBase is BeforeAfter {
      * @param amountIn Amount of USDC to swap
      * @return amountOut Amount of wMToken received from the swap
      */
-    function swap_t0_for_t1(address actor, uint256 amountIn) public returns (uint256 amountOut) {
+    function swap_t0_for_t1(address actor, uint256 amountIn) internal returns (uint256 amountOut) {
         console.log("Swapping token0 (USDC) for token1 (wMToken)");
         vm.startPrank(actor);
         // Approve the router to spend token0 (USDC)
@@ -174,7 +174,7 @@ contract PreconditionsBase is BeforeAfter {
      * @param amountIn Amount of wMToken to swap
      * @return amountOut Amount of USDC received from the swap
      */
-    function swap_t1_for_t0(address actor, uint256 amountIn) public returns (uint256 amountOut) {
+    function swap_t1_for_t0(address actor, uint256 amountIn) internal returns (uint256 amountOut) {
         console.log("Swapping token1 (wMToken) for token0 (USDC)");
         vm.startPrank(actor);
         // Approve the router to spend token1 (wMToken)

@@ -41,16 +41,4 @@ contract PreconditionsMYieldToOne is PreconditionsBase {
         params.to = USERS[(seed + 1) % USERS.length];
         params.amount = fl.clamp(seed, 0, IERC20(params.instance).balanceOf(currentActor));
     }
-
-    function wrapPreconditions_MYieldToOne(uint256 seed) internal returns (WrapParams memory params) {
-        params.instance = mYieldToOneArray[seed % mYieldToOneArray.length];
-        params.recipient = USERS[seed % USERS.length];
-        params.amount = fl.clamp(seed, 0, mToken.balanceOf(currentActor));
-    }
-
-    function unwrapPreconditions_MYieldToOne(uint256 seed) internal returns (UnwrapParams memory params) {
-        params.instance = mYieldToOneArray[seed % mYieldToOneArray.length];
-        params.recipient = USERS[seed % USERS.length];
-        params.amount = fl.clamp(seed, 0, IERC20(params.instance).balanceOf(currentActor));
-    }
 }
