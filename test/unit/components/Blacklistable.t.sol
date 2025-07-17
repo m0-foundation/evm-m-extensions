@@ -15,17 +15,15 @@ import { BlacklistableHarness } from "../../harness/BlacklistableHarness.sol";
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
 contract BlacklistableUnitTests is BaseUnitTest {
-    // Roles
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
-
     BlacklistableHarness public blacklistable;
 
     function setUp() public override {
         super.setUp();
 
         blacklistable = BlacklistableHarness(
-            Upgrades.deployUUPSProxy(
+            Upgrades.deployTransparentProxy(
                 "BlacklistableHarness.sol:BlacklistableHarness",
+                admin,
                 abi.encodeWithSelector(BlacklistableHarness.initialize.selector, blacklistManager)
             )
         );
@@ -41,8 +39,9 @@ contract BlacklistableUnitTests is BaseUnitTest {
         address implementation = address(new BlacklistableHarness());
 
         vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
-        UnsafeUpgrades.deployUUPSProxy(
+        UnsafeUpgrades.deployTransparentProxy(
             implementation,
+            admin,
             abi.encodeWithSelector(BlacklistableHarness.initialize.selector, address(0))
         );
     }

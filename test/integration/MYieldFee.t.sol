@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
@@ -21,20 +21,20 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         _fundAccounts();
 
         mYieldFee = MYieldFee(
-            Upgrades.deployUUPSProxy(
+            Upgrades.deployTransparentProxy(
                 "MYieldFee.sol:MYieldFee",
+                admin,
                 abi.encodeWithSelector(
                     MYieldFee.initialize.selector,
                     NAME,
                     SYMBOL,
-                    address(mToken),
-                    address(swapFacility),
                     YIELD_FEE_RATE,
                     feeRecipient,
                     admin,
-                    yieldFeeManager,
+                    feeManager,
                     claimRecipientManager
-                )
+                ),
+                mExtensionDeployOptions
             )
         );
     }
@@ -49,8 +49,46 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
+        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, feeManager));
     }
+
+    /* ============ index ============ */
+
+    function test_indexGrowth() external {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        // The M_EARNER_RATE is 415 bps. To achieve a 10% growth on the M token index,
+        // we need to solve for t in: 1.1 = e^(rate * t)
+        // t = ln(1.1) / rate_per_second
+        // t = 0.0953101798 / (0.0415 / 31536000) = 72,426,135 seconds
+        uint256 timeDelta = 72_426_135;
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        // The MYieldFee earner rate is 332 bps (415 * (1 - 0.20))
+        // So its index will grow by e^(0.0332/31536000 * 72426135) = 1.07923
+        // The expected index is 1 * 1.079229873640 = 1_079229873640
+        uint128 expectedMYieldFeeIndex = 1_079229873640;
+
+        assertEq(mYieldFee.currentIndex(), expectedMYieldFeeIndex);
+        assertEq(mToken.currentIndex(), 1_147378684081);
+
+        // Update the index to set the new baseline for the next growth period
+        mYieldFee.updateIndex();
+        assertEq(mYieldFee.latestIndex(), expectedMYieldFeeIndex);
+
+        // Warp forward by the same delta again to simulate another 10% M token growth
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        uint128 expectedSecondMYieldFeeIndex = 1_164737120157;
+
+        assertEq(mYieldFee.currentIndex(), expectedSecondMYieldFeeIndex);
+        assertEq(mToken.currentIndex(), 1_262115863007);
+    }
+
+    /* ============ yield accrual ============ */
 
     function test_yieldAccumulationAndClaim() external {
         uint256 amount = 10e6;
@@ -153,7 +191,7 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount, 1);
 
         // Disable earning for the contract
-        _removeFomList(EARNERS_LIST, address(mYieldFee));
+        _removeFromList(EARNERS_LIST, address(mYieldFee));
         mYieldFee.disableEarning();
 
         assertFalse(mYieldFee.isEarningEnabled());
@@ -175,6 +213,45 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertApproxEqAbs(mToken.balanceOf(address(mYieldFee)), amount + totalYield, 1);
     }
 
+    /* ============ updateIndex ============ */
+
+    function test_updateIndex_earningDisabled() public {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        // enableEarning should call updateIndex and set the latest rate
+        assertNotEq(mYieldFee.latestRate(), 0);
+
+        vm.warp(block.timestamp + 1 weeks);
+
+        _removeFromList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.disableEarning();
+
+        // Latest rate should be zero and earning disabled
+        assertFalse(mYieldFee.isEarningEnabled());
+        assertEq(mYieldFee.latestRate(), 0);
+
+        uint256 prevIndex = mYieldFee.currentIndex();
+
+        // Move forward by 5 blocks
+        vm.warp(block.timestamp + 5 * (12 seconds));
+
+        uint256 index = mYieldFee.currentIndex();
+
+        // The index should not grow
+        assertEq(prevIndex, index);
+
+        mYieldFee.updateIndex();
+
+        // Earning should not be re-activated and the index should not grow after being updated
+        assertFalse(mYieldFee.isEarningEnabled());
+        assertEq(mYieldFee.latestRate(), 0);
+        assertEq(index, mYieldFee.currentIndex());
+
+        vm.warp(block.timestamp + 5 * (12 seconds));
+        assertEq(index, mYieldFee.currentIndex());
+    }
+
     /* ============ enableEarning ============ */
 
     function test_enableEarning_notApprovedEarner() external {
@@ -192,7 +269,97 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         mYieldFee.disableEarning();
     }
 
-    /* ============ swap in M with permit ============ */
+    /* ============ wrap ============ */
+
+    function test_wrap() external {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        assertEq(mToken.earnerRate(), 415);
+        assertEq(mYieldFee.earnerRate(), 332); // 20% fee -> 415 bps * 0.8 = 332 bps
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        assertEq(mYieldFee.currentIndex(), 1e12);
+
+        uint256 timeDelta = 72_426_135;
+
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_147378684081);
+        assertEq(mYieldFee.currentIndex(), 1_079229873640);
+
+        _giveM(alice, 1_000e6);
+        _swapInM(address(mYieldFee), alice, alice, 1_000e6);
+
+        // Total supply + yield: 1_000
+        // Alice balance with yield: 1_000
+        // Fee: 0
+        assertEq(mYieldFee.principalOf(alice), 926_586656); // index has grown, so principal is not 1:1 with balance
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6);
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6);
+        assertEq(mYieldFee.totalPrincipal(), 926_586656);
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+        assertEq(mYieldFee.totalAccruedYield(), 0);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_000e6 - 1); // Rounds down
+        assertEq(mYieldFee.totalAccruedFee(), 0);
+
+        // 10% M token index growth, 7.9% M Yield Fee index growth.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_262115863006);
+        assertEq(mYieldFee.currentIndex(), 1_164737120157);
+
+        // Total supply + yield: 1_100
+        // Alice balance with yield: 1_079
+        // Fee: 21
+
+        // Balance rounds up in favor of user, but -1 taken out of yield
+        assertEq(mYieldFee.principalOf(alice), 926_586656);
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6 + 79_229873);
+        assertEq(mYieldFee.totalPrincipal(), 926_586656);
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6 + 79_229873 + 1); // Rounds up in favor of the protocol
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_099_999398); // Rounds down in favor of the protocol
+        assertEq(mYieldFee.totalAccruedFee(), 20_769524); // 1_099_999398 - 1079_229874
+
+        _giveM(alice, 1);
+        _swapInM(address(mYieldFee), alice, alice, 1);
+
+        assertEq(mYieldFee.principalOf(alice), 926_586656); // No change due to principal round down on wrap
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6 + 1);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873 - 1);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6 + 79_229873);
+        assertEq(mYieldFee.totalPrincipal(), 926_586656);
+        assertEq(mYieldFee.totalSupply(), 1_000e6 + 1);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873 - 1);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6 + 79_229873 + 1);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_099_999398);
+        assertEq(mYieldFee.totalAccruedFee(), 20_769524);
+
+        _giveM(alice, 2);
+        _swapInM(address(mYieldFee), alice, alice, 2);
+
+        assertEq(mYieldFee.principalOf(alice), 926_586656 + 1);
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6 + 1 + 2);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873 - 1 - 1);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6 + 79_229873 + 1);
+        assertEq(mYieldFee.totalPrincipal(), 926_586656 + 1);
+        assertEq(mYieldFee.totalSupply(), 1_000e6 + 1 + 2);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873 - 1 - 1);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6 + 79_229873 + 1 + 1);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_099_999398 + 2);
+        assertEq(mYieldFee.totalAccruedFee(), 20_769524 + 1);
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+    }
 
     function test_wrapWithPermits() external {
         _addToList(EARNERS_LIST, address(mYieldFee));
@@ -208,5 +375,182 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         assertEq(mYieldFee.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);
+    }
+
+    /* ============ unwrap ============ */
+
+    function test_unwrap() external {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        assertEq(mToken.earnerRate(), 415);
+        assertEq(mYieldFee.earnerRate(), 332); // 20% fee -> 415 bps * 0.8 = 332 bps
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        assertEq(mYieldFee.currentIndex(), 1e12);
+
+        uint256 timeDelta = 72_426_135;
+
+        _giveM(alice, 1_000e6);
+        _swapInM(address(mYieldFee), alice, alice, 1_000e6);
+
+        // Total supply + yield: 1_000
+        // Alice balance with yield: 1_000
+        // Fee: 0
+        assertEq(mYieldFee.principalOf(alice), 1_000e6); // index has not grown yet, so principal is 1:1 with balance
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6);
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6);
+        assertEq(mYieldFee.totalPrincipal(), 1_000e6);
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+        assertEq(mYieldFee.totalAccruedYield(), 0);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_000e6 - 1); // Rounds down
+        assertEq(mYieldFee.totalAccruedFee(), 0);
+
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_147378684080);
+        assertEq(mYieldFee.currentIndex(), 1_079229873640);
+
+        // Balance rounds up in favor of user, but -1 taken out of yield
+        assertEq(mYieldFee.principalOf(alice), 1_000e6);
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6 + 79_229873);
+        assertEq(mYieldFee.totalPrincipal(), 1_000e6);
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6 + 79_229873 + 1); // Rounds up in favor of the protocol
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_099_999398); // Rounds down in favor of the protocol
+        assertEq(mYieldFee.totalAccruedFee(), 20_769524); // 1_099_999398 - 1079_229874
+
+        _swapMOut(address(mYieldFee), alice, alice, 1);
+
+        assertEq(mYieldFee.principalOf(alice), 1_000e6 - 1);
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6 - 1);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6 + 79_229873 - 1);
+        assertEq(mYieldFee.totalPrincipal(), 999_999999);
+        assertEq(mYieldFee.totalSupply(), 1_000e6 - 1);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_079_229873);
+
+        _swapMOut(address(mYieldFee), alice, alice, 499_999999);
+
+        assertEq(mYieldFee.principalOf(alice), 1_000e6 - 1 - 463_293328);
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6 - 1 - 499_999999);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873 - 1);
+        assertEq(mYieldFee.totalPrincipal(), 1_000e6 - 1 - 463_293328);
+        assertEq(mYieldFee.totalSupply(), 1_000e6 - 1 - 499_999999);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873 - 1);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6 + 79_229873 - 1 - 499_999999);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_099_999398 - 500e6);
+        assertEq(mYieldFee.totalAccruedFee(), 20_769524 + 1);
+
+        _swapMOut(address(mYieldFee), alice, alice, 500e6);
+
+        assertEq(mYieldFee.principalOf(alice), 1_000e6 - 1 - 463_293328 - 463_293329); // 73_413342
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6 - 1 - 499_999999 - 500e6); // 0
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873 - 1 - 1);
+        assertEq(mYieldFee.totalPrincipal(), 1_000e6 - 1 - 463_293328 - 463_293329); // 73_413342
+        assertEq(mYieldFee.totalSupply(), 1_000e6 - 1 - 499_999999 - 500e6); // 0
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873 - 1 - 1);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6 + 79_229873 - 1 - 1 - 499_999999 - 500e6);
+        assertEq(mYieldFee.totalAccruedFee(), 20_769524 + 1);
+
+        assertEq(mToken.balanceOf(alice), 1_010e6);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 99_999397); // 79_229873 + 20_769524
+    }
+
+    // TODO: add unwrap with permits
+
+    /* ============ transfer ============ */
+
+    function test_transfer() external {
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        mYieldFee.enableEarning();
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        assertEq(mToken.earnerRate(), 415);
+        assertEq(mYieldFee.earnerRate(), 332); // 20% fee -> 415 bps * 0.8 = 332 bps
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        assertEq(mYieldFee.currentIndex(), 1e12);
+
+        uint256 timeDelta = 72_426_135;
+
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_147378684081);
+        assertEq(mYieldFee.currentIndex(), 1_079229873640);
+
+        _giveM(alice, 1_000e6);
+        _swapInM(address(mYieldFee), alice, alice, 1_000e6);
+
+        // Total supply + yield: 1_000
+        // Alice balance with yield: 1_000
+        // Fee: 0
+        assertEq(mYieldFee.principalOf(alice), 926_586656); // index has grown, so principal is not 1:1 with balance
+        assertEq(mYieldFee.balanceOf(alice), 1_000e6);
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6);
+        assertEq(mYieldFee.totalPrincipal(), 926_586656);
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+        assertEq(mYieldFee.totalAccruedYield(), 0);
+        assertEq(mYieldFee.projectedTotalSupply(), 1_000e6);
+        assertEq(mToken.balanceOf(address(mYieldFee)), 1_000e6 - 1); // Rounds down
+        assertEq(mYieldFee.totalAccruedFee(), 0);
+
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_262115863006);
+        assertEq(mYieldFee.currentIndex(), 1_164737120157);
+
+        vm.prank(alice);
+        mYieldFee.transfer(bob, 500e6);
+
+        assertEq(mYieldFee.principalOf(alice), 926_586656 - 429_281416);
+        assertEq(mYieldFee.balanceOf(alice), 500e6);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873);
+
+        assertEq(mYieldFee.principalOf(bob), 429_281416);
+        assertEq(mYieldFee.balanceOf(bob), 500e6);
+        assertEq(mYieldFee.accruedYieldOf(bob), 0);
+
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+
+        // Principal is rounded up when adding and rounded down when subtracting.
+        assertEq(mYieldFee.totalPrincipal(), 926_586656);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873);
+
+        // Then index grows again and we transfer again to bob
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_388326690878);
+        assertEq(mYieldFee.currentIndex(), 1_257019095011);
+
+        vm.prank(alice);
+        mYieldFee.transfer(bob, 500e6);
+
+        assertEq(mYieldFee.principalOf(alice), 926_586656 - 429_281416 - 397766432); // 99_538808
+        assertEq(mYieldFee.balanceOf(alice), 0);
+        assertEq(mYieldFee.accruedYieldOf(alice), 79_229873 + 45_892309); // 125_122182
+
+        assertEq(mYieldFee.principalOf(bob), 429_281416 + 397_766432); // 827_047848
+        assertEq(mYieldFee.balanceOf(bob), 1_000e6);
+        assertEq(mYieldFee.accruedYieldOf(bob), 39_614937);
+
+        assertEq(mYieldFee.totalSupply(), 1_000e6);
+
+        assertEq(mYieldFee.totalPrincipal(), 926_586656);
+        assertEq(mYieldFee.totalAccruedYield(), 79_229873 + 45_892309 + 39_614937); // 164_737119
     }
 }

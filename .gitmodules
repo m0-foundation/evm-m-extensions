@@ -19,3 +19,10 @@
 [submodule "lib/fuzzlib"]
 	path = lib/fuzzlib
 	url = https://github.com/perimetersec/fuzzlib
+[submodule "lib/uniswap-v4-periphery"]
+	path = lib/uniswap-v4-periphery
+	url = https://github.com/Uniswap/v4-periphery.git
+[submodule "lib/wrapped-m-token"]
+	path = lib/wrapped-m-token
+	url = https://github.com/m0-foundation/wrapped-m-token.git
+	branch = feat/swap-facility-support

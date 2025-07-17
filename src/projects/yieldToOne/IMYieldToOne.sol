@@ -23,9 +23,6 @@ interface IMYieldToOne {
 
     /* ============ Custom Errors ============ */
 
-    /// @notice Emitted if no yield is available to claim.
-    error NoYield();
-
     /// @notice Emitted in constructor if Yield Recipient is 0x0.
     error ZeroYieldRecipient();
 

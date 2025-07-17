@@ -6,35 +6,21 @@ import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
 contract MYieldFeeHarness is MYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+    constructor(address mToken, address swapFacility) MYieldFee(mToken, swapFacility) {}
 
     function initialize(
         string memory name,
         string memory symbol,
-        address mToken,
-        address swapFacility,
         uint16 feeRate,
         address feeRecipient,
         address admin,
-        address yieldFeeManager,
+        address feeManager,
         address claimRecipientManager
     ) public override initializer {
-        super.initialize(
-            name,
-            symbol,
-            mToken,
-            swapFacility,
-            feeRate,
-            feeRecipient,
-            admin,
-            yieldFeeManager,
-            claimRecipientManager
-        );
+        super.initialize(name, symbol, feeRate, feeRecipient, admin, feeManager, claimRecipientManager);
     }
 
-    function currentBlockTimestamp() external view returns (uint40) {
+    function latestEarnerRateAccrualTimestamp() external view returns (uint40) {
         return _latestEarnerRateAccrualTimestamp();
     }
 
@@ -47,6 +33,10 @@ contract MYieldFeeHarness is MYieldFee {
 
         $.balanceOf[account] = balance;
         $.principalOf[account] = principal;
+    }
+
+    function setIsEarningEnabled(bool isEarningEnabled_) external {
+        _getMYieldFeeStorageLocation().isEarningEnabled = isEarningEnabled_;
     }
 
     function setLatestIndex(uint256 latestIndex_) external {

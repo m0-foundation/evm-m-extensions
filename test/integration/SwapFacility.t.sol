@@ -2,12 +2,19 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "lib/common/src/interfaces/IERC20.sol";
-import { Upgrades } from "lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
+import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
+import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
+import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
+import { Proxy } from "../../lib/common/src/Proxy.sol";
 
-import { MYieldFee } from "src/projects/yieldToAllWithFee/MYieldFee.sol";
-import { MYieldToOne } from "src/projects/yieldToOne/MYieldToOne.sol";
-import { SwapFacility } from "src/swap/SwapFacility.sol";
+import { IBlacklistable } from "../../src/components/IBlacklistable.sol";
+import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
+import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+
+import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
@@ -20,20 +27,20 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         super.setUp();
 
-        mYieldToOne = MYieldToOne(
-            Upgrades.deployUUPSProxy(
-                "MYieldToOne.sol:MYieldToOne",
+        mYieldToOne = MYieldToOneHarness(
+            Upgrades.deployTransparentProxy(
+                "MYieldToOneHarness.sol:MYieldToOneHarness",
+                admin,
                 abi.encodeWithSelector(
-                    MYieldToOne.initialize.selector,
+                    MYieldToOneHarness.initialize.selector,
                     NAME,
                     SYMBOL,
-                    address(mToken),
-                    address(swapFacility),
                     yieldRecipient,
                     admin,
                     blacklistManager,
                     yieldRecipientManager
-                )
+                ),
+                mExtensionDeployOptions
             )
         );
 
@@ -41,9 +48,24 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, USER);
+
+        // TODO: Remove this when Wrapped M is upgraded to V2
+        address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
+        address earnerManager = address(new Proxy(earnerManagerImplementation));
+        address wrappedMTokenImplementationV2 = address(
+            new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
+        );
+
+        // Ignore earners migration
+        address wrappedMTokenMigratorV1 = address(
+            new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
+        );
+
+        vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
+        WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
     }
 
-    function test_swap() public {
+    function test_swap_mYieldToOne_to_wrappedM() public {
         uint256 amount = 1_000_000;
         uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
 
@@ -58,8 +80,111 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
 
-        assertApproxEqAbs(wrappedMBalanceAfter, wrappedMBalanceBefore + amount, 2);
+        assertEq(wrappedMBalanceAfter, wrappedMBalanceBefore + amount);
         assertEq(mYieldToOne.balanceOf(USER), 0);
+    }
+
+    function test_swap_wrappedM_to_mYieldToOne_entireBalance() public {
+        uint256 amount = IERC20(WRAPPED_M).balanceOf(USER);
+
+        assertEq(mYieldToOne.balanceOf(USER), 0);
+
+        vm.startPrank(USER);
+        IERC20(WRAPPED_M).approve(address(swapFacility), amount);
+        swapFacility.swap(WRAPPED_M, address(mYieldToOne), amount, USER);
+
+        assertEq(IERC20(address(mYieldToOne)).balanceOf(USER), amount);
+        assertEq(IERC20(WRAPPED_M).balanceOf(USER), 0);
+    }
+
+    function test_swap_mYieldToOne_to_wrappedM_entireBalance() public {
+        uint256 amount = IERC20(address(mToken)).balanceOf(USER);
+        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
+
+        vm.startPrank(USER);
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+
+        assertEq(mYieldToOne.balanceOf(USER), amount);
+
+        mYieldToOne.approve(address(swapFacility), amount);
+        swapFacility.swap(address(mYieldToOne), WRAPPED_M, amount, USER);
+
+        assertEq(IERC20(address(mYieldToOne)).balanceOf(USER), 0);
+        assertEq(IERC20(WRAPPED_M).balanceOf(USER), wrappedMBalanceBefore + amount);
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swap_mYieldToOne_to_wrappedM(uint256 amount) public {
+        // Ensure the amount is not zero and does not exceed the user's balance
+        vm.assume(amount > 0);
+        vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource));
+
+        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
+
+        _giveM(USER, amount);
+        vm.startPrank(USER);
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+
+        assertEq(mYieldToOne.balanceOf(USER), amount);
+
+        mYieldToOne.approve(address(swapFacility), amount);
+        swapFacility.swap(address(mYieldToOne), WRAPPED_M, amount, USER);
+
+        uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
+
+        assertEq(wrappedMBalanceAfter, wrappedMBalanceBefore + amount);
+        assertEq(mYieldToOne.balanceOf(USER), 0);
+    }
+
+    function test_swap_wrappedM_to_mYieldToOne_blacklistedAccount() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(blacklistManager);
+        mYieldToOne.blacklist(USER);
+
+        vm.startPrank(USER);
+        IERC20(WRAPPED_M).approve(address(swapFacility), amount);
+
+        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, USER));
+        swapFacility.swap(WRAPPED_M, address(mYieldToOne), amount, USER);
+    }
+
+    function test_swapWithPermit_vrs() public {
+        uint256 amount = 1_000_000;
+
+        // Transfer $M to Alice
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount);
+
+        // Swap $M to mYieldToOne
+        vm.startPrank(alice);
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(WRAPPED_M).balanceOf(alice), 0);
+
+        (uint8 v, bytes32 r, bytes32 s) = _getExtensionPermit(
+            address(mYieldToOne),
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        // Swap mYieldToOne to Wrapped M
+        swapFacility.swapWithPermit(address(mYieldToOne), WRAPPED_M, amount, alice, block.timestamp, v, r, s);
+
+        assertApproxEqAbs(IERC20(WRAPPED_M).balanceOf(alice), amount, 2);
+        assertEq(mYieldToOne.balanceOf(alice), 0);
     }
 
     function test_swapInM() public {
@@ -74,18 +199,71 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(USER), amount);
     }
 
-    function test_swapInMWithPermit_VRS() public {
-        uint256 amount = 1_000_000;
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swapInM(uint256 amount) public {
+        // Ensure the amount is not zero and does not exceed the source balance
+        vm.assume(amount > 0);
+        vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource));
+
+        _giveM(USER, amount);
 
         assertEq(mYieldToOne.balanceOf(USER), 0);
+
+        vm.startPrank(USER);
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+
+        assertEq(mYieldToOne.balanceOf(USER), amount);
+    }
+
+    function test_swapInMWithPermit_vrs() public {
+        uint256 amount = 1_000_000;
 
         vm.prank(USER);
         IERC20(address(mToken)).transfer(alice, amount);
 
-        vm.prank(alice);
-        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
 
-        _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, amount, 0, block.timestamp);
+        (uint8 v, bytes32 r, bytes32 s) = _getMPermit(
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        vm.prank(alice);
+        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+    }
+
+    function test_swapInMWithPermit_signature() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount);
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
+
+        (uint8 v, bytes32 r, bytes32 s) = _getMPermit(
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        vm.prank(alice);
+        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
@@ -101,6 +279,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         uint256 mBalanceBefore = IERC20(address(mToken)).balanceOf(USER);
 
+        mYieldToOne.approve(address(swapFacility), amount);
         swapFacility.swapOutM(address(mYieldToOne), amount, USER);
 
         uint256 mBalanceAfter = IERC20(address(mToken)).balanceOf(USER);
@@ -109,34 +288,64 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mBalanceAfter - mBalanceBefore, amount);
     }
 
-    function test_swapInToken_USDC_to_wrappedM() public {
-        uint256 amountIn = 1_000_000;
-        uint256 minAmountOut = 997_000;
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swapOutM(uint256 amount) public {
+        // Ensure the amount is not zero and does not exceed the source balance
+        vm.assume(amount > 0);
+        vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource));
 
-        uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(USER);
-        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
+        _giveM(USER, amount);
 
         vm.startPrank(USER);
-        IERC20(USDC).approve(address(swapFacility), amountIn);
-        swapFacility.swapInToken(USDC, amountIn, WRAPPED_M, minAmountOut, USER, "");
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, USER);
 
-        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
-        uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
+        assertEq(mYieldToOne.balanceOf(USER), amount);
 
-        assertEq(usdcBalanceAfter, usdcBalanceBefore - amountIn);
-        assertApproxEqAbs(wrappedMBalanceAfter, wrappedMBalanceBefore + amountIn, 1000);
+        uint256 mBalanceBefore = IERC20(address(mToken)).balanceOf(USER);
+
+        mYieldToOne.approve(address(swapFacility), amount);
+        swapFacility.swapOutM(address(mYieldToOne), amount, USER);
+
+        uint256 mBalanceAfter = IERC20(address(mToken)).balanceOf(USER);
+
+        assertEq(mYieldToOne.balanceOf(USER), 0);
+        assertEq(mBalanceAfter - mBalanceBefore, amount);
     }
 
-    function test_swapOutToken_wrappedM_to_USDC() public {
-        uint256 amountIn = 1_000_000;
-        uint256 minAmountOut = 997_000;
-        uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(USER);
+    function test_swapOutMWithPermit_vrs() public {
+        uint256 amount = 1_000_000;
 
-        vm.startPrank(USER);
-        IERC20(WRAPPED_M).approve(address(swapFacility), amountIn);
-        swapFacility.swapOutToken(WRAPPED_M, amountIn, USDC, minAmountOut, USER, "");
+        // Transfer $M to Alice
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount);
 
-        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
-        assertApproxEqAbs(usdcBalanceAfter, usdcBalanceBefore + amountIn, 1000);
+        // Swap $M to mYieldToOne
+        vm.startPrank(alice);
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swapInM(address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(address(mToken)).balanceOf(alice), 0);
+
+        (uint8 v, bytes32 r, bytes32 s) = _getExtensionPermit(
+            address(mYieldToOne),
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        // Swap mYieldToOne to M
+        swapFacility.swapOutMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+
+        assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
+        assertEq(mYieldToOne.balanceOf(alice), 0);
     }
 }

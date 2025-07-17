@@ -5,8 +5,10 @@ pragma solidity 0.8.26;
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "../../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
 
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
+import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
 
 /**
@@ -15,10 +17,10 @@ import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
  *         MetaStreet Foundation
  *         Adapted from https://github.com/metastreet-labs/metastreet-usdai-contracts/blob/main/src/swapAdapters/UniswapV3SwapAdapter.sol
  */
-contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
+contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, ReentrancyLock {
     using SafeERC20 for IERC20;
 
-    /// @notice Fee for Uniswap V3 swap router (0.01%)
+    /// @notice Fee for Uniswap V3 USDC - Wrapped $M pool.
     uint24 internal constant UNISWAP_V3_FEE = 100;
 
     /// @notice Path address size
@@ -30,118 +32,142 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
     /// @notice Path next offset
     uint256 internal constant PATH_NEXT_OFFSET = PATH_ADDR_SIZE + PATH_FEE_SIZE;
 
-    address public immutable swapRouter;
+    /// @notice Single pool path size
+    uint256 internal constant PATH_SINGLE_POOL_SIZE = PATH_ADDR_SIZE + PATH_FEE_SIZE + PATH_ADDR_SIZE;
 
-    address public immutable baseToken;
+    /// @inheritdoc IUniswapV3SwapAdapter
+    address public immutable wrappedMToken;
 
-    mapping(address token => bool whitelisted) public whitelistedTokens;
+    /// @inheritdoc IUniswapV3SwapAdapter
+    address public immutable swapFacility;
+
+    /// @inheritdoc IUniswapV3SwapAdapter
+    address public immutable uniswapRouter;
+
+    /// @inheritdoc IUniswapV3SwapAdapter
+    mapping(address token => bool whitelisted) public whitelistedToken;
 
     /**
      * @notice Constructs UniswapV3SwapAdapter contract
-     * @param  baseToken_ The address of base token.
-     * @param  swapRouter_ The address of the Uniswap V3 swap router.
-     * @param  admin The address of the admin.
-     * @param  tokens The list of whitelisted tokens.
+     * @param  wrappedMToken_      The address of Wrapped $M token.
+     * @param  swapFacility_       The address of SwapFacility.
+     * @param  uniswapRouter_      The address of the Uniswap V3 swap router.
+     * @param  admin               The address of the admin.
+     * @param  whitelistedTokens_  The list of whitelisted tokens.
      */
-    constructor(address baseToken_, address swapRouter_, address admin, address[] memory tokens) {
-        if ((baseToken = baseToken_) == address(0)) revert ZeroBaseToken();
-        if ((swapRouter = swapRouter_) == address(0)) revert ZeroSwapRouter();
+    constructor(
+        address wrappedMToken_,
+        address swapFacility_,
+        address uniswapRouter_,
+        address admin,
+        address[] memory whitelistedTokens_
+    ) {
+        if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
+        if ((swapFacility = swapFacility_) == address(0)) revert ZeroSwapFacility();
+        if ((uniswapRouter = uniswapRouter_) == address(0)) revert ZeroUniswapRouter();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
 
-        for (uint256 i; i < tokens.length; i++) {
-            _whitelistToken(tokens[i], true);
+        for (uint256 i; i < whitelistedTokens_.length; ++i) {
+            _whitelistToken(whitelistedTokens_[i], true);
         }
+
+        // Max approve SwapFacility and Uniswap Router to spend Wrapped $M to save gas
+        IERC20(wrappedMToken).approve(swapFacility, type(uint256).max);
+        IERC20(wrappedMToken).approve(uniswapRouter, type(uint256).max);
     }
 
     /// @inheritdoc IUniswapV3SwapAdapter
     function swapIn(
-        address inputToken,
-        uint256 inputAmount,
-        uint256 minBaseAmount,
+        address tokenIn,
+        uint256 amountIn,
+        address extensionOut,
+        uint256 minAmountOut,
         address recipient,
         bytes calldata path
-    ) external returns (uint256 baseAmount) {
-        _revertIfNotWhitelistedToken(inputToken);
-        _revertIfZeroAmount(inputAmount);
-        _revertIfInvalidSwapInPath(inputToken, path);
+    ) external isNotLocked {
+        _revertIfNotWhitelistedToken(tokenIn);
+        _revertIfZeroAmount(amountIn);
+        _revertIfInvalidSwapInPath(tokenIn, path);
         _revertIfZeroRecipient(recipient);
 
-        // Transfer token input from sender to this contract
-        IERC20(inputToken).safeTransferFrom(msg.sender, address(this), inputAmount);
+        uint256 tokenInBalanceBefore = IERC20(tokenIn).balanceOf(address(this));
 
-        address swapRouter_ = swapRouter;
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenIn).forceApprove(uniswapRouter, amountIn);
 
-        // Approve the router to spend token input
-        IERC20(inputToken).forceApprove(swapRouter_, inputAmount);
+        // Swap tokenIn to Wrapped $M in Uniswap V3 pool
+        uint256 amountOut = IV3SwapRouter(uniswapRouter).exactInput(
+            IV3SwapRouter.ExactInputParams({
+                // If no path is provided, assume tokenIn - Wrapped $M pool with 0.01% fee
+                path: path.length == 0 ? abi.encodePacked(tokenIn, UNISWAP_V3_FEE, wrappedMToken) : path,
+                // If extensionOut is Wrapped $M, transfer the output token directly to the recipient
+                recipient: extensionOut == wrappedMToken ? recipient : address(this),
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut
+            })
+        );
 
-        // Swap token input for base token
-        if (path.length == 0) {
-            IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: inputToken,
-                tokenOut: baseToken,
-                fee: UNISWAP_V3_FEE,
-                recipient: recipient,
-                amountIn: inputAmount,
-                amountOutMinimum: minBaseAmount,
-                sqrtPriceLimitX96: 0
-            });
-
-            baseAmount = IV3SwapRouter(swapRouter_).exactInputSingle(params);
-        } else {
-            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
-                path: path,
-                recipient: msg.sender,
-                amountIn: inputAmount,
-                amountOutMinimum: minBaseAmount
-            });
-
-            baseAmount = IV3SwapRouter(swapRouter_).exactInput(params);
+        if (extensionOut != wrappedMToken) {
+            // Swap the Wrapped $M to extensionOut
+            ISwapFacility(swapFacility).swap(wrappedMToken, extensionOut, amountOut, recipient);
         }
+
+        // NOTE: UniswapV3 router allows exactInput operation to not fully utilize
+        //       the given input token amount if the pool does not have sufficient liquidity.
+        //       Refund any remaining input token balance to the caller.
+        uint256 remainingBalance = IERC20(tokenIn).balanceOf(address(this)) - tokenInBalanceBefore;
+        if (remainingBalance > 0) {
+            IERC20(tokenIn).safeTransfer(msg.sender, remainingBalance);
+        }
+
+        emit SwappedIn(tokenIn, amountIn, extensionOut, amountOut, recipient);
     }
 
     /// @inheritdoc IUniswapV3SwapAdapter
     function swapOut(
-        address outputToken,
-        uint256 baseAmount,
-        uint256 minOutputAmount,
+        address extensionIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 minAmountOut,
         address recipient,
         bytes calldata path
-    ) external returns (uint256 outputAmount) {
-        _revertIfNotWhitelistedToken(outputToken);
-        _revertIfZeroAmount(baseAmount);
-        _revertIfInvalidSwapOutPath(outputToken, path);
+    ) external isNotLocked {
+        _revertIfNotWhitelistedToken(tokenOut);
+        _revertIfZeroAmount(amountIn);
+        _revertIfInvalidSwapOutPath(tokenOut, path);
         _revertIfZeroRecipient(recipient);
 
-        // Transfer token input from sender to this contract
-        IERC20(baseToken).safeTransferFrom(msg.sender, address(this), baseAmount);
+        IERC20(extensionIn).transferFrom(msg.sender, address(this), amountIn);
 
-        // Approve the router to spend base token
-        IERC20(baseToken).forceApprove(swapRouter, baseAmount);
-
-        // Swap base token for token output
-        if (path.length == 0) {
-            IV3SwapRouter.ExactInputSingleParams memory params = IV3SwapRouter.ExactInputSingleParams({
-                tokenIn: baseToken,
-                tokenOut: outputToken,
-                fee: UNISWAP_V3_FEE,
-                recipient: recipient,
-                amountIn: baseAmount,
-                amountOutMinimum: minOutputAmount,
-                sqrtPriceLimitX96: 0
-            });
-
-            outputAmount = IV3SwapRouter(swapRouter).exactInputSingle(params);
-        } else {
-            IV3SwapRouter.ExactInputParams memory params = IV3SwapRouter.ExactInputParams({
-                path: path,
-                recipient: recipient,
-                amountIn: baseAmount,
-                amountOutMinimum: minOutputAmount
-            });
-
-            outputAmount = IV3SwapRouter(swapRouter).exactInput(params);
+        // Swap the extensionIn to Wrapped $M token
+        if (extensionIn != wrappedMToken) {
+            IERC20(extensionIn).approve(address(swapFacility), amountIn);
+            ISwapFacility(swapFacility).swap(extensionIn, wrappedMToken, amountIn, address(this));
         }
+
+        // Swap Wrapped $M to tokenOut in Uniswap V3 pool
+        uint256 amountOut = IV3SwapRouter(uniswapRouter).exactInput(
+            IV3SwapRouter.ExactInputParams({
+                // If no path is provided, assume tokenOut - Wrapped $M pool with 0.01% fee
+                path: path.length == 0 ? abi.encodePacked(wrappedMToken, UNISWAP_V3_FEE, tokenOut) : path,
+                recipient: recipient,
+                amountIn: amountIn,
+                amountOutMinimum: minAmountOut
+            })
+        );
+
+        uint256 wrappedMBalanceBefore = IERC20(wrappedMToken).balanceOf(address(this));
+
+        // NOTE: UniswapV3 router allows exactInput operations to not fully utilize
+        //       the given input token amount if the pool does not have sufficient liquidity.
+        //       Refund any remaining input token balance to the caller.
+        uint256 remainingBalance = IERC20(wrappedMToken).balanceOf(address(this)) - wrappedMBalanceBefore;
+        if (remainingBalance > 0) {
+            IERC20(wrappedMToken).transfer(msg.sender, remainingBalance);
+        }
+
+        emit SwappedOut(extensionIn, amountIn, tokenOut, amountOut, recipient);
     }
 
     /// @inheritdoc IUniswapV3SwapAdapter
@@ -149,37 +175,39 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
         _whitelistToken(token, isWhitelisted);
     }
 
+    function msgSender() public view returns (address) {
+        return _getLocker();
+    }
+
     function _whitelistToken(address token, bool isWhitelisted) private {
         if (token == address(0)) revert ZeroToken();
-        whitelistedTokens[token] = isWhitelisted;
+        if (whitelistedToken[token] == isWhitelisted) return;
+
+        whitelistedToken[token] = isWhitelisted;
 
         emit TokenWhitelisted(token, isWhitelisted);
     }
 
     /**
-     * @notice Decode input and output tokens
-     * @param  path Swap path
-     * @return tokenInput Address of the input token
-     * @return tokenOutput Address if the output token
+     * @notice Decodes input and output tokens from the Uniswap V3 path.
+     * @param  path            The UniswapV3 swap path.
+     * @return decodedTokenIn  The address of the input token from the path.
+     * @return decodedTokenOut The address of the output token from the path.
      */
-    function _decodeInputAndOutputTokens(
+    function _decodeAndValidatePathTokens(
         bytes calldata path
-    ) internal pure returns (address tokenInput, address tokenOutput) {
+    ) internal pure returns (address decodedTokenIn, address decodedTokenOut) {
         // Validate path format
-        if (
-            (path.length < PATH_ADDR_SIZE + PATH_FEE_SIZE + PATH_ADDR_SIZE) ||
-            ((path.length - PATH_ADDR_SIZE) % PATH_NEXT_OFFSET != 0)
-        ) {
+        if ((path.length < PATH_SINGLE_POOL_SIZE) || ((path.length - PATH_ADDR_SIZE) % PATH_NEXT_OFFSET != 0))
             revert InvalidPathFormat();
-        }
 
-        tokenInput = address(bytes20(path[:PATH_ADDR_SIZE]));
+        decodedTokenIn = address(bytes20(path[:PATH_ADDR_SIZE]));
 
         // Calculate position of output token
-        uint256 numHops = (path.length - PATH_ADDR_SIZE) / PATH_NEXT_OFFSET;
-        uint256 outputTokenIndex = numHops * PATH_NEXT_OFFSET;
+        uint256 numberOfPools = (path.length - PATH_ADDR_SIZE) / PATH_NEXT_OFFSET;
+        uint256 outputTokenIndex = numberOfPools * PATH_NEXT_OFFSET;
 
-        tokenOutput = address(bytes20(path[outputTokenIndex:outputTokenIndex + PATH_ADDR_SIZE]));
+        decodedTokenOut = address(bytes20(path[outputTokenIndex:outputTokenIndex + PATH_ADDR_SIZE]));
     }
 
     /**
@@ -187,7 +215,7 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
      * @param token Address of a token.
      */
     function _revertIfNotWhitelistedToken(address token) internal view {
-        if (!whitelistedTokens[token]) revert NotWhitelistedToken(token);
+        if (!whitelistedToken[token]) revert NotWhitelistedToken(token);
     }
 
     /**
@@ -208,25 +236,25 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl {
 
     /**
      * @notice Reverts if the swap path is invalid for swapping in.
-     * @param  tokenInput Address of the input token.
-     * @param  path Swap path.
+     * @param  tokenIn The address of the input token provided in `swapIn` function.
+     * @param  path    The Uniswap V3 swap path provided in `swapIn` function.
      */
-    function _revertIfInvalidSwapInPath(address tokenInput, bytes calldata path) internal view {
+    function _revertIfInvalidSwapInPath(address tokenIn, bytes calldata path) internal view {
         if (path.length != 0) {
-            (address tokenInput_, address tokenOutput) = _decodeInputAndOutputTokens(path);
-            if (tokenInput_ != tokenInput || tokenOutput != baseToken) revert InvalidPath();
+            (address decodedTokenIn, address decodedTokenOut) = _decodeAndValidatePathTokens(path);
+            if (decodedTokenIn != tokenIn || decodedTokenOut != wrappedMToken) revert InvalidPath();
         }
     }
 
     /**
      * @notice Reverts if the swap path is invalid for swapping out.
-     * @param  tokenOutput Address of the output token.
-     * @param  path Swap path.
+     * @param  tokenOut The address of the output token provided in `swapOut` function.
+     * @param  path     The Uniswap V3 swap path provided in `swapOut` function.
      */
-    function _revertIfInvalidSwapOutPath(address tokenOutput, bytes calldata path) internal view {
+    function _revertIfInvalidSwapOutPath(address tokenOut, bytes calldata path) internal view {
         if (path.length != 0) {
-            (address tokenInput, address tokenOutput_) = _decodeInputAndOutputTokens(path);
-            if (tokenInput != baseToken || tokenOutput_ != tokenOutput) revert InvalidPath();
+            (address decodedTokenIn, address decodedTokenOut) = _decodeAndValidatePathTokens(path);
+            if (decodedTokenIn != wrappedMToken || decodedTokenOut != tokenOut) revert InvalidPath();
         }
     }
 }

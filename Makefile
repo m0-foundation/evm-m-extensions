@@ -31,7 +31,7 @@ invariant:
 	@./test.sh -d test/invariant -p $(profile)
 
 coverage:
-	FOUNDRY_PROFILE=$(profile) forge coverage --no-match-path 'test/integration/**/*.sol' --no-match-coverage UniswapV3SwapAdapter --report lcov && lcov --extract lcov.info -o lcov.info 'src/*' --ignore-errors inconsistent && genhtml lcov.info -o coverage
+	FOUNDRY_PROFILE=$(profile) forge coverage --report lcov && lcov --extract lcov.info -o lcov.info 'src/*' --ignore-errors inconsistent && genhtml lcov.info -o coverage
 
 gas-report:
 	FOUNDRY_PROFILE=$(profile) forge test --force --gas-report > gasreport.ansi

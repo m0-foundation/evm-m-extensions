@@ -4,13 +4,20 @@ pragma solidity 0.8.26;
 
 import { Test } from "../../../lib/forge-std/src/Test.sol";
 
-import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { IAccessControl } from "../../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { SwapFacility } from "../../../src/swap/SwapFacility.sol";
 
 import { MockM, MockMExtension, MockRegistrar } from "../../utils/Mocks.sol";
+
+contract SwapFacilityV2 {
+    function foo() external pure returns (uint256) {
+        return 1;
+    }
+}
 
 contract SwapFacilityUnitTests is Test {
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
@@ -21,7 +28,6 @@ contract SwapFacilityUnitTests is Test {
     MockRegistrar public registrar;
     MockMExtension public extensionA;
     MockMExtension public extensionB;
-    address public swapAdapter = makeAddr("swapAdapter");
 
     address public owner = makeAddr("owner");
     address public alice = makeAddr("alice");
@@ -31,8 +37,9 @@ contract SwapFacilityUnitTests is Test {
         registrar = new MockRegistrar();
 
         swapFacility = SwapFacility(
-            UnsafeUpgrades.deployUUPSProxy(
-                address(new SwapFacility(address(mToken), address(registrar), swapAdapter)),
+            UnsafeUpgrades.deployTransparentProxy(
+                address(new SwapFacility(address(mToken), address(registrar))),
+                owner,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, owner)
             )
         );
@@ -53,17 +60,12 @@ contract SwapFacilityUnitTests is Test {
 
     function test_constructor_zeroMToken() external {
         vm.expectRevert(ISwapFacility.ZeroMToken.selector);
-        new SwapFacility(address(0), address(registrar), swapAdapter);
+        new SwapFacility(address(0), address(registrar));
     }
 
     function test_constructor_zeroRegistrar() external {
         vm.expectRevert(ISwapFacility.ZeroRegistrar.selector);
-        new SwapFacility(address(mToken), address(0), swapAdapter);
-    }
-
-    function test_constructor_zeroSwapAdapter() external {
-        vm.expectRevert(ISwapFacility.ZeroSwapAdapter.selector);
-        new SwapFacility(address(mToken), address(registrar), address(0));
+        new SwapFacility(address(mToken), address(0));
     }
 
     function test_swap() external {
@@ -77,6 +79,8 @@ contract SwapFacilityUnitTests is Test {
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(extensionA.balanceOf(alice), amount);
         assertEq(extensionB.balanceOf(alice), 0);
+
+        extensionA.approve(address(swapFacility), amount);
 
         vm.expectEmit(true, true, true, true);
         emit ISwapFacility.Swapped(address(extensionA), address(extensionB), amount, alice);
@@ -158,5 +162,18 @@ contract SwapFacilityUnitTests is Test {
 
         vm.prank(alice);
         swapFacility.swapOutM(address(extensionA), 1, alice);
+    }
+
+    function test_upgrade() external {
+        // Current version does not have foo() function
+        vm.expectRevert();
+        SwapFacilityV2(address(swapFacility)).foo();
+
+        // Upgrade the contract to a new implementation
+        vm.startPrank(owner);
+        UnsafeUpgrades.upgradeProxy(address(swapFacility), address(new SwapFacilityV2()), "");
+
+        // Verify the upgrade was successful
+        assertEq(SwapFacilityV2(address(swapFacility)).foo(), 1);
     }
 }

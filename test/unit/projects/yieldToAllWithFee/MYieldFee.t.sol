@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.26;
-
+import { console } from "forge-std/console.sol";
 import {
     IAccessControl
 } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
@@ -22,34 +22,28 @@ import { IERC20Extended } from "../../../../lib/common/src/interfaces/IERC20Exte
 
 import { MYieldFeeHarness } from "../../../harness/MYieldFeeHarness.sol";
 import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
-import { console2 } from "../../../../lib/forge-std/src/Test.sol";
 
 contract MYieldFeeUnitTests is BaseUnitTest {
-    // Roles
-    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
-    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
-    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
-
     MYieldFeeHarness public mYieldFee;
 
     function setUp() public override {
         super.setUp();
 
         mYieldFee = MYieldFeeHarness(
-            Upgrades.deployUUPSProxy(
+            Upgrades.deployTransparentProxy(
                 "MYieldFeeHarness.sol:MYieldFeeHarness",
+                admin,
                 abi.encodeWithSelector(
                     MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
-                    address(mToken),
-                    address(swapFacility),
                     YIELD_FEE_RATE,
                     feeRecipient,
                     admin,
-                    yieldFeeManager,
+                    feeManager,
                     claimRecipientManager
-                )
+                ),
+                mExtensionDeployOptions
             )
         );
 
@@ -64,50 +58,26 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, yieldFeeManager));
+        assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, feeManager));
         assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
     }
 
-    function test_initialize_zeroMToken() external {
-        address implementation = address(new MYieldFeeHarness());
-
-        vm.expectRevert(IMExtension.ZeroMToken.selector);
-        MYieldFeeHarness(
-            UnsafeUpgrades.deployUUPSProxy(
-                implementation,
-                abi.encodeWithSelector(
-                    MYieldFeeHarness.initialize.selector,
-                    "MYieldFee",
-                    "MYF",
-                    address(0),
-                    address(swapFacility),
-                    YIELD_FEE_RATE,
-                    feeRecipient,
-                    admin,
-                    yieldFeeManager,
-                    claimRecipientManager
-                )
-            )
-        );
-    }
-
-    function test_initialize_zeroYieldFeeRecipient() external {
-        address implementation = address(new MYieldFeeHarness());
+    function test_initialize_zeroFeeRecipient() external {
+        address implementation = address(new MYieldFeeHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldFee.ZeroFeeRecipient.selector);
         MYieldFeeHarness(
-            UnsafeUpgrades.deployUUPSProxy(
+            UnsafeUpgrades.deployTransparentProxy(
                 implementation,
+                admin,
                 abi.encodeWithSelector(
                     MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
-                    address(mToken),
-                    address(swapFacility),
                     YIELD_FEE_RATE,
                     address(0),
                     admin,
-                    yieldFeeManager,
+                    feeManager,
                     claimRecipientManager
                 )
             )
@@ -115,41 +85,39 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroAdmin() external {
-        address implementation = address(new MYieldFeeHarness());
+        address implementation = address(new MYieldFeeHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldFee.ZeroAdmin.selector);
         MYieldFeeHarness(
-            UnsafeUpgrades.deployUUPSProxy(
+            UnsafeUpgrades.deployTransparentProxy(
                 implementation,
+                admin,
                 abi.encodeWithSelector(
                     MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
-                    address(mToken),
-                    address(swapFacility),
                     YIELD_FEE_RATE,
                     feeRecipient,
                     address(0),
-                    yieldFeeManager,
+                    feeManager,
                     claimRecipientManager
                 )
             )
         );
     }
 
-    function test_initialize_zeroYieldFeeManager() external {
-        address implementation = address(new MYieldFeeHarness());
+    function test_initialize_zeroFeeManager() external {
+        address implementation = address(new MYieldFeeHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldFee.ZeroFeeManager.selector);
         MYieldFeeHarness(
-            UnsafeUpgrades.deployUUPSProxy(
+            UnsafeUpgrades.deployTransparentProxy(
                 implementation,
+                admin,
                 abi.encodeWithSelector(
                     MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
-                    address(mToken),
-                    address(swapFacility),
                     YIELD_FEE_RATE,
                     feeRecipient,
                     admin,
@@ -161,22 +129,21 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroClaimRecipientManager() external {
-        address implementation = address(new MYieldFeeHarness());
+        address implementation = address(new MYieldFeeHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldFee.ZeroClaimRecipientManager.selector);
         MYieldFeeHarness(
-            UnsafeUpgrades.deployUUPSProxy(
+            UnsafeUpgrades.deployTransparentProxy(
                 implementation,
+                admin,
                 abi.encodeWithSelector(
                     MYieldFeeHarness.initialize.selector,
                     "MYieldFee",
                     "MYF",
-                    address(mToken),
-                    address(swapFacility),
                     YIELD_FEE_RATE,
                     feeRecipient,
                     admin,
-                    yieldFeeManager,
+                    feeManager,
                     address(0)
                 )
             )
@@ -200,9 +167,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         mToken.setBalanceOf(address(mYieldFee), yieldAmount);
         mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6);
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -217,7 +185,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(alice), aliceBalance);
         assertEq(mYieldFee.accruedYieldOf(alice), 0);
 
-        // Another 10% index growth
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
@@ -243,6 +211,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         mToken.setBalanceOf(address(mYieldFee), yieldAmount);
         mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6);
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
         assertEq(mYieldFee.claimRecipientFor(alice), alice);
@@ -252,7 +221,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertEq(mYieldFee.claimRecipientFor(alice), bob);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -273,15 +242,15 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(bob), bobBalance);
         assertEq(mYieldFee.accruedYieldOf(alice), 0);
 
-        // Another 10% index growth
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(alice, carol);
+
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
         yieldAmount = 79_230399;
         uint240 bobYieldAmount = 6_277456;
-
-        vm.prank(claimRecipientManager);
-        mYieldFee.setClaimRecipient(alice, carol);
 
         assertEq(mYieldFee.claimRecipientFor(alice), carol);
 
@@ -309,7 +278,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function testFuzz_claimYieldFor(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 balanceWithYield,
@@ -317,7 +285,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         (balanceWithYield, balance) = _getFuzzedBalances(
             currentIndex,
             balanceWithYield,
@@ -352,9 +320,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function test_claimFee() external {
         uint256 yieldFeeAmount = 20_769600;
 
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -375,7 +344,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.balanceOf(feeRecipient), yieldFeeAmount);
         assertEq(mYieldFee.totalAccruedFee(), 0);
 
-        // Another 10% index growth
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
@@ -399,7 +368,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function testFuzz_claimFee(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 totalSupplyWithYield,
@@ -408,7 +376,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         uint240 maxAmount = _getMaxAmount(currentIndex);
 
         (totalSupplyWithYield, totalSupply) = _getFuzzedBalances(
@@ -446,14 +414,13 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertEq(mYieldFee.balanceOf(feeRecipient), feeRecipientBalanceBefore + yieldFeeAmount);
         assertEq(mYieldFee.totalSupply(), totalSupply + yieldFeeAmount);
-
-        // assertEq(mYieldFee.totalAccruedFee(), 0); // replace mint with M transfer
+        assertEq(mYieldFee.totalAccruedFee(), 0);
     }
 
     /* ============ enableEarning ============ */
 
     function test_enableEarning_earningIsEnabled() external {
-        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+        mYieldFee.setIsEarningEnabled(true);
 
         vm.expectRevert(abi.encodeWithSelector(IMExtension.EarningIsEnabled.selector));
         mYieldFee.enableEarning();
@@ -485,6 +452,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_disableEarning() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
         mYieldFee.setLatestIndex(1_100000000000);
 
@@ -509,6 +477,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         // Index should not change
         assertEq(mYieldFee.currentIndex(), 1_187153439146);
+        assertEq(mYieldFee.updateIndex(), 1_187153439146);
+
+        // State should not change after updating the index
+        assertEq(mYieldFee.currentIndex(), 1_187153439146);
+        assertEq(mYieldFee.latestIndex(), 1_187153439146);
+        assertEq(mYieldFee.latestRate(), 0);
     }
 
     /* ============ setFeeRate ============ */
@@ -527,14 +501,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             abi.encodeWithSelector(IMYieldFee.FeeRateTooHigh.selector, ONE_HUNDRED_PERCENT + 1, ONE_HUNDRED_PERCENT)
         );
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRate(ONE_HUNDRED_PERCENT + 1);
     }
 
     function test_setFeeRate_noUpdate() external {
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRate(YIELD_FEE_RATE);
 
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
@@ -542,13 +516,13 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function test_setFeeRate() external {
         // Reset rate
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRate(0);
 
         vm.expectEmit();
         emit IMYieldFee.FeeRateSet(YIELD_FEE_RATE);
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRate(YIELD_FEE_RATE);
 
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
@@ -568,20 +542,21 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function test_setFeeRecipient_zeroFeeRecipient() external {
         vm.expectRevert(IMYieldFee.ZeroFeeRecipient.selector);
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRecipient(address(0));
     }
 
     function test_setFeeRecipient_noUpdate() external {
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRecipient(feeRecipient);
 
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
     }
 
     function test_setFeeRecipient() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
         mToken.setBalanceOf(address(mYieldFee), 1_100e6);
@@ -591,12 +566,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         address newYieldFeeRecipient = makeAddr("newYieldFeeRecipient");
 
         vm.expectEmit();
-        emit IMYieldFee.FeeClaimed(yieldFeeManager, feeRecipient, yieldFee);
+        emit IMYieldFee.FeeClaimed(feeManager, feeRecipient, yieldFee);
 
         vm.expectEmit();
         emit IMYieldFee.FeeRecipientSet(newYieldFeeRecipient);
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRecipient(newYieldFeeRecipient);
 
         assertEq(mYieldFee.feeRecipient(), newYieldFeeRecipient);
@@ -644,9 +619,37 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.claimRecipientFor(alice), newClaimRecipient);
     }
 
+    function test_setClaimRecipient_claimYield() external {
+        uint240 yieldAmount = 79_230399;
+        uint240 aliceBalance = 1_000e6;
+
+        mToken.setBalanceOf(address(mYieldFee), yieldAmount);
+        mYieldFee.setAccountOf(alice, aliceBalance, 1_000e6);
+        mYieldFee.setIsEarningEnabled(true);
+        mYieldFee.setLatestRate(mYiedFeeEarnerRate);
+
+        // 10% index growth
+        vm.warp(startTimestamp + 30_057_038);
+        assertEq(mYieldFee.currentIndex(), 1_079230399224);
+
+        vm.expectEmit();
+        emit IMYieldFee.YieldClaimed(alice, alice, yieldAmount);
+
+        vm.prank(claimRecipientManager);
+        mYieldFee.setClaimRecipient(alice, bob);
+
+        assertEq(mYieldFee.balanceOf(alice), aliceBalance + yieldAmount);
+        assertEq(mYieldFee.accruedYieldOf(alice), 0);
+
+        vm.prank(alice);
+        uint256 yield = mYieldFee.claimYieldFor(alice);
+        assertEq(yield, 0);
+    }
+
     /* ============ currentIndex ============ */
 
     function test_currentIndex() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
         uint256 expectedIndex = EXP_SCALED_ONE;
@@ -724,6 +727,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         uint32 nextEarnerRate,
         uint16 feeRate,
         uint16 nextYieldFeeRate,
+        bool isEarningEnabled,
         uint128 latestIndex,
         uint40 latestUpdateTimestamp,
         uint40 nextTimestamp,
@@ -736,6 +740,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(earnerRate));
         uint32 latestRate = mYieldFee.latestRate();
 
+        mYieldFee.setIsEarningEnabled(isEarningEnabled);
         latestIndex = _setupLatestIndex(latestIndex);
         latestRate = _setupLatestRate(latestRate);
 
@@ -747,7 +752,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         vm.warp(nextTimestamp);
 
-        uint128 expectedIndex = _getCurrentIndex(latestIndex, latestRate, latestUpdateTimestamp);
+        uint128 expectedIndex = isEarningEnabled
+            ? _getCurrentIndex(latestIndex, latestRate, latestUpdateTimestamp)
+            : latestIndex;
+
         assertEq(mYieldFee.currentIndex(), expectedIndex);
 
         vm.assume(finalTimestamp > nextTimestamp);
@@ -767,7 +775,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.warp(finalTimestamp);
 
         // expectedIndex was saved as the latest index and nextTimestamp is the latest saved timestamp
-        expectedIndex = _getCurrentIndex(expectedIndex, latestRate, nextTimestamp);
+        expectedIndex = isEarningEnabled ? _getCurrentIndex(expectedIndex, latestRate, nextTimestamp) : latestIndex;
         assertEq(mYieldFee.currentIndex(), expectedIndex);
     }
 
@@ -781,14 +789,14 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.earnerRate(), _getEarnerRate(mEarnerRate, YIELD_FEE_RATE));
     }
 
-    /* ============ _currentBlockTimestamp ============ */
+    /* ============ _latestEarnerRateAccrualTimestamp ============ */
 
-    function test_currentBlockTimestamp() external {
+    function test_latestEarnerRateAccrualTimestamp() external {
         uint40 timestamp = uint40(22470340);
 
         vm.warp(timestamp);
 
-        assertEq(mYieldFee.currentBlockTimestamp(), timestamp);
+        assertEq(mYieldFee.latestEarnerRateAccrualTimestamp(), timestamp);
     }
 
     /* ============ _currentEarnerRate ============ */
@@ -804,9 +812,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ accruedYieldOf ============ */
 
     function test_accruedYieldOf() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -816,7 +825,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield without fee.
         assertEq(mYieldFee.accruedYieldOf(alice), 79); // Should be 100 - 100 * 20% = 80 but it rounds down.
 
-        // Another 10% index growth
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
@@ -830,7 +839,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function testFuzz_accruedYieldOf(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 balanceWithYield,
@@ -840,7 +848,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         (balanceWithYield, balance) = _getFuzzedBalances(
             currentIndex,
             balanceWithYield,
@@ -873,9 +881,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ balanceWithYieldOf ============ */
 
     function test_balanceWithYieldOf() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -885,7 +894,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.setAccountOf(alice, 1_000e6, 1_000e6); // 1_100 balance with yield without fee
         assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000e6 + 79_230399); // Should be 1_080 but it rounds down
 
-        // Another 10% index growth
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
@@ -899,7 +908,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function testFuzz_balanceWithYieldOf(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 balanceWithYield,
@@ -909,7 +917,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         (balanceWithYield, balance) = _getFuzzedBalances(
             currentIndex,
             balanceWithYield,
@@ -942,9 +950,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     /* ============ projectedTotalSupply ============ */
 
     function test_projectedTotalSupply() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -959,11 +968,11 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     /* ============ totalAccruedYield ============ */
 
-    // TODO: add fuzz test
     function test_totalAccruedYield() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -978,7 +987,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.setTotalPrincipal(1_000e6);
         assertEq(mYieldFee.totalAccruedYield(), 79_230399); // Should be 80 but it rounds down
 
-        // Another 10% index growth
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
@@ -992,13 +1001,45 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYield(), 747_107381);
     }
 
+    function testFuzz_totalAccruedYield(
+        bool earningEnabled,
+        uint16 feeRate,
+        uint128 latestIndex,
+        uint240 totalSupplyWithYield,
+        uint240 totalSupply,
+        uint40 nextTimestamp,
+        uint40 finalTimestamp
+    ) external {
+        _setupYieldFeeRate(feeRate);
+
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
+        (totalSupplyWithYield, totalSupply) = _getFuzzedBalances(
+            currentIndex,
+            totalSupplyWithYield,
+            totalSupply,
+            _getMaxAmount(currentIndex)
+        );
+
+        uint112 principal = _setupSupply(totalSupplyWithYield, totalSupply);
+        (, uint240 expectedYield) = _getBalanceWithYield(totalSupply, principal, currentIndex);
+
+        assertEq(mYieldFee.totalAccruedYield(), expectedYield);
+
+        vm.assume(finalTimestamp > nextTimestamp);
+
+        vm.warp(finalTimestamp);
+
+        (, expectedYield) = _getBalanceWithYield(totalSupply, principal, mYieldFee.currentIndex());
+        assertEq(mYieldFee.totalAccruedYield(), expectedYield);
+    }
+
     /* ============ totalAccruedFee ============ */
 
-    // TODO: add fuzz test
     function test_totalAccruedFee() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -1020,7 +1061,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedFee(), 20);
         assertEq(mYieldFee.totalAccruedYield() + mYieldFee.totalAccruedFee(), 99);
 
-        // Another 10% index growth
+        // 8.5% M Yield Fee index growth
         vm.warp(startTimestamp + 30_057_038 * 2);
         assertEq(mYieldFee.currentIndex(), 1_164738254609);
 
@@ -1042,6 +1083,45 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.totalAccruedYield() + mYieldFee.totalAccruedFee(), 884);
     }
 
+    function testFuzz_totalAccruedFee(
+        bool earningEnabled,
+        uint16 feeRate,
+        uint128 latestIndex,
+        uint240 totalSupplyWithYield,
+        uint240 totalSupply,
+        uint40 nextTimestamp,
+        uint40 finalTimestamp
+    ) external {
+        _setupYieldFeeRate(feeRate);
+
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
+        (totalSupplyWithYield, totalSupply) = _getFuzzedBalances(
+            currentIndex,
+            totalSupplyWithYield,
+            totalSupply,
+            _getMaxAmount(currentIndex)
+        );
+
+        uint112 principal = _setupSupply(totalSupplyWithYield, totalSupply);
+        (, uint240 expectedYield) = _getBalanceWithYield(totalSupply, principal, currentIndex);
+        uint256 expectedFee = _getYieldFee(expectedYield, feeRate);
+
+        mToken.setBalanceOf(address(mYieldFee), totalSupply + expectedYield + expectedFee);
+
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), expectedFee, 9); // May round down in favor of the protocol
+
+        vm.assume(finalTimestamp > nextTimestamp);
+
+        vm.warp(finalTimestamp);
+
+        (, expectedYield) = _getBalanceWithYield(totalSupply, principal, mYieldFee.currentIndex());
+        expectedFee = _getYieldFee(expectedYield, feeRate);
+
+        mToken.setBalanceOf(address(mYieldFee), totalSupply + expectedYield + expectedFee);
+
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), expectedFee, 9);
+    }
+
     /* ============ wrap ============ */
 
     function test_wrap_insufficientAmount() external {
@@ -1056,18 +1136,19 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InvalidRecipient.selector, address(0)));
 
-        vm.prank(alice);
-        swapFacility.swapInM(address(mYieldFee), 1_000, address(0));
+        vm.prank(address(swapFacility));
+        mYieldFee.wrap(address(0), 1_000);
     }
 
     function test_wrap() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
-        mToken.setBalanceOf(alice, 1_002);
+        mToken.setBalanceOf(address(swapFacility), 1_002);
         mToken.setBalanceOf(address(mYieldFee), 1_100);
 
         mYieldFee.setTotalPrincipal(1_000);
@@ -1092,8 +1173,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 999);
 
-        vm.prank(alice);
-        swapFacility.swapInM(address(mYieldFee), 999, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.wrap(alice, 999);
 
         // Balance round up in favor of user, but -1 taken out of yield
         assertEq(mYieldFee.principalOf(alice), 1_000 + 925);
@@ -1110,8 +1191,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 1);
 
-        vm.prank(alice);
-        swapFacility.swapInM(address(mYieldFee), 1, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.wrap(alice, 1);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 + 925); // No change due to principal round down on wrap.
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1);
@@ -1127,8 +1208,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         vm.expectEmit();
         emit IERC20.Transfer(address(0), alice, 2);
 
-        vm.prank(alice);
-        swapFacility.swapInM(address(mYieldFee), 2, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.wrap(alice, 2);
 
         assertEq(mYieldFee.principalOf(alice), 1_000 + 926);
         assertEq(mYieldFee.balanceOf(alice), 1_000 + 999 + 1 + 2);
@@ -1145,7 +1226,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function testFuzz_wrap(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 balanceWithYield,
@@ -1154,7 +1234,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         (balanceWithYield, balance) = _getFuzzedBalances(
             currentIndex,
             balanceWithYield,
@@ -1165,7 +1245,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         _setupAccount(alice, balanceWithYield, balance);
         wrapAmount = uint240(bound(wrapAmount, 0, _getMaxAmount(currentIndex) - balanceWithYield));
 
-        mToken.setBalanceOf(alice, wrapAmount);
+        mToken.setBalanceOf(address(swapFacility), wrapAmount);
 
         if (wrapAmount == 0) {
             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
@@ -1174,8 +1254,8 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             emit IERC20.Transfer(address(0), alice, wrapAmount);
         }
 
-        vm.prank(alice);
-        swapFacility.swapInM(address(mYieldFee), wrapAmount, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.wrap(alice, wrapAmount);
 
         if (wrapAmount == 0) return;
 
@@ -1204,36 +1284,40 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Simulate M token balance.
         mToken.setBalanceOf(address(mYieldFee), balance + aliceYield + yieldFee);
 
-        // TODO: fix test
-        // assertEq(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedTotalSupply());
-        assertEq(mToken.balanceOf(alice), 0);
+        // May round down in favor of the protocol
+        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(alice), mYieldFee.projectedTotalSupply(), 17);
+        assertEq(mYieldFee.totalAccruedYield(), aliceYield);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 17);
     }
 
     /* ============ unwrap ============ */
 
-    function test_unwrap_insufficientAmount() external {
-        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
-
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldFee), 0, alice);
-    }
-
-    function test_unwrap_insufficientBalance() external {
-        mYieldFee.setAccountOf(alice, 999, 909);
-
-        vm.prank(alice);
-        IERC20(address(mYieldFee)).approve(address(swapFacility), 1_000);
-
-        vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 999, 1_000));
-
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldFee), 1_000, alice);
-    }
+    // function test_unwrap_insufficientAmount() external {
+    //     vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
+    //
+    //     vm.prank(address(swapFacility));
+    //     mYieldFee.unwrap(alice, 0);
+    // }
+    //
+    // function test_unwrap_insufficientBalance() external {
+    //     mYieldFee.setAccountOf(address(swapFacility), 999, 909);
+    //
+    //     vm.prank(alice);
+    //     IERC20(address(mYieldFee)).approve(address(swapFacility), 1_000);
+    //
+    //     vm.expectRevert(
+    //         abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, address(swapFacility), 999, 1_000)
+    //     );
+    //
+    //     vm.prank(address(swapFacility));
+    //     mYieldFee.unwrap(alice, 1_000);
+    // }
 
     function test_unwrap() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -1245,67 +1329,71 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         // Total supply + yield: 1_100
         // Alice balance with yield: 1_079
         // Fee: 21
-        mYieldFee.setAccountOf(alice, 1_000, 1_000); // 1_100 balance with yield without fee
+        mYieldFee.setAccountOf(address(swapFacility), 1_000, 1_000); // 1_100 balance with yield without fee
 
-        assertEq(mYieldFee.principalOf(alice), 1_000);
-        assertEq(mYieldFee.balanceOf(alice), 1_000);
-        assertEq(mYieldFee.accruedYieldOf(alice), 79);
-        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79);
+        assertEq(mYieldFee.principalOf(address(swapFacility)), 1_000);
+        assertEq(mYieldFee.balanceOf(address(swapFacility)), 1_000);
+        assertEq(mYieldFee.accruedYieldOf(address(swapFacility)), 79);
+        assertEq(mYieldFee.balanceWithYieldOf(address(swapFacility)), 1_000 + 79);
         assertEq(mYieldFee.totalPrincipal(), 1_000);
         assertEq(mYieldFee.totalSupply(), 1_000);
-        assertEq(mYieldFee.totalAccruedYield(), 79); // Should be 80 but it rounds down
+        assertEq(mYieldFee.totalAccruedYield(), 79);
         assertEq(mYieldFee.projectedTotalSupply(), 1_080);
 
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 1);
-
         vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldFee), 1, alice);
+        mYieldFee.approve(address(swapFacility), 1_000);
 
-        assertEq(mYieldFee.principalOf(alice), 1_000 - 1);
-        assertEq(mYieldFee.balanceOf(alice), 1_000 - 1);
-        assertEq(mYieldFee.accruedYieldOf(alice), 79);
-        assertEq(mYieldFee.balanceWithYieldOf(alice), 1_000 + 79 - 1);
+        vm.expectEmit();
+        emit IERC20.Transfer(address(swapFacility), address(0), 1);
+
+        vm.prank(address(swapFacility));
+        mYieldFee.unwrap(alice, 1);
+
+        assertEq(mYieldFee.principalOf(address(swapFacility)), 1_000 - 1);
+        assertEq(mYieldFee.balanceOf(address(swapFacility)), 1_000 - 1);
+        assertEq(mYieldFee.accruedYieldOf(address(swapFacility)), 79);
+        assertEq(mYieldFee.balanceWithYieldOf(address(swapFacility)), 1_000 + 79 - 1);
         assertEq(mYieldFee.totalPrincipal(), 999);
         assertEq(mYieldFee.totalSupply(), 1_000 - 1);
         assertEq(mYieldFee.totalAccruedYield(), 79);
         assertEq(mYieldFee.projectedTotalSupply(), 1_079);
 
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 499);
+        emit IERC20.Transfer(address(swapFacility), address(0), 499);
 
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldFee), 499, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.unwrap(alice, 499);
 
-        assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463);
-        assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499);
-        assertEq(mYieldFee.accruedYieldOf(alice), 79 - 1);
+        assertEq(mYieldFee.principalOf(address(swapFacility)), 1_000 - 1 - 463);
+        assertEq(mYieldFee.balanceOf(address(swapFacility)), 1_000 - 1 - 499);
+        assertEq(mYieldFee.accruedYieldOf(address(swapFacility)), 79 - 1);
         assertEq(mYieldFee.totalPrincipal(), 1_000 - 463 - 1);
         assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499);
         assertEq(mYieldFee.totalAccruedYield(), 78);
         assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 2);
 
         vm.expectEmit();
-        emit IERC20.Transfer(alice, address(0), 500);
+        emit IERC20.Transfer(address(swapFacility), address(0), 500);
 
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldFee), 500, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.unwrap(alice, 500);
 
-        assertEq(mYieldFee.principalOf(alice), 1_000 - 1 - 463 - 464); // 72
-        assertEq(mYieldFee.balanceOf(alice), 1_000 - 1 - 499 - 500); // 0
-        assertEq(mYieldFee.accruedYieldOf(alice), 77);
+        assertEq(mYieldFee.principalOf(address(swapFacility)), 1_000 - 1 - 463 - 464); // 72
+        assertEq(mYieldFee.balanceOf(address(swapFacility)), 1_000 - 1 - 499 - 500); // 0
+        assertEq(mYieldFee.accruedYieldOf(address(swapFacility)), 77);
         assertEq(mYieldFee.totalPrincipal(), 1_000 - 464 - 463 - 1); // 72
         assertEq(mYieldFee.totalSupply(), 1_000 - 1 - 499 - 500); // 0
         assertEq(mYieldFee.totalAccruedYield(), 77);
         assertEq(mYieldFee.projectedTotalSupply(), 1_080 - 499 - 500 - 3);
 
-        assertEq(mToken.balanceOf(alice), 1000);
+        // M tokens are sent to SwapFacility and then forwarded to Alice
+        assertEq(mToken.balanceOf(address(swapFacility)), 1000);
         assertEq(mToken.balanceOf(address(mYieldFee)), 100);
+        assertEq(mToken.balanceOf(alice), 0);
     }
 
     function testFuzz_unwrap(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 balanceWithYield,
@@ -1314,7 +1402,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         (balanceWithYield, balance) = _getFuzzedBalances(
             currentIndex,
             balanceWithYield,
@@ -1322,24 +1410,32 @@ contract MYieldFeeUnitTests is BaseUnitTest {
             _getMaxAmount(currentIndex)
         );
 
-        _setupAccount(alice, balanceWithYield, balance);
+        _setupAccount(address(swapFacility), balanceWithYield, balance);
         unwrapAmount = uint240(bound(unwrapAmount, 0, _getMaxAmount(currentIndex) - balanceWithYield));
 
         mToken.setBalanceOf(address(mYieldFee), balanceWithYield);
+
+        vm.prank(alice);
+        mYieldFee.approve(address(swapFacility), unwrapAmount);
 
         if (unwrapAmount == 0) {
             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, (0)));
         } else if (unwrapAmount > balance) {
             vm.expectRevert(
-                abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, balance, unwrapAmount)
+                abi.encodeWithSelector(
+                    IMExtension.InsufficientBalance.selector,
+                    address(swapFacility),
+                    balance,
+                    unwrapAmount
+                )
             );
         } else {
             vm.expectEmit();
-            emit IERC20.Transfer(alice, address(0), unwrapAmount);
+            emit IERC20.Transfer(address(swapFacility), address(0), unwrapAmount);
         }
 
-        vm.prank(alice);
-        swapFacility.swapOutM(address(mYieldFee), unwrapAmount, alice);
+        vm.prank(address(swapFacility));
+        mYieldFee.unwrap(alice, unwrapAmount);
 
         if ((unwrapAmount == 0) || (unwrapAmount > balance)) return;
 
@@ -1361,22 +1457,28 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         uint256 aliceYield = (balanceWithYield <= balance) ? 0 : balanceWithYield - balance;
         uint256 yieldFee = _getYieldFee(aliceYield, feeRate);
 
-        assertEq(mYieldFee.balanceOf(alice), balance);
-        assertEq(mYieldFee.balanceOf(alice), mYieldFee.totalSupply());
+        assertEq(mYieldFee.balanceOf(address(swapFacility)), balance);
+        assertEq(mYieldFee.balanceOf(address(swapFacility)), mYieldFee.totalSupply());
 
         // Rounds up on unwrap for alice and down for total principal.
-        assertApproxEqAbs(mYieldFee.principalOf(alice), mYieldFee.totalPrincipal(), 1);
+        assertApproxEqAbs(mYieldFee.principalOf(address(swapFacility)), mYieldFee.totalPrincipal(), 1);
 
-        // TODO: fix test
-        // assertEq(mYieldFee.balanceWithYieldOf(alice), balance + aliceYield);
-        assertEq(mYieldFee.balanceWithYieldOf(alice), balance + mYieldFee.accruedYieldOf(alice));
+        assertEq(mYieldFee.balanceWithYieldOf(address(swapFacility)), balance + aliceYield);
+        assertEq(
+            mYieldFee.balanceWithYieldOf(address(swapFacility)),
+            balance + mYieldFee.accruedYieldOf(address(swapFacility))
+        );
 
         // Simulate M token balance.
         mToken.setBalanceOf(address(mYieldFee), balance + aliceYield + yieldFee);
 
-        // TODO: fix test
-        // assertEq(mYieldFee.balanceWithYieldOf(alice) + yieldFee, mYieldFee.projectedTotalSupply());
-        assertEq(mToken.balanceOf(alice), unwrapAmount);
+        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(address(swapFacility)), mYieldFee.projectedTotalSupply(), 15);
+        assertEq(mYieldFee.totalAccruedYield(), aliceYield);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
+
+        // M tokens are sent to SwapFacility and then forwarded to Alice
+        assertEq(mToken.balanceOf(address(swapFacility)), unwrapAmount);
+        assertEq(mToken.balanceOf(alice), 0);
     }
 
     /* ============ transfer ============ */
@@ -1408,11 +1510,11 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         mYieldFee.transfer(bob, 1_000);
     }
 
-    // TODO: add integration test
     function test_transfer() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -1458,9 +1560,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     function test_transfer_toSelf() external {
+        mYieldFee.setIsEarningEnabled(true);
         mYieldFee.setLatestRate(mYiedFeeEarnerRate);
 
-        // 10% index growth
+        // 10% M token index growth, 7.9% M Yield Fee index growth because of the 20% fee.
         vm.warp(startTimestamp + 30_057_038);
         assertEq(mYieldFee.currentIndex(), 1_079230399224);
 
@@ -1494,7 +1597,6 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     function testFuzz_transfer(
         bool earningEnabled,
-        uint32 rate,
         uint16 feeRate,
         uint128 latestIndex,
         uint240 aliceBalanceWithYield,
@@ -1505,7 +1607,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     ) external {
         _setupYieldFeeRate(feeRate);
 
-        uint128 currentIndex = _setupIndex(earningEnabled, rate, latestIndex);
+        uint128 currentIndex = _setupIndex(earningEnabled, latestIndex);
         (aliceBalanceWithYield, aliceBalance) = _getFuzzedBalances(
             currentIndex,
             aliceBalanceWithYield,
@@ -1574,40 +1676,36 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         uint240 aliceYield = aliceBalanceWithYield <= aliceBalance ? 0 : aliceBalanceWithYield - aliceBalance;
         uint240 bobYield = bobBalanceWithYield <= bobBalance ? 0 : bobBalanceWithYield - bobBalance;
+        uint256 yieldFee = _getYieldFee(aliceYield + bobYield, feeRate);
 
-        // TODO: fix test
-        // assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + aliceYield);
-        // assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + mYieldFee.accruedYieldOf(alice));
+        assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + aliceYield);
+        assertEq(mYieldFee.balanceWithYieldOf(alice), aliceBalance + mYieldFee.accruedYieldOf(alice));
 
-        // assertEq(mYieldFee.balanceWithYieldOf(bob), bobBalance + bobYield);
+        // Bob may gain more due to rounding.
+        assertApproxEqAbs(mYieldFee.balanceWithYieldOf(bob), bobBalance + bobYield, 10);
         assertEq(mYieldFee.balanceWithYieldOf(bob), bobBalance + mYieldFee.accruedYieldOf(bob));
 
         // Principal added or removed from totalPrincipal is rounded up when adding and rounded down when subtracting.
         assertApproxEqAbs(mYieldFee.totalPrincipal(), aliceBalanceWithYieldPrincipal + bobBalanceWithYieldPrincipal, 2);
         assertApproxEqAbs(mYieldFee.totalPrincipal(), mYieldFee.principalOf(alice) + mYieldFee.principalOf(bob), 2);
 
-        uint256 mBalance = aliceBalance +
-            aliceYield +
-            _getYieldFee(aliceYield, mYieldFee.feeRate()) +
-            bobBalance +
-            bobYield +
-            _getYieldFee(bobYield, mYieldFee.feeRate());
+        uint256 mBalance = aliceBalance + aliceYield + bobBalance + bobYield + yieldFee;
 
         // Simulate M token balance.
         mToken.setBalanceOf(address(mYieldFee), mBalance);
 
-        // TODO: fix test
-        // assertApproxEqAbs(
-        //     mYieldFee.projectedTotalSupply(),
-        //     mYieldFee.balanceWithYieldOf(alice) +
-        //         _getYieldFee(aliceYield, mYieldFee.feeRate()) +
-        //         mYieldFee.balanceWithYieldOf(bob) +
-        //         _getYieldFee(bobYield, mYieldFee.feeRate()),
-        //     0
-        // );
+        // projectedTotalSupply rounds up in favor of the protocol
+        assertApproxEqAbs(
+            mYieldFee.projectedTotalSupply(),
+            mYieldFee.balanceWithYieldOf(alice) + mYieldFee.balanceWithYieldOf(bob),
+            11
+        );
+
+        assertApproxEqAbs(mYieldFee.totalAccruedYield(), aliceYield + bobYield, 11);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
     }
 
-    /* ============ Fuzz Utils ============ */
+    /* ============ currentIndex Utils ============ */
 
     function _getCurrentIndex(
         uint128 latestIndex,
@@ -1620,11 +1718,13 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     latestIndex,
                     ContinuousIndexingMath.getContinuousIndex(
                         ContinuousIndexingMath.convertFromBasisPoints(latestRate),
-                        uint32(block.timestamp - latestUpdateTimestamp)
+                        uint32(mYieldFee.latestEarnerRateAccrualTimestamp() - latestUpdateTimestamp)
                     )
                 )
             );
     }
+
+    /* ============ Fuzz Utils ============ */
 
     function _setupAccount(
         address account,
@@ -1648,7 +1748,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     function _setupYieldFeeRate(uint16 rate) internal returns (uint16) {
         rate = uint16(bound(rate, 0, ONE_HUNDRED_PERCENT));
 
-        vm.prank(yieldFeeManager);
+        vm.prank(feeManager);
         mYieldFee.setFeeRate(rate);
 
         return rate;
@@ -1666,15 +1766,13 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         return latestIndex;
     }
 
-    function _setupIndex(bool earningEnabled, uint32 rate, uint128 latestIndex) internal returns (uint128) {
+    function _setupIndex(bool earningEnabled, uint128 latestIndex) internal returns (uint128) {
         mYieldFee.setLatestIndex(bound(latestIndex, EXP_SCALED_ONE, 10_000000000000));
 
         if (earningEnabled) {
-            // Earning is enabled when latestRate != 0
-            _setupLatestRate(rate);
+            mYieldFee.setIsEarningEnabled(true);
         } else {
-            // Earning is disabled when latestRate == 0
-            mYieldFee.setLatestRate(0);
+            mYieldFee.setIsEarningEnabled(false);
         }
 
         return mYieldFee.currentIndex();

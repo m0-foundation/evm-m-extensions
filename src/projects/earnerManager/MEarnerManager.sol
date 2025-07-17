@@ -11,6 +11,8 @@ import {
 import { IndexingMath } from "../../libs/IndexingMath.sol";
 import { UIntMath } from "../../../lib/common/src/libs/UIntMath.sol";
 
+import { IMExtension } from "../../interfaces/IMExtension.sol";
+import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 import { IMEarnerManager } from "./IMEarnerManager.sol";
 
 import { MExtension } from "../../MExtension.sol";
@@ -41,6 +43,9 @@ abstract contract MEarnerManagerStorageLayout {
         // Slot 3
         uint112 totalPrincipal;
         // Slot 4
+        bool wasEarningEnabled;
+        uint128 disableIndex;
+        // Slot 5
         mapping(address account => Account) accounts;
     }
 
@@ -68,14 +73,23 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     /// @inheritdoc IMEarnerManager
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
 
+    /* ============ Constructor ============ */
+
+    /**
+     * @custom:oz-upgrades-unsafe-allow constructor
+     * @notice Constructs MYieldFee Implementation contract
+     * @dev    Sets immutable storage.
+     * @param  mToken       The address of $M token.
+     * @param  swapFacility The address of Swap Facility.
+     */
+    constructor(address mToken, address swapFacility) MExtension(mToken, swapFacility) {}
+
     /* ============ Initializer ============ */
 
     /**
      * @dev   Initializes the M extension token with earner manager role and different fee tiers.
      * @param name               The name of the token (e.g. "M Earner Manager").
      * @param symbol             The symbol of the token (e.g. "MEM").
-     * @param mToken             The address of an M Token.
-     * @param swapFacility       The address of the Swap Facility.
      * @param admin              The address administrating the M extension. Can grant and revoke roles.
      * @param earnerManager      The address of earner manager
      * @param feeRecipient_      The address that will receive the fees from all the earners.
@@ -83,8 +97,6 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     function initialize(
         string memory name,
         string memory symbol,
-        address mToken,
-        address swapFacility,
         address admin,
         address earnerManager,
         address feeRecipient_
@@ -92,7 +104,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         if (admin == address(0)) revert ZeroAdmin();
         if (earnerManager == address(0)) revert ZeroEarnerManager();
 
-        __MExtension_init(name, symbol, mToken, swapFacility);
+        __MExtension_init(name, symbol);
 
         _setFeeRecipient(feeRecipient_);
 
@@ -134,11 +146,11 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
         if (yieldWithFee == 0) return (0, 0, 0);
 
-        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
-
         // Emit the appropriate `YieldClaimed` and `Transfer` events.
         emit YieldClaimed(account, yieldNetOfFee);
         emit Transfer(address(0), account, yieldWithFee);
+
+        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
 
         // NOTE: No change in principal, only the balance is updated to include the newly claimed yield.
         unchecked {
@@ -158,7 +170,55 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         _update(account, feeRecipient_, fee);
     }
 
+    /// @inheritdoc IMEarnerManager
+    function claimFor(
+        address[] calldata accounts
+    ) external returns (uint256[] memory yieldWithFees, uint256[] memory fees, uint256[] memory yieldNetOfFees) {
+        if (accounts.length == 0) revert ArrayLengthZero();
+
+        // Initialize the return arrays with the same length as the `accounts` array.
+        yieldWithFees = new uint256[](accounts.length);
+        fees = new uint256[](accounts.length);
+        yieldNetOfFees = new uint256[](accounts.length);
+
+        // NOTE: Expected to loop over unique whitelisted addresses; otherwise, no yield will be claimed.
+        for (uint256 index_ = 0; index_ < accounts.length; ++index_) {
+            (yieldWithFees[index_], fees[index_], yieldNetOfFees[index_]) = claimFor(accounts[index_]);
+        }
+    }
+
+    /// @inheritdoc IMExtension
+    function enableEarning() external override {
+        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
+
+        if ($.wasEarningEnabled) revert EarningCannotBeReenabled();
+
+        $.wasEarningEnabled = true;
+
+        emit EarningEnabled(currentIndex());
+
+        IMTokenLike(mToken).startEarning();
+    }
+
+    /// @inheritdoc IMExtension
+    function disableEarning() external override {
+        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
+
+        if ($.disableIndex != 0) revert EarningIsDisabled();
+
+        emit EarningDisabled($.disableIndex = currentIndex());
+
+        IMTokenLike(mToken).stopEarning(address(this));
+    }
+
     /* ============ External/Public view functions ============ */
+
+    /// @inheritdoc IMExtension
+    function isEarningEnabled() public view override returns (bool) {
+        MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
+
+        return $.wasEarningEnabled && $.disableIndex == 0;
+    }
 
     /// @inheritdoc IMEarnerManager
     function accruedYieldAndFeeOf(
@@ -234,6 +294,22 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
         return _getMEarnerManagerStorageLocation().accounts[account].feeRate;
     }
 
+    /// @inheritdoc IMExtension
+    function currentIndex() public view override returns (uint128) {
+        uint128 disableIndex_ = disableIndex();
+        return disableIndex_ == 0 ? IMTokenLike(mToken).currentIndex() : disableIndex_;
+    }
+
+    /// @inheritdoc IMEarnerManager
+    function disableIndex() public view returns (uint128) {
+        return _getMEarnerManagerStorageLocation().disableIndex;
+    }
+
+    /// @inheritdoc IMEarnerManager
+    function wasEarningEnabled() public view returns (bool) {
+        return _getMEarnerManagerStorageLocation().wasEarningEnabled;
+    }
+
     /* ============ Hooks For Internal Interactive Functions ============ */
 
     /**
@@ -254,6 +330,8 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      * @param  recipient The account receiving the minted M Extension token.
      */
     function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view override {
+        if (!isEarningEnabled()) revert EarningIsDisabled();
+
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
 
         _revertIfNotWhitelisted($, account);
@@ -308,15 +386,16 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
 
         emit AccountInfoSet(account, status, feeRate);
 
-        // Set up a new whitelisted account
+        // Claim yield for an `account` as the action below will lead to the change in the account info.
+        // NOTE: Handle addresses being re-whitelisted by claiming any previously accrued yield to the `feeRecipient`.
+        claimFor(account);
+
+        // Set up a new whitelisted account.
         if (!isWhitelisted_ && status) {
             accountInfo_.isWhitelisted = true;
             accountInfo_.feeRate = feeRate;
             return;
         }
-
-        // Claim yield as the action below will lead to the change in whitelisted account info.
-        claimFor(account);
 
         if (!status) {
             // Remove whitelisted account info.

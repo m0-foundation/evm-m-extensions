@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
+import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
+
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
@@ -23,7 +25,12 @@ contract BaseUnitTest is Helpers, Test {
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
+    bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
+    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
+    bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
 
     MockM public mToken;
     MockRateOracle public rateOracle;
@@ -36,11 +43,12 @@ contract BaseUnitTest is Helpers, Test {
 
     address public admin = makeAddr("admin");
     address public blacklistManager = makeAddr("blacklistManager");
+    address public earnerManager = makeAddr("earnerManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
 
     address public feeRecipient = makeAddr("feeRecipient");
-    address public yieldFeeManager = makeAddr("yieldFeeManager");
+    address public feeManager = makeAddr("feeManager");
     address public claimRecipientManager = makeAddr("claimRecipientManager");
 
     address public alice;
@@ -53,6 +61,8 @@ contract BaseUnitTest is Helpers, Test {
 
     address[] public accounts;
 
+    Options public mExtensionDeployOptions;
+
     function setUp() public virtual {
         vm.warp(startTimestamp);
 
@@ -62,11 +72,16 @@ contract BaseUnitTest is Helpers, Test {
         registrar = new MockRegistrar();
 
         swapFacility = SwapFacility(
-            UnsafeUpgrades.deployUUPSProxy(
-                address(new SwapFacility(address(mToken), address(registrar), makeAddr("swapAdapter"))),
+            UnsafeUpgrades.deployTransparentProxy(
+                address(new SwapFacility(address(mToken), address(registrar))),
+                admin,
                 abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
             )
         );
+
+        mExtensionDeployOptions.constructorData = abi.encode(address(mToken), address(swapFacility));
+
+        mToken.setEarnerRate(M_EARNER_RATE);
 
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, charlie, david];
@@ -91,6 +106,10 @@ contract BaseUnitTest is Helpers, Test {
 
     function _getMaxAmount(uint128 index_) internal pure returns (uint240) {
         return (uint240(type(uint112).max) * index_) / EXP_SCALED_ONE;
+    }
+
+    function _getPrincipal(uint256 amount, uint128 index) internal pure returns (uint112) {
+        return IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), index);
     }
 
     /* ============ Fuzz Utils ============ */

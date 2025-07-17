@@ -92,7 +92,7 @@ abstract contract Blacklistable is IBlacklistable, BlacklistableStorageLayout, A
      * @param $ The storage location of the blacklistable contract.
      * @param account The account to blacklist.
      */
-    function _blacklist(BlacklistableStorageStruct storage $, address account) internal virtual {
+    function _blacklist(BlacklistableStorageStruct storage $, address account) internal {
         _revertIfBlacklisted($, account);
 
         $.isBlacklisted[account] = true;
@@ -125,7 +125,7 @@ abstract contract Blacklistable is IBlacklistable, BlacklistableStorageLayout, A
     }
 
     /**
-     * @notice Internal function that reverts if an account is blacklisted.
+     * @notice Internal function that reverts if an account is not blacklisted.
      * @param $ The storage location of the blacklistable contract.
      * @param account The account to check.
      */

@@ -2,11 +2,17 @@
 
 pragma solidity 0.8.26;
 
+import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
+
+import {
+    IAccessControl
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
+import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
@@ -20,20 +26,20 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldToOne = MYieldToOne(
-            Upgrades.deployUUPSProxy(
-                "MYieldToOne.sol:MYieldToOne",
+        mYieldToOne = MYieldToOneHarness(
+            Upgrades.deployTransparentProxy(
+                "MYieldToOneHarness.sol:MYieldToOneHarness",
+                admin,
                 abi.encodeWithSelector(
-                    MYieldToOne.initialize.selector,
+                    MYieldToOneHarness.initialize.selector,
                     NAME,
                     SYMBOL,
-                    address(mToken),
-                    address(swapFacility),
                     yieldRecipient,
                     admin,
                     blacklistManager,
                     yieldRecipientManager
-                )
+                ),
+                mExtensionDeployOptions
             )
         );
     }
@@ -46,7 +52,12 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         // Check the initial state of the contract
         assertEq(mYieldToOne.mToken(), address(mToken));
+        assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
+
+        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
+        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
     }
 
     function test_yieldAccumulationAndClaim() external {
@@ -123,7 +134,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mToken.balanceOf(address(mYieldToOne)), 11373 + amount);
 
         // Disable earning for the contract
-        _removeFomList(EARNERS_LIST, address(mYieldToOne));
+        _removeFromList(EARNERS_LIST, address(mYieldToOne));
         mYieldToOne.disableEarning();
 
         assertFalse(mYieldToOne.isEarningEnabled());
@@ -161,7 +172,42 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         mYieldToOne.disableEarning();
     }
 
-    /* ============ swap in M with permit ============ */
+    /* ============ wrap ============ */
+
+    function test_wrap() external {
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        _swapInM(address(mYieldToOne), alice, alice, 5e6);
+
+        assertEq(mYieldToOne.balanceOf(alice), 5e6);
+        assertEq(mYieldToOne.totalSupply(), 5e6);
+
+        assertEq(mToken.balanceOf(alice), 5e6);
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 5e6, 1);
+
+        assertEq(mYieldToOne.yield(), 0);
+
+        _swapInM(address(mYieldToOne), alice, alice, 5e6);
+
+        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.totalSupply(), 10e6);
+
+        assertEq(mToken.balanceOf(alice), 0);
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 10e6, 2);
+
+        assertEq(mYieldToOne.yield(), 0);
+
+        // Move time forward to generate yield
+        vm.warp(vm.getBlockTimestamp() + 365 days);
+
+        assertEq(mYieldToOne.yield(), 42_3730);
+
+        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.totalSupply(), 10e6);
+    }
 
     function test_wrapWithPermits() external {
         _addToList(EARNERS_LIST, address(mYieldToOne));
@@ -177,5 +223,77 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         assertEq(mYieldToOne.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);
+    }
+
+    /* ============ unwrap ============ */
+
+    function test_unwrap() external {
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
+
+        mYieldToOne.setBalanceOf(alice, 10e6);
+        mYieldToOne.setTotalSupply(10e6);
+        _giveM(address(mYieldToOne), 10e6);
+
+        // 2 wei are lost due to rounding
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 10e6, 2);
+        assertEq(mToken.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.totalSupply(), 10e6);
+
+        // Move time forward to generate yield
+        vm.warp(vm.getBlockTimestamp() + 365 days);
+
+        assertEq(mYieldToOne.yield(), 42_3730);
+
+        _swapMOut(address(mYieldToOne), alice, alice, 5e6);
+
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 42_3730 + 5e6, 1);
+        assertEq(mToken.balanceOf(alice), 15e6);
+        assertEq(mYieldToOne.balanceOf(alice), 5e6);
+        assertEq(mYieldToOne.totalSupply(), 5e6);
+
+        _swapMOut(address(mYieldToOne), alice, alice, 5e6);
+
+        assertEq(mToken.balanceOf(alice), 20e6);
+
+        // Alice's full withdrawal would have reverted without yield.
+        // The 2 wei lost due to rounding were covered by the yield.
+        assertEq(mYieldToOne.yield(), 42_3730 - 2);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 42_3730 - 2);
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(mYieldToOne.totalSupply(), 0);
+    }
+
+    // TODO: add tests to unwrap with permits
+
+    /* ============ claimYield ============ */
+
+    function test_claimYield() external {
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
+
+        mYieldToOne.setBalanceOf(alice, 10e6);
+        mYieldToOne.setTotalSupply(10e6);
+        _giveM(address(mYieldToOne), 10e6);
+
+        // 2 wei are lost due to rounding
+        assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 10e6, 2);
+        assertEq(mYieldToOne.balanceOf(yieldRecipient), 0);
+
+        // Move time forward to generate yield
+        vm.warp(vm.getBlockTimestamp() + 365 days);
+
+        assertEq(mYieldToOne.yield(), 42_3730);
+        assertEq(mYieldToOne.totalSupply(), 10e6);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 10e6 + 42_3730); // Rounding error has been covered by yield
+
+        assertEq(mYieldToOne.claimYield(), 42_3730);
+
+        assertEq(mYieldToOne.yield(), 0);
+        assertEq(mYieldToOne.totalSupply(), 10e6 + 42_3730);
+        assertEq(mYieldToOne.balanceOf(yieldRecipient), 42_3730);
+        assertEq(mToken.balanceOf(address(mYieldToOne)), 10e6 + 42_3730);
     }
 }

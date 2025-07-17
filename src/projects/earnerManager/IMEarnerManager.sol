@@ -67,6 +67,9 @@ interface IMEarnerManager {
     /// @notice Emitted in `setAccountInfo` if the array is empty.
     error ArrayLengthZero();
 
+    /// @notice Emitted in `enableEarning` if earning was already previously enabled.
+    error EarningCannotBeReenabled();
+
     /* ============ Interactive Functions ============ */
 
     /**
@@ -77,6 +80,17 @@ interface IMEarnerManager {
      * @return yieldNetOfFee The amount of M extension yield net of fees.
      */
     function claimFor(address account) external returns (uint256, uint256, uint256);
+
+    /**
+     * @notice Claims accrued yield to the accounts and % in fees to fee recipient.
+     * @param  accounts The addresses of the accounts to claim yield for.
+     * @return yieldWithFees The total amount of M extension yield claimed for each account.
+     * @return fees The amount of M extension yield fee sent to fee recipient for each account.
+     * @return yieldNetOfFees The amount of M extension yield net of fees for each account.
+     */
+    function claimFor(
+        address[] calldata accounts
+    ) external returns (uint256[] memory yieldWithFees, uint256[] memory fees, uint256[] memory yieldNetOfFees);
 
     /**
      * @notice Sets the account info like:
@@ -136,6 +150,12 @@ interface IMEarnerManager {
 
     /// @notice The address of the yield fee recipient for all whitelisted accounts.
     function feeRecipient() external view returns (address);
+
+    /// @notice The M index when earning for the M extension was disabled.
+    function disableIndex() external view returns (uint128);
+
+    /// @notice Whether earning was enabled at least once for this M extension.
+    function wasEarningEnabled() external view returns (bool);
 
     /// @notice The projected total supply if all accrued yield was claimed at this moment.
     function projectedTotalSupply() external view returns (uint256);

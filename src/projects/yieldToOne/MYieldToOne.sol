@@ -40,14 +40,23 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     /// @inheritdoc IMYieldToOne
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
 
+    /* ============ Constructor ============ */
+
+    /**
+     * @custom:oz-upgrades-unsafe-allow constructor
+     * @notice Constructs MYieldToOne Implementation contract
+     * @dev    Sets immutable storage.
+     * @param  mToken       The address of $M token.
+     * @param  swapFacility The address of Swap Facility.
+     */
+    constructor(address mToken, address swapFacility) MExtension(mToken, swapFacility) {}
+
     /* ============ Initializer ============ */
 
     /**
      * @dev   Initializes the M extension token with yield claimable by a single recipient.
      * @param name                   The name of the token (e.g. "M Yield to One").
      * @param symbol                 The symbol of the token (e.g. "MYO").
-     * @param mToken                 The address of the M Token.
-     * @param swapFacility           The address of the Swap Facility.
      * @param yieldRecipient_        The address of an yield destination.
      * @param admin           The address of a admin.
      * @param blacklistManager       The address of a blacklist manager.
@@ -56,17 +65,15 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     function initialize(
         string memory name,
         string memory symbol,
-        address mToken,
-        address swapFacility,
         address yieldRecipient_,
         address admin,
         address blacklistManager,
         address yieldRecipientManager
-    ) public initializer {
+    ) public virtual initializer {
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (admin == address(0)) revert ZeroAdmin();
 
-        __MExtension_init(name, symbol, mToken, swapFacility);
+        __MExtension_init(name, symbol);
         __Blacklistable_init(blacklistManager);
 
         _setYieldRecipient(yieldRecipient_);
@@ -78,10 +85,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IMYieldToOne
-    function claimYield() external returns (uint256) {
+    function claimYield() public returns (uint256) {
         uint256 yield_ = yield();
 
-        if (yield_ == 0) revert NoYield();
+        if (yield_ == 0) return 0;
 
         emit YieldClaimed(yield_);
 
@@ -92,6 +99,9 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
 
     /// @inheritdoc IMYieldToOne
     function setYieldRecipient(address account) external onlyRole(YIELD_RECIPIENT_MANAGER_ROLE) {
+        // Claim yield for the previous yield recipient.
+        claimYield();
+
         _setYieldRecipient(account);
     }
 

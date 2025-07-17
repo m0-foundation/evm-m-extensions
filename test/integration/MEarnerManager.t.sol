@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 
@@ -19,18 +19,18 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         _fundAccounts();
 
         mEarnerManager = MEarnerManager(
-            Upgrades.deployUUPSProxy(
+            Upgrades.deployTransparentProxy(
                 "MEarnerManager.sol:MEarnerManager",
+                admin,
                 abi.encodeWithSelector(
                     MEarnerManager.initialize.selector,
                     NAME,
                     SYMBOL,
-                    address(mToken),
-                    address(swapFacility),
                     admin,
                     earnerManager,
                     feeRecipient
-                )
+                ),
+                mExtensionDeployOptions
             )
         );
     }
@@ -45,6 +45,8 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
     }
+
+    /* ============ yield ============ */
 
     function test_yieldAccumulationAndClaim() external {
         // Enable earning for the contract
@@ -147,7 +149,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertEq(mEarnerManager.balanceOf(feeRecipient), aliceFee + bobFee + carolFee + feeRecipientYield);
     }
 
-    function test_fieldRecipient() external {
+    function test_yieldRecipient() external {
         // Enable earning for the contract
         _addToList(EARNERS_LIST, address(mEarnerManager));
         mEarnerManager.enableEarning();
@@ -199,5 +201,326 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertEq(bobYield, 0);
         assertEq(bobFee, 0);
         assertEq(bobYieldNetOfFees, 0);
+    }
+
+    /* ============ wrap ============ */
+
+    function test_wrap() external {
+        _addToList(EARNERS_LIST, address(mEarnerManager));
+        mEarnerManager.enableEarning();
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 1_000); // 10% fee
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        assertEq(mEarnerManager.currentIndex(), 1_043072100803);
+
+        uint256 timeDelta = 72_426_135;
+
+        // 10% M token index growth == 10% M Earner Manager index growth
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_147378684081);
+        assertEq(mEarnerManager.currentIndex(), 1_147378684081);
+
+        _giveM(alice, 1_000e6);
+        _swapInM(address(mEarnerManager), alice, alice, 1_000e6);
+
+        // Total supply + yield: 1_000
+        // Alice balance with yield: 1_000
+        // Fee: 0
+        assertEq(mEarnerManager.principalOf(alice), 871_551837); // index has grown, so principal is not 1:1 with balance
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 0);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 0);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6);
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_000e6 - 1); // Rounds down
+
+        // 10% M token index growth == 10% M Earner Manager index growth.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_262115863006);
+        assertEq(mEarnerManager.currentIndex(), 1_262115863006);
+
+        // Total supply + yield: 1_100
+        // Alice balance with yield: 1_079
+        // Fee: 21
+
+        // Balance rounds up in favor of user, but -1 taken out of yield
+        assertEq(mEarnerManager.principalOf(alice), 871_551837);
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459);
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 + 1); // Rounds up in favor of the protocol
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_099_999398); // Rounds down in favor of the protocol
+
+        _giveM(alice, 1);
+        _swapInM(address(mEarnerManager), alice, alice, 1);
+
+        assertEq(mEarnerManager.principalOf(alice), 871_551837); // No change due to principal round down on wrap
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6 + 1);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459 - 1);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459);
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6 + 1);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 + 1);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_099_999398);
+
+        _giveM(alice, 2);
+        _swapInM(address(mEarnerManager), alice, alice, 2);
+
+        assertEq(mEarnerManager.principalOf(alice), 871_551837 + 1);
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6 + 1 + 2);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459 - 1);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459 + 1 + 1);
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837 + 1);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6 + 1 + 2);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 + 1 + 2);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_099_999398 + 2);
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+    }
+
+    function test_wrapWithPermits() external {
+        _addToList(EARNERS_LIST, address(mEarnerManager));
+        mEarnerManager.enableEarning();
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 1_000); // 10% fee
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        _swapInMWithPermitVRS(address(mEarnerManager), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+
+        assertEq(mEarnerManager.balanceOf(alice), 5e6);
+        assertEq(mToken.balanceOf(alice), 5e6);
+
+        _swapInMWithPermitSignature(address(mEarnerManager), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+
+        assertEq(mEarnerManager.balanceOf(alice), 10e6);
+        assertEq(mToken.balanceOf(alice), 0);
+    }
+
+    /* ============ unwrap ============ */
+
+    function test_unwrap() external {
+        _addToList(EARNERS_LIST, address(mEarnerManager));
+        mEarnerManager.enableEarning();
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 1_000); // 10% fee
+
+        // TODO: is this needed? Revert otherwise when approving swap facility to spend M Earner Manager
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(address(swapFacility), true, 0);
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        assertEq(mEarnerManager.currentIndex(), 1_043072100803);
+
+        uint256 timeDelta = 72_426_135;
+
+        _giveM(alice, 1_000e6);
+        _swapInM(address(mEarnerManager), alice, alice, 1_000e6);
+
+        // Total supply + yield: 1_000
+        // Alice balance with yield: 1_000
+        // Fee: 0
+        assertEq(mEarnerManager.principalOf(alice), 958_706497); // index has grown, so principal is not 1:1 with balance
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 0);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 0);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6);
+        assertEq(mEarnerManager.totalPrincipal(), 958_706497);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_000e6 - 1); // Rounds down
+
+        // 10% M token index growth == 10% M Earner Manager index growth.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_147378684080);
+        assertEq(mEarnerManager.currentIndex(), 1_147378684080);
+
+        // Balance rounds up in favor of user, but -1 taken out of yield
+        assertEq(mEarnerManager.principalOf(alice), 958_706497);
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459);
+        assertEq(mEarnerManager.totalPrincipal(), 958_706497);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 + 1); // Rounds up in favor of the protocol
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_099_999398); // Rounds down in favor of the protocol
+
+        _swapMOut(address(mEarnerManager), alice, alice, 1);
+
+        assertEq(mEarnerManager.principalOf(alice), 958_706497 - 1);
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6 - 1);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459 - 1);
+        assertEq(mEarnerManager.totalPrincipal(), 958_706497 - 1);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6 - 1);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_099_999398 - 1);
+
+        _swapMOut(address(mEarnerManager), alice, alice, 499_999999);
+
+        assertEq(mEarnerManager.principalOf(alice), 958_706497 - 1 - 435_775918);
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6 - 1 - 499_999999);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459 - 1 - 499_999999);
+        assertEq(mEarnerManager.totalPrincipal(), 958_706497 - 1 - 435_775918);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6 - 1 - 499_999999);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 - 499_999999);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_099_999398 - 1 - 499_999999);
+
+        _swapMOut(address(mEarnerManager), alice, alice, 500e6);
+
+        assertEq(mEarnerManager.principalOf(alice), 958_706497 - 1 - 435_775919 - 435_775918); // 87_154659
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6 - 1 - 499_999999 - 500e6); // 0
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459 - 1);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6 + 89_999459 - 1 - 499_999999 - 500e6 - 1);
+        assertEq(mEarnerManager.totalPrincipal(), 958_706497 - 1 - 435_775919 - 435_775918); // 87_154659
+        assertEq(mEarnerManager.totalSupply(), 1_000e6 - 1 - 499_999999 - 500e6); // 0
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 - 499_999999 - 500e6 - 1);
+
+        assertEq(mToken.balanceOf(alice), 1_010e6);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 89_999459 + 9_999939 - 1);
+    }
+
+    // TODO: add unwrap with permits test
+    // function test_unwrapWithPermits() external {
+    //     _addToList(EARNERS_LIST, address(mEarnerManager));
+    //     mEarnerManager.enableEarning();
+    //
+    //     vm.prank(earnerManager);
+    //     mEarnerManager.setAccountInfo(alice, true, 0); // 0% fee for simplicity
+    //
+    //     _giveM(alice, 1_000e6);
+    //     _swapInM(address(mEarnerManager), alice, alice, 1_000e6);
+    //
+    //     assertEq(mEarnerManager.balanceOf(alice), 1_000e6);
+    //     assertEq(mToken.balanceOf(address(mEarnerManager)), 1_000e6 - 1);
+    //
+    //     _swapMOutWithPermitVRS(address(mEarnerManager), alice, aliceKey, alice, 500e6, 0, block.timestamp);
+    //
+    //     assertEq(mEarnerManager.balanceOf(alice), 500e6);
+    //     assertEq(mToken.balanceOf(alice), 10e6 + 500e6);
+    //
+    //     _swapMOutWithPermitSignature(address(mEarnerManager), alice, aliceKey, alice, 500e6, 1, block.timestamp);
+    //
+    //     assertEq(mEarnerManager.balanceOf(alice), 0);
+    //     assertEq(mToken.balanceOf(alice), 10e6 + 1_000e6);
+    // }
+
+    /* ============ transfer ============ */
+
+    function test_transfer() external {
+        _addToList(EARNERS_LIST, address(mEarnerManager));
+        mEarnerManager.enableEarning();
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 1_000); // 10% fee
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(bob, true, 1_000); // 10% fee
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+        assertEq(mToken.balanceOf(bob), 10e6);
+
+        assertEq(mToken.currentIndex(), 1_043072100803);
+        assertEq(mEarnerManager.currentIndex(), 1_043072100803);
+
+        uint256 timeDelta = 72_426_135;
+
+        // 10% M token index growth == 10% M Earner Manager index growth
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_147378684081);
+        assertEq(mEarnerManager.currentIndex(), 1_147378684081);
+
+        _giveM(alice, 1_000e6);
+        _swapInM(address(mEarnerManager), alice, alice, 1_000e6);
+
+        // Total supply + yield: 1_000
+        // Alice balance with yield: 1_000
+        // Fee: 0
+        assertEq(mEarnerManager.principalOf(alice), 871_551837); // index has grown, so principal is not 1:1 with balance
+        assertEq(mEarnerManager.balanceOf(alice), 1_000e6);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 0);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 0);
+        assertEq(mEarnerManager.balanceWithYieldOf(alice), 1_000e6);
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837);
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6);
+        assertEq(mToken.balanceOf(address(mEarnerManager)), 1_000e6 - 1); // Rounds down
+
+        // 10% M token index growth == 10% M Earner Manager index growth.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_262115863006);
+        assertEq(mEarnerManager.currentIndex(), 1_262115863006);
+
+        vm.prank(alice);
+        mEarnerManager.transfer(bob, 500e6);
+
+        assertEq(mEarnerManager.principalOf(alice), 871_551837 - 396_160143);
+        assertEq(mEarnerManager.balanceOf(alice), 500e6);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939);
+
+        assertEq(mEarnerManager.principalOf(bob), 396_160143);
+        assertEq(mEarnerManager.balanceOf(bob), 500e6);
+        assertEq(mEarnerManager.accruedYieldOf(bob), 0);
+        assertEq(mEarnerManager.accruedFeeOf(bob), 0);
+
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+
+        // Principal is rounded up when adding and rounded down when subtracting.
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837);
+        assertEq(mEarnerManager.projectedTotalSupply(), 1_000e6 + 89_999459 + 9_999939 + 1);
+
+        // Then index grows again and we transfer again to bob
+        // 10% M token index growth == 10% M Earner Manager index growth.
+        vm.warp(vm.getBlockTimestamp() + timeDelta);
+
+        assertEq(mToken.currentIndex(), 1_388326690878);
+        assertEq(mEarnerManager.currentIndex(), 1_388326690878);
+
+        vm.prank(alice);
+        mEarnerManager.transfer(bob, 500e6);
+
+        assertEq(mEarnerManager.principalOf(alice), 871_551837 - 396_160143 - 360_145781); // 115_245913
+        assertEq(mEarnerManager.balanceOf(alice), 0);
+        assertEq(mEarnerManager.accruedYieldOf(alice), 89_999459 + 53_999621);
+        assertEq(mEarnerManager.accruedFeeOf(alice), 9_999939 + 5_999958);
+
+        assertEq(mEarnerManager.principalOf(bob), 396_160143 + 360_145781); // 1_231_697617
+        assertEq(mEarnerManager.balanceOf(bob), 1_000e6);
+        assertEq(mEarnerManager.accruedYieldOf(bob), 44_999730);
+        assertEq(mEarnerManager.accruedFeeOf(bob), 4_999970);
+
+        assertEq(mEarnerManager.totalSupply(), 1_000e6);
+
+        assertEq(mEarnerManager.totalPrincipal(), 871_551837);
+        assertEq(
+            mEarnerManager.projectedTotalSupply(),
+            1_000e6 + 89_999459 + 53_999621 + 9_999939 + 5_999958 + 44_999730 + 4_999970 + 1
+        );
     }
 }

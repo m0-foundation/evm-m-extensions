@@ -6,20 +6,16 @@ import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.
 
 contract MEarnerManagerHarness is MEarnerManager {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
+    constructor(address mToken, address swapFacility) MEarnerManager(mToken, swapFacility) {}
 
     function initialize(
         string memory name,
         string memory symbol,
-        address mToken,
-        address swapFacility,
         address admin,
         address earnerManager,
         address feeRecipient_
     ) public override initializer {
-        super.initialize(name, symbol, mToken, swapFacility, admin, earnerManager, feeRecipient_);
+        super.initialize(name, symbol, admin, earnerManager, feeRecipient_);
     }
 
     function setAccountOf(
@@ -45,5 +41,7 @@ contract MEarnerManagerHarness is MEarnerManager {
         _getMEarnerManagerStorageLocation().totalPrincipal = totalPrincipal_;
     }
 
-    // function setFeeRecipient
+    function setWasEarningEnabled(bool wasEarningEnabled_) external {
+        _getMEarnerManagerStorageLocation().wasEarningEnabled = wasEarningEnabled_;
+    }
 }

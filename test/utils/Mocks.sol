@@ -2,6 +2,10 @@
 
 pragma solidity 0.8.26;
 
+import {
+    Initializable
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 contract MockM {
@@ -199,7 +203,26 @@ contract MockMExtension is MockERC20 {
     }
 
     function unwrap(address recipient, uint256 amount) external {
-        _burn(ISwapFacility(swapFacility).msgSender(), amount);
-        mToken.transfer(swapFacility, amount);
+        _burn(msg.sender, amount);
+        mToken.transfer(msg.sender, amount);
+    }
+}
+
+contract MExtensionUpgrade is Initializable {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function bar() external pure returns (uint256) {
+        return 1;
+    }
+}
+
+contract MockSwapFacility {
+    address public msgSender;
+
+    function setMsgSender(address msgSender_) external {
+        msgSender = msgSender_;
     }
 }

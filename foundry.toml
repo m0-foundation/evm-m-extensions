@@ -12,6 +12,8 @@ ffi = true
 ast = true
 build_info = true
 extra_output = ["storageLayout"]
+no_match_coverage = "script|test"
+ignored_warnings_from = ["lib", "test", "script"]
 
 [profile.production]
 build_info = true

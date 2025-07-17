@@ -5,17 +5,21 @@ pragma solidity 0.8.26;
 import { Test } from "../../lib/forge-std/src/Test.sol";
 
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
+
+import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
 import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 import { IRegistrarLike } from "../../src/swap/interfaces/IRegistrarLike.sol";
 
-import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
+
+import { MExtensionHarness } from "../harness/MExtensionHarness.sol";
+import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -51,7 +55,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address public blacklistManager = makeAddr("blacklistManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
-    address public yieldFeeManager = makeAddr("yieldFeeManager");
+    address public feeManager = makeAddr("feeManager");
     address public claimRecipientManager = makeAddr("claimRecipientManager");
     address public earnerManager = makeAddr("earnerManager");
     address public feeRecipient = makeAddr("feeRecipient");
@@ -66,7 +70,8 @@ contract BaseIntegrationTest is Helpers, Test {
 
     address[] public accounts = [alice, bob, carol, charlie, david];
 
-    MYieldToOne public mYieldToOne;
+    MExtensionHarness public mExtension;
+    MYieldToOneHarness public mYieldToOne;
     MYieldFee public mYieldFee;
     MEarnerManager public mEarnerManager;
     SwapFacility public swapFacility;
@@ -75,9 +80,19 @@ contract BaseIntegrationTest is Helpers, Test {
     string public constant NAME = "M USD Extension";
     string public constant SYMBOL = "MUSDE";
 
+    Options public mExtensionDeployOptions;
+
     function setUp() public virtual {
         (alice, aliceKey) = makeAddrAndKey("alice");
         accounts = [alice, bob, carol, charlie, david];
+
+        swapFacility = SwapFacility(
+            UnsafeUpgrades.deployTransparentProxy(
+                address(new SwapFacility(address(mToken), address(registrar))),
+                admin,
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+            )
+        );
 
         address[] memory whitelistedTokens = new address[](3);
         whitelistedTokens[0] = WRAPPED_M;
@@ -85,24 +100,21 @@ contract BaseIntegrationTest is Helpers, Test {
         whitelistedTokens[2] = USDT;
 
         swapAdapter = new UniswapV3SwapAdapter(
-            WRAPPED_M, // baseToken (wrapped M)
+            WRAPPED_M,
+            address(swapFacility),
             UNISWAP_V3_ROUTER,
             admin,
             whitelistedTokens
         );
 
-        swapFacility = SwapFacility(
-            UnsafeUpgrades.deployUUPSProxy(
-                address(new SwapFacility(address(mToken), address(registrar), address(swapAdapter))),
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
-            )
-        );
+        mExtensionDeployOptions.constructorData = abi.encode(address(mToken), address(swapFacility));
 
         vm.startPrank(admin);
 
         swapFacility.grantRole(M_SWAPPER_ROLE, alice);
         swapFacility.grantRole(M_SWAPPER_ROLE, bob);
         swapFacility.grantRole(M_SWAPPER_ROLE, feeRecipient);
+        swapFacility.setTrustedRouter(address(swapAdapter), true);
 
         vm.stopPrank();
     }
@@ -112,7 +124,7 @@ contract BaseIntegrationTest is Helpers, Test {
         IRegistrarLike(registrar).addToList(list, account);
     }
 
-    function _removeFomList(bytes32 list, address account) internal {
+    function _removeFromList(bytes32 list, address account) internal {
         vm.prank(standardGovernor);
         IRegistrarLike(registrar).removeFromList(list, account);
     }
@@ -126,16 +138,16 @@ contract BaseIntegrationTest is Helpers, Test {
         vm.deal(account, amount);
     }
 
-    function _swapInM(address mExtension, address account, address recipient, uint256 amount) internal {
+    function _swapInM(address mExtension_, address account, address recipient, uint256 amount) internal {
         vm.prank(account);
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(account);
-        swapFacility.swapInM(mExtension, amount, recipient);
+        swapFacility.swapInM(mExtension_, amount, recipient);
     }
 
     function _swapInMWithPermitVRS(
-        address mExtension,
+        address mExtension_,
         address account,
         uint256 signerPrivateKey,
         address recipient,
@@ -143,7 +155,7 @@ contract BaseIntegrationTest is Helpers, Test {
         uint256 nonce,
         uint256 deadline
     ) internal {
-        (uint8 v_, bytes32 r_, bytes32 s_) = _getPermit(
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getMPermit(
             address(swapFacility),
             account,
             signerPrivateKey,
@@ -153,15 +165,37 @@ contract BaseIntegrationTest is Helpers, Test {
         );
 
         vm.prank(account);
-        swapFacility.swapInMWithPermit(mExtension, amount, recipient, deadline, v_, r_, s_);
+        swapFacility.swapInMWithPermit(mExtension_, amount, recipient, deadline, v_, r_, s_);
     }
 
-    function _swapMOut(address mExtension, address account, address recipient, uint256 amount) internal {
-        vm.prank(account);
-        IMExtension(mExtension).approve(address(swapFacility), amount);
+    function _swapInMWithPermitSignature(
+        address mExtension_,
+        address account,
+        uint256 signerPrivateKey,
+        address recipient,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal {
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getMPermit(
+            address(swapFacility),
+            account,
+            signerPrivateKey,
+            amount,
+            nonce,
+            deadline
+        );
 
         vm.prank(account);
-        swapFacility.swapOutM(mExtension, amount, recipient);
+        swapFacility.swapInMWithPermit(mExtension_, amount, recipient, deadline, abi.encodePacked(r_, s_, v_));
+    }
+
+    function _swapMOut(address mExtension_, address account, address recipient, uint256 amount) internal {
+        vm.prank(account);
+        IMExtension(mExtension_).approve(address(swapFacility), amount);
+
+        vm.prank(account);
+        swapFacility.swapOutM(mExtension_, amount, recipient);
     }
 
     function _set(bytes32 key, bytes32 value) internal {
@@ -182,8 +216,8 @@ contract BaseIntegrationTest is Helpers, Test {
         (, key_) = makeAddrAndKey(name_);
     }
 
-    function _getPermit(
-        address mExtension,
+    function _getMPermit(
+        address spender,
         address account,
         uint256 signerPrivateKey,
         uint256 amount,
@@ -197,7 +231,38 @@ contract BaseIntegrationTest is Helpers, Test {
                     abi.encodePacked(
                         "\x19\x01",
                         mToken.DOMAIN_SEPARATOR(),
-                        keccak256(abi.encode(mToken.PERMIT_TYPEHASH(), account, mExtension, amount, nonce, deadline))
+                        keccak256(abi.encode(mToken.PERMIT_TYPEHASH(), account, spender, amount, nonce, deadline))
+                    )
+                )
+            );
+    }
+
+    function _getExtensionPermit(
+        address extension,
+        address spender,
+        address account,
+        uint256 signerPrivateKey,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal view returns (uint8 v_, bytes32 r_, bytes32 s_) {
+        return
+            vm.sign(
+                signerPrivateKey,
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        IMExtension(extension).DOMAIN_SEPARATOR(),
+                        keccak256(
+                            abi.encode(
+                                IMExtension(extension).PERMIT_TYPEHASH(),
+                                account,
+                                spender,
+                                amount,
+                                nonce,
+                                deadline
+                            )
+                        )
                     )
                 )
             );
