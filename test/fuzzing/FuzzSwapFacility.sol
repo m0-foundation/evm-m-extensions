@@ -51,39 +51,39 @@ contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacili
         swapOutMPostconditions(success, returnData, params);
     }
 
-    function fuzz_swapInToken(uint256 seed) public setCurrentActor {
-        SwapInTokenParams memory params = swapInTokenPreconditions(seed);
+    // function fuzz_swapInToken(uint256 seed) public setCurrentActor {
+    //     SwapInTokenParams memory params = swapInTokenPreconditions(seed);
 
-        _before();
+    //     _before();
 
-        (bool success, bytes memory returnData) = _swapInTokenCall(
-            params.instance,
-            params.tokenIn,
-            params.amountIn,
-            params.extensionOut,
-            params.minAmountOut,
-            params.recipient,
-            params.path
-        );
+    //     (bool success, bytes memory returnData) = _swapInTokenCall(
+    //         params.instance,
+    //         params.tokenIn,
+    //         params.amountIn,
+    //         params.extensionOut,
+    //         params.minAmountOut,
+    //         params.recipient,
+    //         params.path
+    //     );
 
-        swapInTokenPostconditions(success, returnData, params);
-    }
+    //     swapInTokenPostconditions(success, returnData, params);
+    // }
 
-    function fuzz_swapOutToken(uint256 seed) public setCurrentActor {
-        SwapOutTokenParams memory params = swapOutTokenPreconditions(seed);
+    // function fuzz_swapOutToken(uint256 seed) public setCurrentActor {
+    //     SwapOutTokenParams memory params = swapOutTokenPreconditions(seed);
 
-        _before();
+    //     _before();
 
-        (bool success, bytes memory returnData) = _swapOutTokenCall(
-            params.instance,
-            params.extensionIn,
-            params.amountIn,
-            params.tokenOut,
-            params.minAmountOut,
-            params.recipient,
-            params.path
-        );
+    //     (bool success, bytes memory returnData) = _swapOutTokenCall(
+    //         params.instance,
+    //         params.extensionIn,
+    //         params.amountIn,
+    //         params.tokenOut,
+    //         params.minAmountOut,
+    //         params.recipient,
+    //         params.path
+    //     );
 
-        swapOutTokenPostconditions(success, returnData, params);
-    }
+    //     swapOutTokenPostconditions(success, returnData, params);
+    // }
 }

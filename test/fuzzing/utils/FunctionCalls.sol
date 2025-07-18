@@ -200,7 +200,7 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
         emit ClaimForCall(instance, account);
         vm.prank(currentActor);
         (success, returnData) = address(instance).call(
-            abi.encodeWithSelector(MEarnerManager.claimFor.selector, account)
+            abi.encodeWithSelector(bytes4(keccak256("claimFor(address)")), account)
         );
     }
 
@@ -338,53 +338,53 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
         );
     }
 
-    function _swapInTokenCall(
-        address instance,
-        address tokenIn,
-        uint256 amountIn,
-        address extensionOut,
-        uint256 minAmountOut,
-        address recipient,
-        bytes memory path
-    ) internal returns (bool success, bytes memory returnData) {
-        emit SwapInTokenCall(instance, tokenIn, amountIn, extensionOut, minAmountOut, recipient, path);
-        vm.prank(currentActor);
-        (success, returnData) = address(instance).call(
-            abi.encodeWithSelector(
-                SwapFacility.swapInToken.selector,
-                tokenIn,
-                amountIn,
-                extensionOut,
-                minAmountOut,
-                recipient,
-                path
-            )
-        );
-    }
+    // function _swapInTokenCall(
+    //     address instance,
+    //     address tokenIn,
+    //     uint256 amountIn,
+    //     address extensionOut,
+    //     uint256 minAmountOut,
+    //     address recipient,
+    //     bytes memory path
+    // ) internal returns (bool success, bytes memory returnData) {
+    //     emit SwapInTokenCall(instance, tokenIn, amountIn, extensionOut, minAmountOut, recipient, path);
+    //     vm.prank(currentActor);
+    //     (success, returnData) = address(instance).call(
+    //         abi.encodeWithSelector(
+    //             SwapFacility.swapInToken.selector,
+    //             tokenIn,
+    //             amountIn,
+    //             extensionOut,
+    //             minAmountOut,
+    //             recipient,
+    //             path
+    //         )
+    //     );
+    // }
 
-    function _swapOutTokenCall(
-        address instance,
-        address extensionIn,
-        uint256 amountIn,
-        address tokenOut,
-        uint256 minAmountOut,
-        address recipient,
-        bytes memory path
-    ) internal returns (bool success, bytes memory returnData) {
-        emit SwapOutTokenCall(instance, extensionIn, amountIn, tokenOut, minAmountOut, recipient, path);
-        vm.prank(currentActor);
-        (success, returnData) = address(instance).call(
-            abi.encodeWithSelector(
-                SwapFacility.swapOutToken.selector,
-                extensionIn,
-                amountIn,
-                tokenOut,
-                minAmountOut,
-                recipient,
-                path
-            )
-        );
-    }
+    // function _swapOutTokenCall(
+    //     address instance,
+    //     address extensionIn,
+    //     uint256 amountIn,
+    //     address tokenOut,
+    //     uint256 minAmountOut,
+    //     address recipient,
+    //     bytes memory path
+    // ) internal returns (bool success, bytes memory returnData) {
+    //     emit SwapOutTokenCall(instance, extensionIn, amountIn, tokenOut, minAmountOut, recipient, path);
+    //     vm.prank(currentActor);
+    //     (success, returnData) = address(instance).call(
+    //         abi.encodeWithSelector(
+    //             SwapFacility.swapOutToken.selector,
+    //             extensionIn,
+    //             amountIn,
+    //             tokenOut,
+    //             minAmountOut,
+    //             recipient,
+    //             path
+    //         )
+    //     );
+    // }
 
     function _mintCall(address account, uint256 amount) internal returns (bool success, bytes memory returnData) {
         emit MintCall(account, amount);

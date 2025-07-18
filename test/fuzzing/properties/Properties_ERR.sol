@@ -15,6 +15,9 @@ import { IStatefulERC712 } from "test/fuzzing/mocks/WrappedMToken.f.sol";
 import { IERC20Extended } from "test/fuzzing/mocks/WrappedMToken.f.sol";
 import { IUniswapV3SwapAdapter } from "src/swap/interfaces/IUniswapV3SwapAdapter.sol";
 import { IMExtension } from "src/interfaces/IMExtension.sol";
+import {
+    IAccessControl
+} from "lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 abstract contract Properties_ERR is RevertHandler {
     /*
@@ -57,7 +60,7 @@ abstract contract Properties_ERR is RevertHandler {
         allowedErrors[7] = IMYieldFee.ZeroAccount.selector;
 
         // IMYieldToOne errors
-        allowedErrors[8] = IMYieldToOne.NoYield.selector;
+        // allowedErrors[8] = IMYieldToOne.NoYield.selector;
         allowedErrors[9] = IMYieldToOne.ZeroYieldRecipient.selector;
         allowedErrors[10] = IMYieldToOne.ZeroYieldRecipientManager.selector;
         allowedErrors[11] = IMYieldToOne.ZeroAdmin.selector;
@@ -122,8 +125,10 @@ abstract contract Properties_ERR is RevertHandler {
         allowedErrors[52] = IWrappedMToken.ZeroMToken.selector;
         allowedErrors[53] = IWrappedMToken.ZeroMigrationAdmin.selector;
 
-        allowedErrors[54] = IUniswapV3SwapAdapter.ZeroBaseToken.selector;
-        allowedErrors[55] = IUniswapV3SwapAdapter.ZeroSwapRouter.selector;
+        allowedErrors[54] = IAccessControl.AccessControlUnauthorizedAccount.selector;
+        allowedErrors[55] = IAccessControl.AccessControlBadConfirmation.selector;
+        // allowedErrors[54] = IUniswapV3SwapAdapter.ZeroBaseToken.selector;
+        // allowedErrors[55] = IUniswapV3SwapAdapter.ZeroSwapRouter.selector;
         allowedErrors[56] = IUniswapV3SwapAdapter.ZeroToken.selector;
         allowedErrors[57] = IUniswapV3SwapAdapter.ZeroAmount.selector;
         allowedErrors[58] = IUniswapV3SwapAdapter.ZeroRecipient.selector;

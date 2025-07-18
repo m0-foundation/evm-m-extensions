@@ -25,21 +25,21 @@ contract FoundryPlayground is FuzzGuided {
         fuzz_swapOutM(1e6);
     }
 
-    function test_coverage_SwapInToken() public {
-        fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
+    // function test_coverage_SwapInToken() public {
+    //     fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
 
-        fuzz_mint(2e6);
-        setActor(USER2);
-        fuzz_warpWeeks(1);
-        setActor(USER2);
-        fuzz_swapInToken(1e6);
-        setActor(USER2);
-        fuzz_swapOutToken(1e6);
-    }
+    //     fuzz_mint(2e6);
+    //     setActor(USER2);
+    //     fuzz_warpWeeks(1);
+    //     setActor(USER2);
+    //     fuzz_swapInToken(1e6);
+    //     setActor(USER2);
+    //     fuzz_swapOutToken(1e6);
+    // }
 
-    function test_coverage_swapInToken() public {
-        fuzz_swapInToken(1e6);
-    }
+    // function test_coverage_swapInToken() public {
+    //     fuzz_swapInToken(1e6);
+    // }
 
     function test_coverage_allLiquiditySwaps() public {
         fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config

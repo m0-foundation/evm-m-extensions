@@ -129,16 +129,23 @@ contract FuzzSetup is FunctionCalls {
 
     function deployM0() internal {
         rateOracle = new MockRateOracle();
-        swapAdapter = new UniswapV3SwapAdapter(address(wMToken), address(v3SwapRouter), admin, whitelistedTokens);
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployUUPSProxy(
-                address(new SwapFacility(address(mToken), address(registrar), address(swapAdapter))),
+                address(new SwapFacility(address(mToken), address(registrar))),
                 abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
             )
         );
 
-        MYieldToOne mYieldToOne1Impl = new MYieldToOne();
+        swapAdapter = new UniswapV3SwapAdapter(
+            address(wMToken),
+            address(swapFacility),
+            address(v3SwapRouter),
+            admin,
+            whitelistedTokens
+        );
+
+        MYieldToOne mYieldToOne1Impl = new MYieldToOne(address(mToken), address(swapFacility));
         ERC1967Proxy mYieldToOne1Proxy = new ERC1967Proxy(
             address(mYieldToOne1Impl),
             abi.encodeWithSelector(
@@ -155,7 +162,7 @@ contract FuzzSetup is FunctionCalls {
         );
         mYieldToOne1 = MYieldToOne(address(mYieldToOne1Proxy));
 
-        MYieldToOne mYieldToOne2Impl = new MYieldToOne();
+        MYieldToOne mYieldToOne2Impl = new MYieldToOne(address(mToken), address(swapFacility));
         ERC1967Proxy mYieldToOne2Proxy = new ERC1967Proxy(
             address(mYieldToOne2Impl),
             abi.encodeWithSelector(
@@ -172,7 +179,7 @@ contract FuzzSetup is FunctionCalls {
         );
         mYieldToOne2 = MYieldToOne(address(mYieldToOne2Proxy));
 
-        MYieldToOne mYieldToOne3Impl = new MYieldToOne();
+        MYieldToOne mYieldToOne3Impl = new MYieldToOne(address(mToken), address(swapFacility));
         ERC1967Proxy mYieldToOne3Proxy = new ERC1967Proxy(
             address(mYieldToOne3Impl),
             abi.encodeWithSelector(
@@ -189,15 +196,13 @@ contract FuzzSetup is FunctionCalls {
         );
         mYieldToOne3 = MYieldToOne(address(mYieldToOne3Proxy));
 
-        MYieldFeeHarness mYieldFee1Impl = new MYieldFeeHarness();
+        MYieldFeeHarness mYieldFee1Impl = new MYieldFeeHarness(address(mToken), address(swapFacility));
         ERC1967Proxy mYieldFee1Proxy = new ERC1967Proxy(
             address(mYieldFee1Impl),
             abi.encodeWithSelector(
                 MYieldFeeHarness.initialize.selector,
                 "MYieldFee1",
                 "MYF1",
-                address(mToken),
-                address(swapFacility),
                 YIELD_FEE_RATE,
                 feeRecipient,
                 admin,
@@ -207,15 +212,13 @@ contract FuzzSetup is FunctionCalls {
         );
         mYieldFee1 = MYieldFeeHarness(address(mYieldFee1Proxy));
 
-        MYieldFeeHarness mYieldFee2Impl = new MYieldFeeHarness();
+        MYieldFeeHarness mYieldFee2Impl = new MYieldFeeHarness(address(mToken), address(swapFacility));
         ERC1967Proxy mYieldFee2Proxy = new ERC1967Proxy(
             address(mYieldFee2Impl),
             abi.encodeWithSelector(
                 MYieldFeeHarness.initialize.selector,
                 "MYieldFee2",
                 "MYF2",
-                address(mToken),
-                address(swapFacility),
                 YIELD_FEE_RATE,
                 feeRecipient,
                 admin,
@@ -225,15 +228,13 @@ contract FuzzSetup is FunctionCalls {
         );
         mYieldFee2 = MYieldFeeHarness(address(mYieldFee2Proxy));
 
-        MYieldFeeHarness mYieldFee3Impl = new MYieldFeeHarness();
+        MYieldFeeHarness mYieldFee3Impl = new MYieldFeeHarness(address(mToken), address(swapFacility));
         ERC1967Proxy mYieldFee3Proxy = new ERC1967Proxy(
             address(mYieldFee3Impl),
             abi.encodeWithSelector(
                 MYieldFeeHarness.initialize.selector,
                 "MYieldFee3",
                 "MYF3",
-                address(mToken),
-                address(swapFacility),
                 YIELD_FEE_RATE,
                 feeRecipient,
                 admin,
@@ -243,7 +244,7 @@ contract FuzzSetup is FunctionCalls {
         );
         mYieldFee3 = MYieldFeeHarness(address(mYieldFee3Proxy));
 
-        MEarnerManagerHarness mEarnerManager1Impl = new MEarnerManagerHarness();
+        MEarnerManagerHarness mEarnerManager1Impl = new MEarnerManagerHarness(address(mToken), address(swapFacility));
         ERC1967Proxy mEarnerManager1Proxy = new ERC1967Proxy(
             address(mEarnerManager1Impl),
             abi.encodeWithSelector(
@@ -259,15 +260,13 @@ contract FuzzSetup is FunctionCalls {
         );
         mEarnerManager1 = MEarnerManagerHarness(address(mEarnerManager1Proxy));
 
-        MEarnerManagerHarness mEarnerManager2Impl = new MEarnerManagerHarness();
+        MEarnerManagerHarness mEarnerManager2Impl = new MEarnerManagerHarness(address(mToken), address(swapFacility));
         ERC1967Proxy mEarnerManager2Proxy = new ERC1967Proxy(
             address(mEarnerManager2Impl),
             abi.encodeWithSelector(
                 MEarnerManagerHarness.initialize.selector,
                 "MEarnerManager2",
                 "MEM2",
-                address(mToken),
-                address(swapFacility),
                 admin,
                 earnerManager,
                 feeRecipient
@@ -275,15 +274,13 @@ contract FuzzSetup is FunctionCalls {
         );
         mEarnerManager2 = MEarnerManagerHarness(address(mEarnerManager2Proxy));
 
-        MEarnerManagerHarness mEarnerManager3Impl = new MEarnerManagerHarness();
+        MEarnerManagerHarness mEarnerManager3Impl = new MEarnerManagerHarness(address(mToken), address(swapFacility));
         ERC1967Proxy mEarnerManager3Proxy = new ERC1967Proxy(
             address(mEarnerManager3Impl),
             abi.encodeWithSelector(
                 MEarnerManagerHarness.initialize.selector,
                 "MEarnerManager3",
                 "MEM3",
-                address(mToken),
-                address(swapFacility),
                 admin,
                 earnerManager,
                 feeRecipient
@@ -348,6 +345,14 @@ contract FuzzSetup is FunctionCalls {
         mYieldFee1.enableEarning();
         mYieldFee2.enableEarning();
         mYieldFee3.enableEarning();
+
+        mEarnerManager1.enableEarning();
+        mEarnerManager2.enableEarning();
+        mEarnerManager3.enableEarning();
+
+        mYieldToOne1.enableEarning();
+        mYieldToOne2.enableEarning();
+        mYieldToOne3.enableEarning();
     }
 
     function setUsers() internal {
