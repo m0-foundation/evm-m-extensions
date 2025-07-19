@@ -69,25 +69,25 @@ contract FuzzMYieldFee is PreconditionsMYieldFee, PostconditionsMYieldFee {
         setClaimRecipientPostconditions(success, returnData);
     }
 
-    // function fuzz_enableEarning_MYieldFee(uint256 seed) public setCurrentActor {
-    //     address instance = enableEarningPreconditions_MYieldFee(seed);
+    function fuzz_enableEarning_MYieldFee(uint256 seed) public setCurrentActor {
+        address instance = enableEarningPreconditions_MYieldFee(seed);
 
-    //     _before();
+        _before();
 
-    //     (bool success, bytes memory returnData) = _enableEarningCall(instance);
+        (bool success, bytes memory returnData) = _enableEarningCall(instance);
 
-    //     enableEarningPostconditions_MYieldFee(success, returnData);
-    // }
+        enableEarningPostconditions_MYieldFee(success, returnData);
+    }
 
-    // function fuzz_disableEarning_MYieldFee(uint256 seed) public setCurrentActor {
-    //     address instance = disableEarningPreconditions_MYieldFee(seed);
+    function fuzz_disableEarning_MYieldFee(uint256 seed) public setCurrentActor {
+        address instance = disableEarningPreconditions_MYieldFee(seed);
 
-    //     _before();
+        _before();
 
-    //     (bool success, bytes memory returnData) = _disableEarningCall(instance);
+        (bool success, bytes memory returnData) = _disableEarningCall(instance);
 
-    //     disableEarningPostconditions_MYieldFee(success, returnData);
-    // }
+        disableEarningPostconditions_MYieldFee(success, returnData);
+    }
 
     function fuzz_approve_MYieldFee(uint256 seed) public setCurrentActor {
         ApproveParams memory params = approvePreconditions_MYieldFee(seed);

@@ -75,23 +75,23 @@ contract FuzzMEarnerManager is PreconditionsMEarnerManager, PostconditionsMEarne
         transferFromPostconditions_MEarnerManager(success, returnData);
     }
 
-    // function fuzz_enableEarning_MEarnerManager(uint256 seed) public setCurrentActor {
-    //     address instance = enableEarningPreconditions_MEarnerManager(seed);
+    function fuzz_enableEarning_MEarnerManager(uint256 seed) public setCurrentActor {
+        address instance = enableEarningPreconditions_MEarnerManager(seed);
 
-    //     _before();
+        _before();
 
-    //     (bool success, bytes memory returnData) = _enableEarningCall(instance);
+        (bool success, bytes memory returnData) = _enableEarningCall(instance);
 
-    //     enableEarningPostconditions_MEarnerManager(success, returnData);
-    // }
+        enableEarningPostconditions_MEarnerManager(success, returnData);
+    }
 
-    // function fuzz_disableEarning_MEarnerManager(uint256 seed) public setCurrentActor {
-    //     address instance = disableEarningPreconditions_MEarnerManager(seed);
+    function fuzz_disableEarning_MEarnerManager(uint256 seed) public setCurrentActor {
+        address instance = disableEarningPreconditions_MEarnerManager(seed);
 
-    //     _before();
+        _before();
 
-    //     (bool success, bytes memory returnData) = _disableEarningCall(instance);
+        (bool success, bytes memory returnData) = _disableEarningCall(instance);
 
-    //     disableEarningPostconditions_MEarnerManager(success, returnData);
-    // }
+        disableEarningPostconditions_MEarnerManager(success, returnData);
+    }
 }

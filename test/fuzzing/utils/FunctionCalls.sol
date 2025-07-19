@@ -9,6 +9,8 @@ import { MYieldFee } from "src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { SwapFacility } from "src/swap/SwapFacility.sol";
 import { MExtension } from "src/MExtension.sol";
 import { MToken } from "test/fuzzing/mocks/MToken.sol";
+import { IUniswapV3SwapAdapter } from "src/swap/UniswapV3SwapAdapter.sol";
+import { IMExtension } from "src/interfaces/IMExtension.sol";
 
 contract FunctionCalls is FuzzBase, FuzzStorageVariables {
     // MToken function calls
@@ -338,53 +340,53 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
         );
     }
 
-    // function _swapInTokenCall(
-    //     address instance,
-    //     address tokenIn,
-    //     uint256 amountIn,
-    //     address extensionOut,
-    //     uint256 minAmountOut,
-    //     address recipient,
-    //     bytes memory path
-    // ) internal returns (bool success, bytes memory returnData) {
-    //     emit SwapInTokenCall(instance, tokenIn, amountIn, extensionOut, minAmountOut, recipient, path);
-    //     vm.prank(currentActor);
-    //     (success, returnData) = address(instance).call(
-    //         abi.encodeWithSelector(
-    //             SwapFacility.swapInToken.selector,
-    //             tokenIn,
-    //             amountIn,
-    //             extensionOut,
-    //             minAmountOut,
-    //             recipient,
-    //             path
-    //         )
-    //     );
-    // }
+    function _swapInTokenCall(
+        address instance,
+        address tokenIn,
+        uint256 amountIn,
+        address extensionOut,
+        uint256 minAmountOut,
+        address recipient,
+        bytes memory path
+    ) internal returns (bool success, bytes memory returnData) {
+        emit SwapInTokenCall(instance, tokenIn, amountIn, extensionOut, minAmountOut, recipient, path);
+        vm.prank(currentActor);
+        (success, returnData) = address(instance).call(
+            abi.encodeWithSelector(
+                IUniswapV3SwapAdapter.swapIn.selector,
+                tokenIn,
+                amountIn,
+                extensionOut,
+                minAmountOut,
+                recipient,
+                path
+            )
+        );
+    }
 
-    // function _swapOutTokenCall(
-    //     address instance,
-    //     address extensionIn,
-    //     uint256 amountIn,
-    //     address tokenOut,
-    //     uint256 minAmountOut,
-    //     address recipient,
-    //     bytes memory path
-    // ) internal returns (bool success, bytes memory returnData) {
-    //     emit SwapOutTokenCall(instance, extensionIn, amountIn, tokenOut, minAmountOut, recipient, path);
-    //     vm.prank(currentActor);
-    //     (success, returnData) = address(instance).call(
-    //         abi.encodeWithSelector(
-    //             SwapFacility.swapOutToken.selector,
-    //             extensionIn,
-    //             amountIn,
-    //             tokenOut,
-    //             minAmountOut,
-    //             recipient,
-    //             path
-    //         )
-    //     );
-    // }
+    function _swapOutTokenCall(
+        address instance,
+        address extensionIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 minAmountOut,
+        address recipient,
+        bytes memory path
+    ) internal returns (bool success, bytes memory returnData) {
+        emit SwapOutTokenCall(instance, extensionIn, amountIn, tokenOut, minAmountOut, recipient, path);
+        vm.prank(currentActor);
+        (success, returnData) = address(instance).call(
+            abi.encodeWithSelector(
+                IUniswapV3SwapAdapter.swapOut.selector,
+                extensionIn,
+                amountIn,
+                tokenOut,
+                minAmountOut,
+                recipient,
+                path
+            )
+        );
+    }
 
     function _mintCall(address account, uint256 amount) internal returns (bool success, bytes memory returnData) {
         emit MintCall(account, amount);
@@ -408,13 +410,13 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
 
     function _enableEarningCall(address instance) internal returns (bool success, bytes memory returnData) {
         emit EnableEarningCall(instance);
-        vm.prank(currentActor);
-        (success, returnData) = address(instance).call(abi.encodeWithSelector(MYieldFee.enableEarning.selector));
+        // vm.prank(currentActor);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(IMExtension.enableEarning.selector));
     }
 
     function _disableEarningCall(address instance) internal returns (bool success, bytes memory returnData) {
         emit DisableEarningCall(instance);
-        vm.prank(currentActor);
-        (success, returnData) = address(instance).call(abi.encodeWithSelector(MYieldFee.disableEarning.selector));
+        // vm.prank(currentActor);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(IMExtension.disableEarning.selector));
     }
 }

@@ -9,6 +9,7 @@ contract MockRegistrar {
     address public vault;
 
     bytes32 public constant EARNERS_LIST_NAME = "earners";
+    bytes32 internal constant EARNERS_LIST_IGNORED = "earners_list_ignored";
 
     mapping(bytes32 key => bytes32 value) internal _values;
 
@@ -19,6 +20,9 @@ contract MockRegistrar {
     }
 
     function get(bytes32 key) external view returns (bytes32 value) {
+        if (key == EARNERS_LIST_IGNORED) {
+            return bytes32(uint256(1));
+        }
         return _values[key];
     }
 

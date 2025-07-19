@@ -9,7 +9,7 @@ contract PreconditionsBase is BeforeAfter {
     event LogAddress(address actor);
 
     modifier setCurrentActor() {
-        require(protocolSet);
+        require(protocolSet, "Protocol not set");
 
         if (_setActor) {
             uint256 fuzzNumber = generateFuzzNumber(iteration, SEED);

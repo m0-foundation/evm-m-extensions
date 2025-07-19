@@ -85,5 +85,12 @@ filterFunctions:
 "Fuzz.fuzz_warpDays(uint256)",
 "Fuzz.fuzz_allLiquidityUni(uint256,uint256,int24,int24,uint256)",
 "Fuzz.fuzz_swapZeroToOne(uint256)",
-"Fuzz.fuzz_swapOneToZero(uint256)"
+"Fuzz.fuzz_swapOneToZero(uint256)",
+"Fuzz.fuzz_disableEarning_MYieldToOne(uint256)",
+"Fuzz.fuzz_enableEarning_MYieldToOne(uint256)",
+"Fuzz.fuzz_disableEarning_MYieldFee(uint256)",
+"Fuzz.fuzz_enableEarning_MYieldFee(uint256)",
+"Fuzz.fuzz_enableEarning_MEarnerManager(uint256)",
+"Fuzz.fuzz_disableEarning_MEarnerManager(uint256)"
+
   ]

@@ -25,17 +25,17 @@ contract FoundryPlayground is FuzzGuided {
         fuzz_swapOutM(1e6);
     }
 
-    // function test_coverage_SwapInToken() public {
-    //     fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
+    function test_coverage_SwapInToken() public {
+        fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
 
-    //     fuzz_mint(2e6);
-    //     setActor(USER2);
-    //     fuzz_warpWeeks(1);
-    //     setActor(USER2);
-    //     fuzz_swapInToken(1e6);
-    //     setActor(USER2);
-    //     fuzz_swapOutToken(1e6);
-    // }
+        fuzz_mint(2e6);
+        setActor(USER2);
+        fuzz_warpWeeks(1);
+        setActor(USER2);
+        fuzz_swapInToken(1e6);
+        setActor(USER2);
+        fuzz_swapOutToken(1e6);
+    }
 
     // function test_coverage_swapInToken() public {
     //     fuzz_swapInToken(1e6);
@@ -50,6 +50,26 @@ contract FoundryPlayground is FuzzGuided {
         fuzz_swapZeroToOne(1e6);
         setActor(USER2);
         fuzz_swapOneToZero(1e6);
+    }
+
+    function test_enableEarning_MYieldToOne() public {
+        fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
+
+        fuzz_disableEarning_MYieldToOne(1);
+        fuzz_enableEarning_MYieldToOne(1);
+    }
+
+    function test_enableEarning_MYieldFee() public {
+        fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
+
+        fuzz_enableEarning_MYieldFee(1);
+        fuzz_disableEarning_MYieldFee(1);
+    }
+
+    function test_enableEarning_MEarnerManager() public {
+        fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
+        fuzz_enableEarning_MEarnerManager(1);
+        fuzz_disableEarning_MEarnerManager(1);
     }
 
     // function test_coverage_MEarnerManager() public {

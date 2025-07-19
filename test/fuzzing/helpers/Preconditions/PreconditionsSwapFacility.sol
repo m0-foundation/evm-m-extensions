@@ -28,7 +28,7 @@ contract PreconditionsSwapFacility is PreconditionsBase {
     }
 
     function swapInTokenPreconditions(uint256 seed) internal returns (SwapInTokenParams memory params) {
-        params.instance = address(swapFacility);
+        params.instance = address(swapAdapter);
         params.tokenIn = address(USDC);
         params.amountIn = fl.clamp(seed, 0, USDC.balanceOf(currentActor));
         params.extensionOut = allExtensions[seed % allExtensions.length];
@@ -38,7 +38,7 @@ contract PreconditionsSwapFacility is PreconditionsBase {
     }
 
     function swapOutTokenPreconditions(uint256 seed) internal returns (SwapOutTokenParams memory params) {
-        params.instance = address(swapFacility);
+        params.instance = address(swapAdapter);
         params.extensionIn = allExtensions[seed % allExtensions.length];
         params.amountIn = fl.clamp(seed, 0, IMTokenLike(params.extensionIn).balanceOf(currentActor));
         params.tokenOut = address(USDC);

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import { ERC20Extended } from "lib/common/src/ERC20Extended.sol";
 import { UIntMath } from "lib/common/src/libs/UIntMath.sol";
+import { console } from "forge-std/console.sol";
 
 import { IERC20 } from "lib/common/src/interfaces/IERC20.sol";
 
@@ -16,6 +17,7 @@ import { IRateModel } from "./interfaces/IRateModel.sol";
 import { ContinuousIndexing } from "./abstract/ContinuousIndexing.sol";
 import { ContinuousIndexingMath } from "./libs/ContinuousIndexingMath.sol";
 
+import { console } from "forge-std/console.sol";
 /*
 
 ███╗   ███╗    ████████╗ ██████╗ ██╗  ██╗███████╗███╗   ██╗
@@ -99,7 +101,8 @@ contract MToken is IMToken, ContinuousIndexing, ERC20Extended {
 
     /// @inheritdoc IMToken
     function startEarning() external {
-        if (!_isApprovedEarner(msg.sender)) revert NotApprovedEarner();
+        //NOTE: removed by fuzzer
+        // if (!_isApprovedEarner(msg.sender)) revert NotApprovedEarner();
 
         _startEarning(msg.sender);
     }
@@ -111,7 +114,8 @@ contract MToken is IMToken, ContinuousIndexing, ERC20Extended {
 
     /// @inheritdoc IMToken
     function stopEarning(address account_) external {
-        if (_isApprovedEarner(account_)) revert IsApprovedEarner();
+        //NOTE: removed by fuzzer
+        // if (_isApprovedEarner(account_)) revert IsApprovedEarner();
 
         _stopEarning(account_);
     }

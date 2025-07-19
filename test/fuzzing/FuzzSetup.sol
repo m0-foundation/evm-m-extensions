@@ -342,6 +342,10 @@ contract FuzzSetup is FunctionCalls {
         mEarnerManager2.setAccountOf(address(swapFacility), 0, 0, true, 0);
         mEarnerManager3.setAccountOf(address(swapFacility), 0, 0, true, 0);
 
+        mEarnerManager1.setAccountOf(address(swapAdapter), 0, 0, true, 0);
+        mEarnerManager2.setAccountOf(address(swapAdapter), 0, 0, true, 0);
+        mEarnerManager3.setAccountOf(address(swapAdapter), 0, 0, true, 0);
+
         mYieldFee1.enableEarning();
         mYieldFee2.enableEarning();
         mYieldFee3.enableEarning();
@@ -388,6 +392,12 @@ contract FuzzSetup is FunctionCalls {
             vm.prank(USERS[i]);
             weth.approve(address(v3SwapRouter), type(uint256).max);
 
+            vm.prank(USERS[i]);
+            USDC.approve(address(swapAdapter), type(uint256).max);
+
+            vm.prank(USERS[i]);
+            weth.approve(address(swapAdapter), type(uint256).max);
+
             mEarnerManager1.setAccountOf(USERS[i], 0, 0, true, 0);
             mEarnerManager2.setAccountOf(USERS[i], 0, 0, true, 0);
             mEarnerManager3.setAccountOf(USERS[i], 0, 0, true, 0);
@@ -395,6 +405,8 @@ contract FuzzSetup is FunctionCalls {
             for (uint256 j = 0; j < allExtensions.length; j++) {
                 vm.prank(USERS[i]);
                 IERC20(allExtensions[j]).approve(address(swapFacility), type(uint256).max);
+                vm.prank(USERS[i]);
+                IERC20(allExtensions[j]).approve(address(swapAdapter), type(uint256).max);
             }
         }
     }
