@@ -306,7 +306,12 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMYieldFee
     function earnerRate() public view virtual returns (uint32) {
-        return UIntMath.safe32((uint256(ONE_HUNDRED_PERCENT - feeRate()) * _currentEarnerRate()) / ONE_HUNDRED_PERCENT);
+        return
+            isEarningEnabled()
+                ? UIntMath.safe32(
+                    (uint256(ONE_HUNDRED_PERCENT - feeRate()) * _currentEarnerRate()) / ONE_HUNDRED_PERCENT
+                )
+                : 0;
     }
 
     /// @inheritdoc IMExtension

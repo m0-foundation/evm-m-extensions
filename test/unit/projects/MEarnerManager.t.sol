@@ -982,6 +982,13 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mEarnerManager.disableEarning();
     }
 
+    function test_disableEarning_earningWasNotEnabled() external {
+        mEarnerManager.setWasEarningEnabled(false);
+
+        vm.expectRevert(IMExtension.EarningIsDisabled.selector);
+        mEarnerManager.disableEarning();
+    }
+
     function test_disableEarning() external {
         mToken.setCurrentIndex(12e11);
 

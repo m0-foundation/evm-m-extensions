@@ -204,7 +204,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     function disableEarning() external override {
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
 
-        if ($.disableIndex != 0) revert EarningIsDisabled();
+        if (!isEarningEnabled()) revert EarningIsDisabled();
 
         emit EarningDisabled($.disableIndex = currentIndex());
 

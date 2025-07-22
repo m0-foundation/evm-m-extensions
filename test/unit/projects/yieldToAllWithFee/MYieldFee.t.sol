@@ -781,12 +781,22 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     /* ============ earnerRate ============ */
 
-    function test_earnerRate() external {
+    function test_earnerRate_earningIsEnabled() external {
         uint32 mEarnerRate = 415;
+        mYieldFee.setIsEarningEnabled(true);
 
         vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
 
         assertEq(mYieldFee.earnerRate(), _getEarnerRate(mEarnerRate, YIELD_FEE_RATE));
+    }
+
+    function test_earnerRate_earningIsDisabled() external {
+        uint32 mEarnerRate = 415;
+        mYieldFee.setIsEarningEnabled(false);
+
+        vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
+
+        assertEq(mYieldFee.earnerRate(), 0);
     }
 
     /* ============ _latestEarnerRateAccrualTimestamp ============ */
