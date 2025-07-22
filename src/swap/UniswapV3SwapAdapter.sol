@@ -138,6 +138,8 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, Reentranc
         _revertIfInvalidSwapOutPath(tokenOut, path);
         _revertIfZeroRecipient(recipient);
 
+        uint256 wrappedMBalanceBefore = IERC20(wrappedMToken).balanceOf(address(this));
+
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amountIn);
 
         // Swap the extensionIn to Wrapped $M token
@@ -156,8 +158,6 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, Reentranc
                 amountOutMinimum: minAmountOut
             })
         );
-
-        uint256 wrappedMBalanceBefore = IERC20(wrappedMToken).balanceOf(address(this));
 
         // NOTE: UniswapV3 router allows exactInput operations to not fully utilize
         //       the given input token amount if the pool does not have sufficient liquidity.
