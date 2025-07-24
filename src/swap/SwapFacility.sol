@@ -248,15 +248,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
         emit SwappedOutM(extensionIn, amount, recipient);
     }
 
-    /**
-     * @dev    Returns the M Token balance of `account`.
-     * @param  account The account being queried.
-     * @return balance The M Token balance of the account.
-     */
-    function _mBalanceOf(address account) internal view returns (uint256) {
-        return IMTokenLike(mToken).balanceOf(account);
-    }
-
     /* ============ Private View/Pure Functions ============ */
 
     /**
