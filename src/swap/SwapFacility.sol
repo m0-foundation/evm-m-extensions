@@ -4,9 +4,6 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {
-    AccessControlUpgradeable
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
@@ -21,7 +18,7 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock {
+contract SwapFacility is ISwapFacility, ReentrancyLock {
     using SafeERC20 for IERC20;
 
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
@@ -58,8 +55,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
      */
     function initialize(address admin) external initializer {
         __ReentrancyLock_init(admin);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     /* ============ Interactive Functions ============ */
