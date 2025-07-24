@@ -3,7 +3,6 @@
 pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
@@ -19,8 +18,6 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
  * @author M0 Labs
  */
 contract SwapFacility is ISwapFacility, ReentrancyLock {
-    using SafeERC20 for IERC20;
-
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
 
