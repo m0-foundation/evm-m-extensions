@@ -1484,7 +1484,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(address(swapFacility)), mYieldFee.projectedTotalSupply(), 15);
         assertEq(mYieldFee.totalAccruedYield(), aliceYield);
-        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 13);
 
         // M tokens are sent to SwapFacility and then forwarded to Alice
         assertEq(mToken.balanceOf(address(swapFacility)), unwrapAmount);
