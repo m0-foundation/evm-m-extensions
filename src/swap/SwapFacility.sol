@@ -269,7 +269,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
 
     /**
      * @dev   Reverts if `account` is not an approved M token swapper.
-     * @param account Address of an extension.
+     * @param account Address of the account to check.
      */
     function _revertIfNotApprovedSwapper(address account) private view {
         if (!hasRole(M_SWAPPER_ROLE, account)) revert NotApprovedSwapper(account);
