@@ -49,20 +49,20 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, USER);
 
-        // TODO: Remove this when Wrapped M is upgraded to V2
-        address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
-        address earnerManager = address(new Proxy(earnerManagerImplementation));
-        address wrappedMTokenImplementationV2 = address(
-            new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
-        );
+        // // TODO: Remove this when Wrapped M is upgraded to V2
+        // address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
+        // address earnerManager = address(new Proxy(earnerManagerImplementation));
+        // address wrappedMTokenImplementationV2 = address(
+        //     new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
+        // );
 
-        // Ignore earners migration
-        address wrappedMTokenMigratorV1 = address(
-            new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
-        );
+        // // Ignore earners migration
+        // address wrappedMTokenMigratorV1 = address(
+        //     new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
+        // );
 
-        vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
-        WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
+        // vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
+        // WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
     }
 
     function test_swap_mYieldToOne_to_wrappedM() public {
@@ -80,7 +80,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
 
-        assertEq(wrappedMBalanceAfter, wrappedMBalanceBefore + amount);
+        assertEq(wrappedMBalanceAfter, wrappedMBalanceBefore + amount - 1); // WrappedM V1 rounding error
         assertEq(mYieldToOne.balanceOf(USER), 0);
     }
 
@@ -93,7 +93,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         IERC20(WRAPPED_M).approve(address(swapFacility), amount);
         swapFacility.swap(WRAPPED_M, address(mYieldToOne), amount, USER);
 
-        assertEq(IERC20(address(mYieldToOne)).balanceOf(USER), amount);
+        assertEq(IERC20(address(mYieldToOne)).balanceOf(USER), amount - 1); // WrappedM V1 rounding error
         assertEq(IERC20(WRAPPED_M).balanceOf(USER), 0);
     }
 
@@ -120,14 +120,15 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
     /// forge-config: ci.fuzz.runs = 10
     /// forge-config: ci.fuzz.depth = 2
     function testFuzz_swap_mYieldToOne_to_wrappedM(uint256 amount) public {
-        // Ensure the amount is not zero and does not exceed the user's balance
-        vm.assume(amount > 0);
+        // Ensure the amount is not zero, above 1 to account for possible rounding, and does not exceed the user's balance
+        vm.assume(amount > 1);
         vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource));
 
         uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
 
         _giveM(USER, amount);
         vm.startPrank(USER);
+
         IERC20(address(mToken)).approve(address(swapFacility), amount);
         swapFacility.swapInM(address(mYieldToOne), amount, USER);
 
@@ -138,7 +139,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
 
-        assertEq(wrappedMBalanceAfter, wrappedMBalanceBefore + amount);
+        assertApproxEqAbs(wrappedMBalanceAfter, wrappedMBalanceBefore + amount, 2); // WrappedM V1 rounding error
         assertEq(mYieldToOne.balanceOf(USER), 0);
     }
 

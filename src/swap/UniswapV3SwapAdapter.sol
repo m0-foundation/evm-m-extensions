@@ -146,6 +146,9 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, Reentranc
         if (extensionIn != wrappedMToken) {
             IERC20(extensionIn).approve(address(swapFacility), amountIn);
             ISwapFacility(swapFacility).swap(extensionIn, wrappedMToken, amountIn, address(this));
+
+            // NOTE: added to support WrappedM V1 extension, should be removed in the future after upgrade to WrappedM V2.
+            amountIn = IERC20(wrappedMToken).balanceOf(address(this)) - wrappedMBalanceBefore;
         }
 
         // Swap Wrapped $M to tokenOut in Uniswap V3 pool

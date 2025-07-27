@@ -199,9 +199,16 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
+        // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
+        uint256 balanceBefore = _mBalanceOf(address(this));
+
         // NOTE: Amount and recipient validation is performed in Extensions.
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
         IMExtension(extensionIn).unwrap(address(this), amount);
+
+        // NOTE: Calculate amount as $M Token balance difference
+        //       to account for WrappedM V1 rounding errors.
+        amount = _mBalanceOf(address(this)) - balanceBefore;
 
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
@@ -232,15 +239,32 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
     function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
+        // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
+        uint256 balanceBefore = _mBalanceOf(address(this));
+
         // NOTE: Amount and recipient validation is performed in Extensions.
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
         IMExtension(extensionIn).unwrap(address(this), amount);
+
+        // NOTE: Calculate amount as $M Token balance difference
+        //       to account for WrappedM V1 rounding errors.
+        amount = _mBalanceOf(address(this)) - balanceBefore;
+
         IERC20(mToken).transfer(recipient, amount);
 
         emit SwappedOutM(extensionIn, amount, recipient);
     }
 
     /* ============ Private View/Pure Functions ============ */
+
+    /**
+     * @dev    Returns the M Token balance of `account`.
+     * @param  account The account being queried.
+     * @return balance The M Token balance of the account.
+     */
+    function _mBalanceOf(address account) internal view returns (uint256) {
+        return IMTokenLike(mToken).balanceOf(account);
+    }
 
     /**
      * @dev   Reverts if `extension` is not an approved earner.

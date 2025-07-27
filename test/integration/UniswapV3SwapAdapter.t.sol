@@ -50,20 +50,20 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, USER);
 
-        // TODO: Remove this when Wrapped M is upgraded to V2
-        address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
-        address earnerManager = address(new Proxy(earnerManagerImplementation));
-        address wrappedMTokenImplementationV2 = address(
-            new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
-        );
+        // // TODO: Remove this when Wrapped M is upgraded to V2
+        // address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
+        // address earnerManager = address(new Proxy(earnerManagerImplementation));
+        // address wrappedMTokenImplementationV2 = address(
+        //     new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
+        // );
 
-        // Ignore earners migration
-        address wrappedMTokenMigratorV1 = address(
-            new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
-        );
+        // // Ignore earners migration
+        // address wrappedMTokenMigratorV1 = address(
+        //     new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
+        // );
 
-        vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
-        WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
+        // vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
+        // WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
     }
 
     function test_initialState() external {
