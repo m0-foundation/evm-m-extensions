@@ -200,7 +200,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
         // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
-        uint256 balanceBefore = _mBalanceOf(address(this));
+        uint256 mBalanceBefore = _mBalanceOf(address(this));
 
         // NOTE: Amount and recipient validation is performed in Extensions.
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
@@ -208,7 +208,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
 
         // NOTE: Calculate amount as $M Token balance difference
         //       to account for WrappedM V1 rounding errors.
-        amount = _mBalanceOf(address(this)) - balanceBefore;
+        amount = _mBalanceOf(address(this)) - mBalanceBefore;
 
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
@@ -240,7 +240,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
         // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
-        uint256 balanceBefore = _mBalanceOf(address(this));
+        uint256 mBalanceBefore = _mBalanceOf(address(this));
 
         // NOTE: Amount and recipient validation is performed in Extensions.
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
@@ -248,7 +248,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
 
         // NOTE: Calculate amount as $M Token balance difference
         //       to account for WrappedM V1 rounding errors.
-        amount = _mBalanceOf(address(this)) - balanceBefore;
+        amount = _mBalanceOf(address(this)) - mBalanceBefore;
 
         IERC20(mToken).transfer(recipient, amount);
 

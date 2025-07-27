@@ -6,7 +6,7 @@ import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.s
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
@@ -20,12 +20,12 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldFee = MYieldFee(
+        mYieldFee = MYieldFeeHarness(
             Upgrades.deployTransparentProxy(
-                "MYieldFee.sol:MYieldFee",
+                "MYieldFeeHarness.sol:MYieldFeeHarness",
                 admin,
                 abi.encodeWithSelector(
-                    MYieldFee.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     NAME,
                     SYMBOL,
                     YIELD_FEE_RATE,
