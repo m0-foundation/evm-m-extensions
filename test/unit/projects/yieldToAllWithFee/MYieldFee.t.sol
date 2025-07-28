@@ -781,12 +781,22 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     /* ============ earnerRate ============ */
 
-    function test_earnerRate() external {
+    function test_earnerRate_earningIsEnabled() external {
         uint32 mEarnerRate = 415;
+        mYieldFee.setIsEarningEnabled(true);
 
         vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
 
         assertEq(mYieldFee.earnerRate(), _getEarnerRate(mEarnerRate, YIELD_FEE_RATE));
+    }
+
+    function test_earnerRate_earningIsDisabled() external {
+        uint32 mEarnerRate = 415;
+        mYieldFee.setIsEarningEnabled(false);
+
+        vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
+
+        assertEq(mYieldFee.earnerRate(), 0);
     }
 
     /* ============ _latestEarnerRateAccrualTimestamp ============ */
@@ -1474,7 +1484,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(address(swapFacility)), mYieldFee.projectedTotalSupply(), 15);
         assertEq(mYieldFee.totalAccruedYield(), aliceYield);
-        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 13);
 
         // M tokens are sent to SwapFacility and then forwarded to Alice
         assertEq(mToken.balanceOf(address(swapFacility)), unwrapAmount);

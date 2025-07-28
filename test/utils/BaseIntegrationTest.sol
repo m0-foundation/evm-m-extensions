@@ -9,6 +9,7 @@ import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousInde
 import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
 import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
+import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 import { IRegistrarLike } from "../../src/swap/interfaces/IRegistrarLike.sol";
@@ -20,6 +21,7 @@ import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 import { MExtensionHarness } from "../harness/MExtensionHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
+import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { Helpers } from "./Helpers.sol";
 
@@ -28,6 +30,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address public constant registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
     IMTokenLike public constant mToken = IMTokenLike(0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b);
+    IERC20 public constant wrappedM = IERC20(0x437cc33344a0B27A429f795ff6B469C72698B291);
 
     uint16 public constant YIELD_FEE_RATE = 2000; // 20%
 
@@ -72,7 +75,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
     MExtensionHarness public mExtension;
     MYieldToOneHarness public mYieldToOne;
-    MYieldFee public mYieldFee;
+    MYieldFeeHarness public mYieldFee;
     MEarnerManager public mEarnerManager;
     SwapFacility public swapFacility;
     UniswapV3SwapAdapter public swapAdapter;

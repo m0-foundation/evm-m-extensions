@@ -3,10 +3,6 @@
 pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {
-    AccessControlUpgradeable
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
@@ -21,9 +17,7 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock {
-    using SafeERC20 for IERC20;
-
+contract SwapFacility is ISwapFacility, ReentrancyLock {
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
 
@@ -58,8 +52,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
      */
     function initialize(address admin) external initializer {
         __ReentrancyLock_init(admin);
-
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
     }
 
     /* ============ Interactive Functions ============ */
@@ -207,9 +199,16 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
+        // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
+        uint256 mBalanceBefore = _mBalanceOf(address(this));
+
         // NOTE: Amount and recipient validation is performed in Extensions.
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
         IMExtension(extensionIn).unwrap(address(this), amount);
+
+        // NOTE: Calculate amount as $M Token balance difference
+        //       to account for WrappedM V1 rounding errors.
+        amount = _mBalanceOf(address(this)) - mBalanceBefore;
 
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
@@ -240,13 +239,23 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
+        // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
+        uint256 mBalanceBefore = _mBalanceOf(address(this));
+
         // NOTE: Amount and recipient validation is performed in Extensions.
         // Recipient parameter is ignored in the MExtension, keeping it for backward compatibility.
         IMExtension(extensionIn).unwrap(address(this), amount);
+
+        // NOTE: Calculate amount as $M Token balance difference
+        //       to account for WrappedM V1 rounding errors.
+        amount = _mBalanceOf(address(this)) - mBalanceBefore;
+
         IERC20(mToken).transfer(recipient, amount);
 
         emit SwappedOutM(extensionIn, amount, recipient);
     }
+
+    /* ============ Private View/Pure Functions ============ */
 
     /**
      * @dev    Returns the M Token balance of `account`.
@@ -256,8 +265,6 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
     function _mBalanceOf(address account) internal view returns (uint256) {
         return IMTokenLike(mToken).balanceOf(account);
     }
-
-    /* ============ Private View/Pure Functions ============ */
 
     /**
      * @dev   Reverts if `extension` is not an approved earner.
@@ -269,7 +276,7 @@ contract SwapFacility is ISwapFacility, AccessControlUpgradeable, ReentrancyLock
 
     /**
      * @dev   Reverts if `account` is not an approved M token swapper.
-     * @param account Address of an extension.
+     * @param account Address of the account to check.
      */
     function _revertIfNotApprovedSwapper(address account) private view {
         if (!hasRole(M_SWAPPER_ROLE, account)) revert NotApprovedSwapper(account);

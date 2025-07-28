@@ -50,20 +50,20 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, USER);
 
-        // TODO: Remove this when Wrapped M is upgraded to V2
-        address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
-        address earnerManager = address(new Proxy(earnerManagerImplementation));
-        address wrappedMTokenImplementationV2 = address(
-            new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
-        );
+        // // TODO: Remove this when Wrapped M is upgraded to V2
+        // address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
+        // address earnerManager = address(new Proxy(earnerManagerImplementation));
+        // address wrappedMTokenImplementationV2 = address(
+        //     new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
+        // );
 
-        // Ignore earners migration
-        address wrappedMTokenMigratorV1 = address(
-            new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
-        );
+        // // Ignore earners migration
+        // address wrappedMTokenMigratorV1 = address(
+        //     new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
+        // );
 
-        vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
-        WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
+        // vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
+        // WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
     }
 
     function test_initialState() external {
@@ -108,6 +108,34 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
 
         assertEq(usdcBalanceAfter, usdcBalanceBefore - amountIn);
         assertApproxEqAbs(mYieldToOneBalanceAfter, mYieldToOneBalanceBefore + amountIn, 1000);
+    }
+
+    function test_swapIn_USDC_to_mYieldToOne_remainingBalance() public {
+        uint256 amountIn = 20_000_000e6;
+        uint256 minAmountOut = 997_000;
+
+        address usdcWhale = 0xaD354CfBAa4A8572DD6Df021514a3931A8329Ef5;
+        address uniPool = 0x970A7749EcAA4394C8B2Bf5F2471F41FD6b79288;
+
+        uint256 usdcBalanceBefore = IERC20(USDC).balanceOf(usdcWhale);
+        uint256 mYieldToOneBalanceBefore = mYieldToOne.balanceOf(usdcWhale);
+        uint256 poolBalanceAfter = IERC20(USDC).balanceOf(uniPool);
+
+        assertEq(mYieldToOneBalanceBefore, 0);
+
+        vm.startPrank(usdcWhale);
+        IERC20(USDC).approve(address(swapAdapter), amountIn);
+        swapAdapter.swapIn(USDC, amountIn, address(mYieldToOne), minAmountOut, usdcWhale, "");
+
+        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(usdcWhale);
+        uint256 mYieldToOneBalanceAfter = mYieldToOne.balanceOf(usdcWhale);
+
+        assertApproxEqAbs(usdcBalanceBefore - usdcBalanceAfter, mYieldToOneBalanceAfter, 4_000e6);
+
+        assertEq(IERC20(WRAPPED_M).balanceOf(address(swapAdapter)), 0);
+        assertEq(IERC20(WRAPPED_M).balanceOf(address(swapFacility)), 0);
+        assertEq(IERC20(USDC).balanceOf(address(swapFacility)), 0);
+        assertEq(IERC20(USDC).balanceOf(address(swapAdapter)), 0);
     }
 
     function test_swapIn_USDC_to_mYieldToOne_blacklistedAccount() public {
@@ -234,5 +262,34 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
 
         uint256 usdtBalanceAfter = IERC20(USDT).balanceOf(USER);
         assertApproxEqAbs(usdtBalanceAfter, usdtBalanceBefore + amountIn, 1000);
+    }
+
+    function test_swapOut_wrappedM_to_USDC_remainingBalance() public {
+        uint256 amountIn = 20_000_000e6;
+        uint256 minAmountOut = 997_000;
+
+        address wrappedMWhale = 0x4Cbc25559DbBD1272EC5B64c7b5F48a2405e6470;
+        address uniPool = 0x970A7749EcAA4394C8B2Bf5F2471F41FD6b79288;
+
+        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(wrappedMWhale);
+
+        vm.startPrank(wrappedMWhale);
+        IERC20(WRAPPED_M).approve(address(swapAdapter), amountIn);
+
+        swapAdapter.swapOut(WRAPPED_M, amountIn, USDC, minAmountOut, USER, "");
+
+        // uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(wrappedMWhale);
+        uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(wrappedMWhale);
+        uint256 usdcBalanceAfter = IERC20(USDC).balanceOf(USER);
+        uint256 poolBalanceAfter = IERC20(WRAPPED_M).balanceOf(uniPool);
+
+        uint256 swapAdapterBalance = IERC20(USDC).balanceOf(address(swapAdapter));
+        uint256 SwapFacilityBalance = IERC20(USDC).balanceOf(address(swapFacility));
+
+        assertApproxEqAbs(wrappedMBalanceBefore - wrappedMBalanceAfter, usdcBalanceAfter, 4_000e6);
+        assertEq(IERC20(WRAPPED_M).balanceOf(address(swapAdapter)), 0);
+        assertEq(IERC20(WRAPPED_M).balanceOf(address(swapFacility)), 0);
+        assertEq(IERC20(USDC).balanceOf(address(swapFacility)), 0);
+        assertEq(IERC20(USDC).balanceOf(address(swapAdapter)), 0);
     }
 }
