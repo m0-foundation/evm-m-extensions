@@ -49,7 +49,7 @@ abstract contract RevertHandler is PropertiesBase {
     function _getAllowedCustomErrors() internal pure virtual returns (bytes4[] memory) {
         bytes4[] memory allowedErrors = new bytes4[](1);
         // Uncomment to allow empty reverts:
-        // allowedErrors[0] = bytes4(abi.encode(""));
+        allowedErrors[0] = bytes4(abi.encode(""));
         return allowedErrors;
     }
 

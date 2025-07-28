@@ -23,7 +23,6 @@ contract FuzzUni is PreconditionsUni, PostconditionsUni {
         actorsToUpdate[0] = currentActor;
         _before(actorsToUpdate);
 
-        // Add liquidity using the helper function from FoundrySetup
         add_liquidity_direct(
             currentActor,
             currentActor,
@@ -53,7 +52,6 @@ contract FuzzUni is PreconditionsUni, PostconditionsUni {
         actorsToUpdate[0] = currentActor;
         _before(actorsToUpdate);
 
-        // Execute swap using helper from FoundryPlayground
         uint256 amountOut = swap_t0_for_t1(currentActor, amountIn);
 
         swapZeroToOnePostconditions(
@@ -73,7 +71,6 @@ contract FuzzUni is PreconditionsUni, PostconditionsUni {
         actorsToUpdate[0] = currentActor;
         _before(actorsToUpdate);
 
-        // Execute swap using helper from FoundryPlayground
         uint256 amountOut = swap_t1_for_t0(currentActor, amountIn);
 
         swapOneToZeroPostconditions(

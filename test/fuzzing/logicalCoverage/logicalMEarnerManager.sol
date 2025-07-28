@@ -284,12 +284,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedFeeOf_mEarnerManager0_USER2 > 1e12 && accruedFeeOf_mEarnerManager0_USER2 <= 1e18) {
             fl.log("accruedFeeOf_mEarnerManager0_USER2 is between 1e12 and 1e18");
         }
-        if (accruedFeeOf_mEarnerManager0_USER2 > 1e18 && accruedFeeOf_mEarnerManager0_USER2 <= 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager0_USER2 is between 1e18 and 1e24");
-        }
-        if (accruedFeeOf_mEarnerManager0_USER2 > 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager0_USER2 is greater than 1e24");
-        }
 
         uint256 accruedFeeOf_mEarnerManager1_USER2 = states[1].mEarnerManager[mEarnerManagerArray[1]].accruedFeeOf[
             USERS[1]
@@ -305,12 +299,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedFeeOf_mEarnerManager1_USER2 > 1e12 && accruedFeeOf_mEarnerManager1_USER2 <= 1e18) {
             fl.log("accruedFeeOf_mEarnerManager1_USER2 is between 1e12 and 1e18");
-        }
-        if (accruedFeeOf_mEarnerManager1_USER2 > 1e18 && accruedFeeOf_mEarnerManager1_USER2 <= 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager1_USER2 is between 1e18 and 1e24");
-        }
-        if (accruedFeeOf_mEarnerManager1_USER2 > 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager1_USER2 is greater than 1e24");
         }
 
         uint256 accruedFeeOf_mEarnerManager2_USER2 = states[1].mEarnerManager[mEarnerManagerArray[2]].accruedFeeOf[
@@ -328,12 +316,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedFeeOf_mEarnerManager2_USER2 > 1e12 && accruedFeeOf_mEarnerManager2_USER2 <= 1e18) {
             fl.log("accruedFeeOf_mEarnerManager2_USER2 is between 1e12 and 1e18");
         }
-        if (accruedFeeOf_mEarnerManager2_USER2 > 1e18 && accruedFeeOf_mEarnerManager2_USER2 <= 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager2_USER2 is between 1e18 and 1e24");
-        }
-        if (accruedFeeOf_mEarnerManager2_USER2 > 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager2_USER2 is greater than 1e24");
-        }
 
         uint256 accruedFeeOf_mEarnerManager0_USER3 = states[1].mEarnerManager[mEarnerManagerArray[0]].accruedFeeOf[
             USERS[2]
@@ -349,12 +331,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedFeeOf_mEarnerManager0_USER3 > 1e12 && accruedFeeOf_mEarnerManager0_USER3 <= 1e18) {
             fl.log("accruedFeeOf_mEarnerManager0_USER3 is between 1e12 and 1e18");
-        }
-        if (accruedFeeOf_mEarnerManager0_USER3 > 1e18 && accruedFeeOf_mEarnerManager0_USER3 <= 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager0_USER3 is between 1e18 and 1e24");
-        }
-        if (accruedFeeOf_mEarnerManager0_USER3 > 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager0_USER3 is greater than 1e24");
         }
 
         uint256 accruedFeeOf_mEarnerManager1_USER3 = states[1].mEarnerManager[mEarnerManagerArray[1]].accruedFeeOf[
@@ -372,12 +348,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedFeeOf_mEarnerManager1_USER3 > 1e12 && accruedFeeOf_mEarnerManager1_USER3 <= 1e18) {
             fl.log("accruedFeeOf_mEarnerManager1_USER3 is between 1e12 and 1e18");
         }
-        if (accruedFeeOf_mEarnerManager1_USER3 > 1e18 && accruedFeeOf_mEarnerManager1_USER3 <= 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager1_USER3 is between 1e18 and 1e24");
-        }
-        if (accruedFeeOf_mEarnerManager1_USER3 > 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager1_USER3 is greater than 1e24");
-        }
 
         uint256 accruedFeeOf_mEarnerManager2_USER3 = states[1].mEarnerManager[mEarnerManagerArray[2]].accruedFeeOf[
             USERS[2]
@@ -393,12 +363,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedFeeOf_mEarnerManager2_USER3 > 1e12 && accruedFeeOf_mEarnerManager2_USER3 <= 1e18) {
             fl.log("accruedFeeOf_mEarnerManager2_USER3 is between 1e12 and 1e18");
-        }
-        if (accruedFeeOf_mEarnerManager2_USER3 > 1e18 && accruedFeeOf_mEarnerManager2_USER3 <= 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager2_USER3 is between 1e18 and 1e24");
-        }
-        if (accruedFeeOf_mEarnerManager2_USER3 > 1e24) {
-            fl.log("accruedFeeOf_mEarnerManager2_USER3 is greater than 1e24");
         }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager0_USER1 = states[1]
@@ -416,12 +380,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedYieldAndFeeOf_mEarnerManager0_USER1 > 1e12 && accruedYieldAndFeeOf_mEarnerManager0_USER1 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER1 is between 1e12 and 1e18");
         }
-        if (accruedYieldAndFeeOf_mEarnerManager0_USER1 > 1e18 && accruedYieldAndFeeOf_mEarnerManager0_USER1 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER1 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager0_USER1 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER1 is greater than 1e24");
-        }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager1_USER1 = states[1]
             .mEarnerManager[mEarnerManagerArray[1]]
@@ -437,12 +395,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedYieldAndFeeOf_mEarnerManager1_USER1 > 1e12 && accruedYieldAndFeeOf_mEarnerManager1_USER1 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER1 is between 1e12 and 1e18");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager1_USER1 > 1e18 && accruedYieldAndFeeOf_mEarnerManager1_USER1 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER1 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager1_USER1 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER1 is greater than 1e24");
         }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager2_USER1 = states[1]
@@ -460,12 +412,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedYieldAndFeeOf_mEarnerManager2_USER1 > 1e12 && accruedYieldAndFeeOf_mEarnerManager2_USER1 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER1 is between 1e12 and 1e18");
         }
-        if (accruedYieldAndFeeOf_mEarnerManager2_USER1 > 1e18 && accruedYieldAndFeeOf_mEarnerManager2_USER1 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER1 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager2_USER1 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER1 is greater than 1e24");
-        }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager0_USER2 = states[1]
             .mEarnerManager[mEarnerManagerArray[0]]
@@ -481,12 +427,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedYieldAndFeeOf_mEarnerManager0_USER2 > 1e12 && accruedYieldAndFeeOf_mEarnerManager0_USER2 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER2 is between 1e12 and 1e18");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager0_USER2 > 1e18 && accruedYieldAndFeeOf_mEarnerManager0_USER2 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER2 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager0_USER2 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER2 is greater than 1e24");
         }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager1_USER2 = states[1]
@@ -504,12 +444,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedYieldAndFeeOf_mEarnerManager1_USER2 > 1e12 && accruedYieldAndFeeOf_mEarnerManager1_USER2 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER2 is between 1e12 and 1e18");
         }
-        if (accruedYieldAndFeeOf_mEarnerManager1_USER2 > 1e18 && accruedYieldAndFeeOf_mEarnerManager1_USER2 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER2 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager1_USER2 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER2 is greater than 1e24");
-        }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager2_USER2 = states[1]
             .mEarnerManager[mEarnerManagerArray[2]]
@@ -525,12 +459,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedYieldAndFeeOf_mEarnerManager2_USER2 > 1e12 && accruedYieldAndFeeOf_mEarnerManager2_USER2 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER2 is between 1e12 and 1e18");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager2_USER2 > 1e18 && accruedYieldAndFeeOf_mEarnerManager2_USER2 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER2 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager2_USER2 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER2 is greater than 1e24");
         }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager0_USER3 = states[1]
@@ -548,12 +476,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedYieldAndFeeOf_mEarnerManager0_USER3 > 1e12 && accruedYieldAndFeeOf_mEarnerManager0_USER3 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER3 is between 1e12 and 1e18");
         }
-        if (accruedYieldAndFeeOf_mEarnerManager0_USER3 > 1e18 && accruedYieldAndFeeOf_mEarnerManager0_USER3 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER3 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager0_USER3 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager0_USER3 is greater than 1e24");
-        }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager1_USER3 = states[1]
             .mEarnerManager[mEarnerManagerArray[1]]
@@ -570,12 +492,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         if (accruedYieldAndFeeOf_mEarnerManager1_USER3 > 1e12 && accruedYieldAndFeeOf_mEarnerManager1_USER3 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER3 is between 1e12 and 1e18");
         }
-        if (accruedYieldAndFeeOf_mEarnerManager1_USER3 > 1e18 && accruedYieldAndFeeOf_mEarnerManager1_USER3 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER3 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager1_USER3 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager1_USER3 is greater than 1e24");
-        }
 
         uint256 accruedYieldAndFeeOf_mEarnerManager2_USER3 = states[1]
             .mEarnerManager[mEarnerManagerArray[2]]
@@ -591,12 +507,6 @@ contract LogicalMEarnerManager is BeforeAfter {
         }
         if (accruedYieldAndFeeOf_mEarnerManager2_USER3 > 1e12 && accruedYieldAndFeeOf_mEarnerManager2_USER3 <= 1e18) {
             fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER3 is between 1e12 and 1e18");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager2_USER3 > 1e18 && accruedYieldAndFeeOf_mEarnerManager2_USER3 <= 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER3 is between 1e18 and 1e24");
-        }
-        if (accruedYieldAndFeeOf_mEarnerManager2_USER3 > 1e24) {
-            fl.log("accruedYieldAndFeeOf_mEarnerManager2_USER3 is greater than 1e24");
         }
     }
 }

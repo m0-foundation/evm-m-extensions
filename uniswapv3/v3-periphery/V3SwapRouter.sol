@@ -24,6 +24,8 @@ abstract contract V3SwapRouter is IV3SwapRouter, PeripheryPaymentsWithFeeExtende
     using Path for bytes;
     using SafeCast for uint256;
 
+    error V3InvalidSwap();
+
     /// @dev Used as the placeholder value for amountInCached, because the computed amount in for an exact output swap
     /// can never actually be this value
     uint256 private constant DEFAULT_AMOUNT_IN_CACHED = type(uint256).max;
@@ -44,7 +46,7 @@ abstract contract V3SwapRouter is IV3SwapRouter, PeripheryPaymentsWithFeeExtende
 
     /// @inheritdoc IUniswapV3SwapCallback
     function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata _data) external override {
-        require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
+        if (amount0Delta <= 0 && amount1Delta <= 0) revert V3InvalidSwap(); // swaps entirely within 0-liquidity regions are not supported
         SwapCallbackData memory data = abi.decode(_data, (SwapCallbackData));
         (address tokenIn, address tokenOut, uint24 fee) = data.path.decodeFirstPool();
         CallbackValidation.verifyCallback(factory, tokenIn, tokenOut, fee);

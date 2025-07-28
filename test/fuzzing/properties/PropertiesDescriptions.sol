@@ -15,8 +15,6 @@ contract PropertiesDescriptions {
     string constant SWAP_04 = "SWAP_04: Received amount of M0 must be greater or equal than slippage";
     string constant SWAP_05 = "SWAP_05: Received amount of USDC must be greater or equal than slippage";
 
-    // string constant MYF_01 =
-    //     "MYF_01: Entire yield the extension itself earned from underlying M0 should be equal to distributed yield to users + fee";
     string constant MYF_01 = "MYF_01: MYieldFee extension mToken Balance must be greater or equal than projectedSupply";
     string constant MYF_02 =
         "MYF_02: MYieldFee extension mToken Balance must be greater or equal than projectedSupply + fee";

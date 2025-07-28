@@ -7,7 +7,7 @@ contract PostconditionsBase is Properties {
     function onSuccessInvariantsGeneral(bytes memory returnData) internal {
         checkLogicalCoverage();
 
-        // invariant_MYF_01();
+        invariant_MYF_01();
         invariant_MYF_02();
         invariant_SWAP_02();
         invariant_MEARN_01();

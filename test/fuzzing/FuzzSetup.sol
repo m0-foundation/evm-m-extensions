@@ -68,13 +68,7 @@ contract FuzzSetup is FunctionCalls {
         require(token0 < token1, "token0 must be less than token1");
         // Create pool with 0.01% fee (100 basis points)
 
-        emit log_named_address("token0", token0);
-        emit log_named_address("token1", token1);
-        emit log_named_uint("UNISWAP_V3_FEE", UNISWAP_V3_FEE);
-        emit log_named_address("uniV3Factory", address(uniV3Factory));
-
         address poolAddress = uniV3Factory.createPool(token0, token1, UNISWAP_V3_FEE);
-        emit log_named_address("poolAddress", poolAddress);
 
         assert(poolAddress == address(v3SwapRouter.getPool(token0, token1, UNISWAP_V3_FEE)));
 
@@ -112,8 +106,6 @@ contract FuzzSetup is FunctionCalls {
             fee: UNISWAP_V3_FEE,
             tickLower: tickLower,
             tickUpper: tickUpper,
-            // amount0Desired: 1000000 * 1e6, // 1M USDC (6 decimals)
-            // amount1Desired: 1000000 * 1e6, // 1M wMToken (6 decimals) //TODO: UPD: FIXED IN UNISWAP V3 POOL SOURCE, we got problems with echidna memory leak iterating in highest tick
             amount0Desired: 2_000_000_000_000 * 1e6, // 2T wMToken (6 decimals)
             amount1Desired: 2_000_000_000_000 * 1e6, // 2T USDC (6 decimals)
             amount0Min: 0,
@@ -398,9 +390,9 @@ contract FuzzSetup is FunctionCalls {
             vm.prank(USERS[i]);
             weth.approve(address(swapAdapter), type(uint256).max);
 
-            mEarnerManager1.setAccountOf(USERS[i], 0, 0, true, 0);
-            mEarnerManager2.setAccountOf(USERS[i], 0, 0, true, 0);
-            mEarnerManager3.setAccountOf(USERS[i], 0, 0, true, 0);
+            mEarnerManager1.setAccountOf(USERS[i], 0, 0, true, 1_000);
+            mEarnerManager2.setAccountOf(USERS[i], 0, 0, true, 2_000);
+            mEarnerManager3.setAccountOf(USERS[i], 0, 0, true, 3_000);
 
             for (uint256 j = 0; j < allExtensions.length; j++) {
                 vm.prank(USERS[i]);

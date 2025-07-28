@@ -18,12 +18,6 @@ contract LogicalMYieldToOne is BeforeAfter {
         if (yield > 1e12 && yield <= 1e18) {
             fl.log("MYieldToOne[0] yield is between 1e12 and 1e18");
         }
-        if (yield > 1e18 && yield <= 1e24) {
-            fl.log("MYieldToOne[0] yield is between 1e18 and 1e24");
-        }
-        if (yield > 1e24) {
-            fl.log("MYieldToOne[0] yield is greater than 1e24");
-        }
 
         yield = states[1].mYieldToOne[mYieldToOneArray[1]].yield;
         if (yield == 0) {
@@ -38,12 +32,6 @@ contract LogicalMYieldToOne is BeforeAfter {
         if (yield > 1e12 && yield <= 1e18) {
             fl.log("MYieldToOne[1] yield is between 1e12 and 1e18");
         }
-        if (yield > 1e18 && yield <= 1e24) {
-            fl.log("MYieldToOne[1] yield is between 1e18 and 1e24");
-        }
-        if (yield > 1e24) {
-            fl.log("MYieldToOne[1] yield is greater than 1e24");
-        }
 
         yield = states[1].mYieldToOne[mYieldToOneArray[2]].yield;
         if (yield == 0) {
@@ -57,12 +45,6 @@ contract LogicalMYieldToOne is BeforeAfter {
         }
         if (yield > 1e12 && yield <= 1e18) {
             fl.log("MYieldToOne[2] yield is between 1e12 and 1e18");
-        }
-        if (yield > 1e18 && yield <= 1e24) {
-            fl.log("MYieldToOne[2] yield is between 1e18 and 1e24");
-        }
-        if (yield > 1e24) {
-            fl.log("MYieldToOne[2] yield is greater than 1e24");
         }
     }
 }

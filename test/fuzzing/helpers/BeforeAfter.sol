@@ -190,7 +190,6 @@ contract BeforeAfter is FuzzSetup {
         uint256 principalBalanceOf;
         uint256 projectedTotalSupply;
         uint256 currentIndex;
-        uint256 earnerRate;
         uint256 latestIndex;
         uint256 latestRate;
         uint256 feeRate;
@@ -284,7 +283,6 @@ contract BeforeAfter is FuzzSetup {
             states[callNum].mYieldFee[extAddress].projectedTotalSupply = IMYieldFee(extAddress).projectedTotalSupply();
             // ==== logical coverage ====
             states[callNum].mYieldFee[extAddress].currentIndex = MYieldFee(extAddress).currentIndex();
-            states[callNum].mYieldFee[extAddress].earnerRate = MYieldFee(extAddress).earnerRate();
             states[callNum].mYieldFee[extAddress].latestIndex = MYieldFee(extAddress).latestIndex();
             states[callNum].mYieldFee[extAddress].latestRate = MYieldFee(extAddress).latestRate();
             states[callNum].mYieldFee[extAddress].totalAccruedFee = MYieldFee(extAddress).totalAccruedFee();

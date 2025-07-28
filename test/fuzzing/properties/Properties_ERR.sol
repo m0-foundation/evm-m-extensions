@@ -18,6 +18,7 @@ import { IMExtension } from "src/interfaces/IMExtension.sol";
 import {
     IAccessControl
 } from "lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { V3SwapRouter } from "uniswapv3/v3-periphery/V3SwapRouter.sol";
 
 abstract contract Properties_ERR is RevertHandler {
     /*
@@ -45,7 +46,7 @@ abstract contract Properties_ERR is RevertHandler {
     //     .selector;
 
     function _getAllowedCustomErrors() internal pure virtual override returns (bytes4[] memory) {
-        bytes4[] memory allowedErrors = new bytes4[](66);
+        bytes4[] memory allowedErrors = new bytes4[](67);
 
         // IMSpokeYieldFee errors
         allowedErrors[0] = IMSpokeYieldFee.ZeroRateOracle.selector;
@@ -127,8 +128,7 @@ abstract contract Properties_ERR is RevertHandler {
 
         allowedErrors[54] = IAccessControl.AccessControlUnauthorizedAccount.selector;
         allowedErrors[55] = IAccessControl.AccessControlBadConfirmation.selector;
-        // allowedErrors[54] = IUniswapV3SwapAdapter.ZeroBaseToken.selector;
-        // allowedErrors[55] = IUniswapV3SwapAdapter.ZeroSwapRouter.selector;
+
         allowedErrors[56] = IUniswapV3SwapAdapter.ZeroToken.selector;
         allowedErrors[57] = IUniswapV3SwapAdapter.ZeroAmount.selector;
         allowedErrors[58] = IUniswapV3SwapAdapter.ZeroRecipient.selector;
@@ -140,6 +140,8 @@ abstract contract Properties_ERR is RevertHandler {
         allowedErrors[63] = IMExtension.ZeroSwapFacility.selector;
         allowedErrors[64] = IMExtension.NotSwapFacility.selector;
         allowedErrors[65] = IMExtension.InsufficientBalance.selector;
+
+        allowedErrors[66] = V3SwapRouter.V3InvalidSwap.selector;
 
         return allowedErrors;
     }
@@ -163,7 +165,7 @@ abstract contract Properties_ERR is RevertHandler {
         }
 
         // Check UniswapV3 string errors
-        // return _isAllowedUniswapV3Error(returnData);
+        return _isAllowedUniswapV3Error(returnData);
     }
 
     function _isAllowedUniswapV3Error(bytes memory returnData) internal pure returns (bool) {

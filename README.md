@@ -1,192 +1,135 @@
-# Fuzz install
+# Overview
 
-`npm install @openzeppelin/contracts-v4@npm:@openzeppelin/contracts@4.9.6`
-`npm i @uniswap/v3-periphery`
-`forge install Uniswap/universal-router@main`
+Guardian Audits conducted an in-depth security review of M-extensions by M^0 labs from June 23th to June 27rd, 2025. The comprehensive evaluation included developing a specialized fuzzing suite to uncover complex logical errors across various protocol states. This suite was created during the review period and successfully delivered upon the audit's completion.
 
-add
+# Contents
+
+This fuzzing suite was developed for M^0 and updated with remediations at July 20th. The suite primarily targets core functionality found in `MEarnerManager.sol` and `MYieldFee.sol`, `MYieldToOne.sol` and `SwapFacility.sol`.
+
+This suite implements a minimalistic, instant-on approach to fuzzing. It employs Echidna's stateful fuzzing mechanism to simulate the project lifecycle and and minimizes mocking with M0 token, MinterGateway, wrapped M token and Uniswap V3 local deployments.
+
+All tested properties can be found below in this README.
+
+## Setup
+
+1. Install dependencies
+
+`npm i`
+
+`forge install`
+
+## Usage
+
+2. Run Echidna fuzzing with Foundry compilation tool
+   `forge clean && forge build test/fuzzing/Fuzz.sol && ./echidna . --contract Fuzz --config echidna.yaml`
+
+3. Run Foundry reproducers
+   `forge test --mt test_coverage_mint`
+
+# Scope
+
+Repo: https://github.com/GuardianOrg/m-extensions-m0-m-extensions-fuzz
+
+Branch: `main`
+
+Commit: `ba39e694aa7bfffd5138a0ead9f9cb7438c7929a`
+
+Here's the fuzzing directory structure with its contents:
 
 ```
-    error AccessControlUnauthorizedAccount(address account, bytes32 role);
-    error AccessControlBadConfirmation();
+test/fuzzing
+├── FoundryPlayground.sol
+├── Fuzz.sol
+├── FuzzGuided.sol
+├── FuzzMEarnerManager.sol
+├── FuzzMToken.sol
+├── FuzzMYieldFee.sol
+├── FuzzMYieldToOne.sol
+├── FuzzSetup.sol
+├── FuzzSwapFacility.sol
+├── FuzzUni.sol
+├── helpers
+│   ├── BeforeAfter.sol
+│   ├── FuzzStorageVariables.sol
+│   ├── Postconditions
+│   │   ├── PostconditionsBase.sol
+│   │   ├── PostconditionsMEarnerManager.sol
+│   │   ├── PostconditionsMToken.sol
+│   │   ├── PostconditionsMYieldFee.sol
+│   │   ├── PostconditionsMYieldToOne.sol
+│   │   ├── PostconditionsSwapFacility.sol
+│   │   └── PostconditionsUni.sol
+│   └── Preconditions
+│       ├── PreconditionsBase.sol
+│       ├── PreconditionsMEarnerManager.sol
+│       ├── PreconditionsMToken.sol
+│       ├── PreconditionsMYieldFee.sol
+│       ├── PreconditionsMYieldToOne.sol
+│       ├── PreconditionsSwapFacility.sol
+│       └── PreconditionsUni.sol
+├── lifeSupport
+│   ├── IContinuousIndexing.sol
+│   └── Lock.sol
+├── logicalCoverage
+│   ├── logicalBase.sol
+│   ├── logicalMEarnerManager.sol
+│   ├── logicalMYieldFee.sol
+│   └── logicalMYieldToOne.sol
+├── logs
+├── mocks
+│   ├── DirectPoolMinter.sol
+│   ├── MToken.sol
+│   ├── MinterGateway.f.sol
+│   ├── MockERC20.sol
+│   ├── MockMToken.sol
+│   ├── MockRegistar.sol
+│   ├── WrappedMToken.f.sol
+│   ├── abstract
+│   │   └── ContinuousIndexing.sol
+│   ├── interfaces
+│   │   ├── IContinuousIndexing.sol
+│   │   ├── IMToken.sol
+│   │   └── IRateModel.sol
+│   ├── libs
+│   │   └── ContinuousIndexingMath.sol
+│   └── rateModels
+│       ├── EarnerRateModel.sol
+│       ├── MinterRateModel.sol
+│       ├── interfaces
+│       │   ├── IEarnerRateModel.sol
+│       │   ├── IMinterRateModel.sol
+│       │   └── IRateModel.sol
+│       └── solmate
+│           └── src
+│               └── utils
+│                   └── SignedWadMath.sol
+├── properties
+│   ├── Properties.sol
+│   ├── PropertiesBase.sol
+│   ├── PropertiesDescriptions.sol
+│   ├── Properties_ERR.sol
+│   ├── Properties_MEARN.sol
+│   ├── Properties_MYF.sol
+│   ├── Properties_SWAP.sol
+│   └── RevertHandler.sol
+└── utils
+    ├── FunctionCalls.sol
+    ├── FuzzActors.sol
+    └── FuzzConstants.sol
 ```
 
-to
-lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol
-
-del lib/openzeppelin-foundry-upgrades/src/Upgrades.sol
-
-run `forge clean && forge build test/fuzzing/Fuzz.sol && ./echidna . --contract Fuzz --config echidna.yaml`
-
-# Foundry template
-
-Template to kickstart a Foundry project.
-
-## Getting started
-
-The easiest way to get started is by clicking the [Use this template](https://github.com/MZero-Labs/foundry-template/generate) button at the top right of this page.
-
-If you prefer to go the CLI way:
-
-```bash
-forge init my-project --template https://github.com/MZero-Labs/foundry-template
-```
-
-## Development
-
-### Installation
-
-You may have to install the following tools to use this repository:
-
-- [Foundry](https://github.com/foundry-rs/foundry) to compile and test contracts
-- [lcov](https://github.com/linux-test-project/lcov) to generate the code coverage report
-- [slither](https://github.com/crytic/slither) to static analyze contracts
-
-Install dependencies:
-
-```bash
-npm i
-```
-
-### Env
-
-Copy `.env` and write down the env variables needed to run this project.
-
-```bash
-cp .env.example .env
-```
-
-### Compile
-
-Run the following command to compile the contracts:
-
-```bash
-npm run compile
-```
-
-### Coverage
-
-Forge is used for coverage, run it with:
-
-```bash
-npm run coverage
-```
-
-You can then consult the report by opening `coverage/index.html`:
-
-```bash
-open coverage/index.html
-```
-
-### Test
-
-To run all tests:
-
-```bash
-npm test
-```
-
-Run test that matches a test contract:
-
-```bash
-forge test --mc <test-contract-name>
-```
-
-Test a specific test case:
-
-```bash
-forge test --mt <test-case-name>
-```
-
-To run slither:
-
-```bash
-npm run slither
-```
-
-### Code quality
-
-[Husky](https://typicode.github.io/husky/#/) is used to run [lint-staged](https://github.com/okonet/lint-staged) and tests when committing.
-
-[Prettier](https://prettier.io) is used to format code. Use it by running:
-
-```bash
-npm run prettier
-```
-
-[Solhint](https://protofire.github.io/solhint/) is used to lint Solidity files. Run it with:
-
-```bash
-npm run solhint
-```
-
-To fix solhint errors, run:
-
-```bash
-npm run solhint-fix
-```
-
-### CI
-
-The following Github Actions workflow are setup to run on push and pull requests:
-
-- [.github/workflows/coverage.yml](.github/workflows/coverage.yml)
-- [.github/workflows/test-gas.yml](.github/workflows/test-gas.yml)
-
-It will build the contracts and run the test coverage, as well as a gas report.
-
-The coverage report will be displayed in the PR by [github-actions-report-lcov](https://github.com/zgosalvez/github-actions-report-lcov) and the gas report by [foundry-gas-diff](https://github.com/Rubilmax/foundry-gas-diff).
-
-For the workflows to work, you will need to setup the `MNEMONIC_FOR_TESTS` and `MAINNET_RPC_URL` repository secrets in the settings of your Github repository.
-
-Some additional workflows are available if you wish to add fuzz, integration and invariant tests:
-
-- [.github/workflows/test-fuzz.yml](.github/workflows/test-fuzz.yml)
-- [.github/workflows/test-integration.yml](.github/workflows/test-integration.yml)
-- [.github/workflows/test-invariant.yml](.github/workflows/test-invariant.yml)
-
-You will need to uncomment them to activate them.
-
-### Documentation
-
-The documentation can be generated by running:
-
-```bash
-npm run doc
-```
-
-It will run a server on port 4000, you can then access the documentation by opening [http://localhost:4000](http://localhost:4000).
-
-## Deployment
-
-### Build
-
-To compile the contracts for production, run:
-
-```bash
-npm run build
-```
-
-### Deploy
-
-#### Local
-
-Open a new terminal window and run [anvil](https://book.getfoundry.sh/reference/anvil/) to start a local chain:
-
-```bash
-anvil
-```
-
-Deploy the contracts by running:
-
-```bash
-npm run deploy-local
-```
-
-#### Sepolia
-
-To deploy to the Sepolia testnet, run:
-
-```bash
-npm run deploy-sepolia
-```
+# Protocol Invariants Status Table
+
+| Invariant ID | Invariant Description                                                                      | Passed | Remediations | Run Count |
+| ------------ | ------------------------------------------------------------------------------------------ | ------ | ------------ | --------- |
+| MYF-01       | MYieldFee extension mToken Balance must be greater or equal than projectedSupply           | ❌     | ❌           | 10M+      |
+| MYF-02       | MYieldFee extension mToken Balance must be greater or equal than projectedSupply + fee     | ❌     | ❌           | 10M+      |
+| SWAP-01-00   | YTO_TO_YTO: MYieldToOne yield must not change after swaps                                  | ✅     | ✅           | 10M+      |
+| SWAP-01-01   | YFEE_TO_YFEE: MYieldFee yield must not change after swaps                                  | ✅     | ✅           | 10M+      |
+| SWAP-01-02   | MEARN_TO_MEARN: MEarnerManager yield must not change after swaps                           | ✅     | ✅           | 10M+      |
+| SWAP-02      | Swap facility M0 balance must be 0 after swap out                                          | ✅     | ✅           | 10M+      |
+| SWAP-03      | Total M0 balance of all users must not change after swap                                   | ✅     | ✅           | 10M+      |
+| SWAP-04      | Received amount of M0 must be greater or equal than slippage                               | ✅     | ✅           | 10M+      |
+| SWAP-05      | Received amount of USDC must be greater or equal than slippage                             | ✅     | ✅           | 10M+      |
+| MEARN-01     | MEarnerManager extension mToken Balance must be greater or equal than projectedTotalSupply | ❌     | ✅           | 10M+      |
+| ERR-01       | Unexpected Error                                                                           | ✅     | ✅           | 10M+      |
