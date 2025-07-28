@@ -104,7 +104,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(USER), 0);
     }
 
-    function test_swap_mYieldTonOne_to_mYieldFee() public {
+    function test_swap_mYieldToOne_to_mYieldFee() public {
         uint256 amount = 1_000_000;
         uint256 mYieldFeeBalanceBefore = IERC20(address(mYieldFee)).balanceOf(USER);
 
