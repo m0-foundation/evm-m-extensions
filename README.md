@@ -21,7 +21,8 @@ All tested properties can be found below in this README.
 ## Usage
 
 2. Run Echidna fuzzing with Foundry compilation tool
-   `forge clean && forge build test/fuzzing/Fuzz.sol && ./echidna . --contract Fuzz --config echidna.yaml`
+
+`forge clean && forge build test/fuzzing/Fuzz.sol && ./echidna . --contract Fuzz --config echidna.yaml`
 
 3. Run Foundry reproducers
    `forge test --mt test_coverage_mint`
