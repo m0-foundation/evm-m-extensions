@@ -105,7 +105,9 @@ contract BaseIntegrationTest is Helpers, Test {
         swapAdapter = new UniswapV3SwapAdapter(
             WRAPPED_M,
             address(swapFacility),
-            UNISWAP_V3_ROUTER,
+            UNISWAP_V3_ROUTER
+        );
+        swapAdapter.initialize(
             admin,
             whitelistedTokens
         );

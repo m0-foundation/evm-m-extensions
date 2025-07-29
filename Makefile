@@ -74,10 +74,21 @@ deploy-swap-adapter:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeploySwapAdapter.s.sol:DeploySwapAdapter \
 	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast
 
 deploy-swap-adapter-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-adapter-sepolia: deploy-swap-adapter
+
+upgrade-swap-adapter:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	forge script script/upgrade/UpgradeSwapAdapter.s.sol:UpgradeSwapAdapter \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive --broadcast
+
+upgrade-swap-adapter-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+upgrade-swap-adapter-sepolia: upgrade-swap-adapter
 
 deploy-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \

@@ -62,7 +62,8 @@ contract ScriptBase is Script {
   }
 
   function _getSwapFacility() internal view returns (address) {
-    return vm.envAddress("SWAP_FACILITY");
+    Deployments memory deployments_ = _readDeployment(block.chainid);
+    return deployments_.swapFacility;
   }
 
   function _getName() internal view returns (string memory) {
@@ -73,8 +74,8 @@ contract ScriptBase is Script {
     return vm.envString("SYMBOL");
   }
 
-  function _getUniswapRouter() internal view returns (address) {
-    return vm.envAddress("UNISWAP_ROUTER");
+  function _getUniswapRouter() internal pure returns (address) {
+    return 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b;
   }
 
   function _getEarnerManager() internal view returns (address) {

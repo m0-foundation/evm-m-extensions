@@ -4,8 +4,9 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import { AccessControl } from "../../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
+import { AccessControlUpgradeable } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import { Migratable } from "../../lib/common/src/Migratable.sol";
 
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
@@ -17,7 +18,7 @@ import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
  *         MetaStreet Foundation
  *         Adapted from https://github.com/metastreet-labs/metastreet-usdai-contracts/blob/main/src/swapAdapters/UniswapV3SwapAdapter.sol
  */
-contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, ReentrancyLock {
+contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock, AccessControlUpgradeable, Migratable {
     using SafeERC20 for IERC20;
 
     /// @notice Fee for Uniswap V3 USDC - Wrapped $M pool.
@@ -52,29 +53,46 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, Reentranc
      * @param  wrappedMToken_      The address of Wrapped $M token.
      * @param  swapFacility_       The address of SwapFacility.
      * @param  uniswapRouter_      The address of the Uniswap V3 swap router.
-     * @param  admin               The address of the admin.
-     * @param  whitelistedTokens_  The list of whitelisted tokens.
      */
     constructor(
         address wrappedMToken_,
         address swapFacility_,
-        address uniswapRouter_,
-        address admin,
-        address[] memory whitelistedTokens_
+        address uniswapRouter_
     ) {
         if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
         if ((swapFacility = swapFacility_) == address(0)) revert ZeroSwapFacility();
         if ((uniswapRouter = uniswapRouter_) == address(0)) revert ZeroUniswapRouter();
+    }
 
+    /* ============ Initializer ============ */
+
+    /**
+     * @notice Initializes the UniswapV3SwapAdapter contract.
+     * @param  admin The address of the admin.
+     */
+    function initialize(
+        address admin,
+        address[] memory whitelistedTokens
+    ) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
 
-        for (uint256 i; i < whitelistedTokens_.length; ++i) {
-            _whitelistToken(whitelistedTokens_[i], true);
+        for (uint256 i; i < whitelistedTokens.length; ++i) {
+            _whitelistToken(whitelistedTokens[i], true);
         }
 
         // Max approve SwapFacility and Uniswap Router to spend Wrapped $M to save gas
         IERC20(wrappedMToken).approve(swapFacility, type(uint256).max);
         IERC20(wrappedMToken).approve(uniswapRouter, type(uint256).max);
+    }
+
+    /* ============ Migratable *============ */
+    
+    /**
+     * @notice Migrates the UniswapV3SwapAdapter contract.
+     * @param  migrator The address of the migrator.
+     */
+    function migrate(address migrator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _migrate(migrator);
     }
 
     /// @inheritdoc IUniswapV3SwapAdapter
@@ -259,5 +277,11 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, Reentranc
             (address decodedTokenIn, address decodedTokenOut) = _decodeAndValidatePathTokens(path);
             if (decodedTokenIn != wrappedMToken || decodedTokenOut != tokenOut) revert InvalidPath();
         }
+    }
+
+    /// @inheritdoc Migratable
+    function _getMigrator() internal pure override returns (address migrator_) {
+        // NOTE: in this version only the owner-controlled migration via `migrate()` function is supported
+        return address(0);
     }
 }

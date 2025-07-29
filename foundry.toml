@@ -15,7 +15,8 @@ extra_output = ["storageLayout"]
 no_match_coverage = "script|test"
 ignored_warnings_from = ["lib", "test", "script"]
 fs_permissions = [
-  { access = "read-write", path = "./deployments" }
+  { access = "read-write", path = "./deployments" },
+  { access = "read-write", path = "./out" }
 ]
 
 [profile.production]

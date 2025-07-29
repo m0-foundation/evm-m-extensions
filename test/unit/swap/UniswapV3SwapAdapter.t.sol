@@ -34,7 +34,9 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         swapAdapter = new UniswapV3SwapAdapter(
             address(wrappedM),
             swapFacility,
-            UNISWAP_V3_ROUTER,
+            UNISWAP_V3_ROUTER
+        );
+        swapAdapter.initialize(
             admin,
             whitelistedToken
         );
@@ -51,17 +53,17 @@ contract UniswapV3SwapAdapterUnitTests is Test {
 
     function test_constructor_zeroWrappedMToken() external {
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroWrappedMToken.selector);
-        new UniswapV3SwapAdapter(address(0), swapFacility, UNISWAP_V3_ROUTER, admin, whitelistedToken);
+        new UniswapV3SwapAdapter(address(0), swapFacility, UNISWAP_V3_ROUTER);
     }
 
     function test_constructor_zerSwapFacility() external {
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroSwapFacility.selector);
-        new UniswapV3SwapAdapter(address(wrappedM), address(0), UNISWAP_V3_ROUTER, admin, whitelistedToken);
+        new UniswapV3SwapAdapter(address(wrappedM), address(0), UNISWAP_V3_ROUTER);
     }
 
     function test_constructor_zeroUniswapRouter() external {
         vm.expectRevert(IUniswapV3SwapAdapter.ZeroUniswapRouter.selector);
-        new UniswapV3SwapAdapter(address(wrappedM), swapFacility, address(0), admin, whitelistedToken);
+        new UniswapV3SwapAdapter(address(wrappedM), swapFacility, address(0));
     }
 
     function test_whitelistToken() external {

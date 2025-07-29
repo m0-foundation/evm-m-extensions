@@ -2,41 +2,28 @@
 
 pragma solidity 0.8.26;
 
-import { DeployBase } from "./DeployBase.s.sol";  
+import { DeploySwapAdapterBase } from "./DeploySwapAdapterBase.s.sol";  
+import { console } from "forge-std/console.sol";
 
 import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
-contract DeploySwapAdapter is DeployBase {
-
-  UniswapV3SwapAdapter public swapAdapter;
+contract DeploySwapAdapter is DeploySwapAdapterBase {
 
   function run () public {
 
+    address deployer_ = vm.addr(vm.envUint("PRIVATE_KEY"));
+
     vm.startBroadcast();
 
-    address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
-
-    Options memory opts;
-
-    opts.constructorData = abi.encode(
-      _getMToken(),
-      _getSwapFacility(),
-      _getUniswapRouter(),
-      _getAdmin(),
-      _getWhitelistedTokens()
-    );
-
-    swapAdapter = UniswapV3SwapAdapter(
-      Upgrades.deployTransparentProxy(
-        "UniswapV3SwapAdapter.sol:UniswapV3SwapAdapter",
-        deployer,
-        ""
-      )
-    );
+    address swapAdater_ = _deploySwapAdapter(block.chainid, deployer_);
 
     vm.stopBroadcast();
+
+    console.log("SwapAdapter:", swapAdater_);
+
+    _writeDeployment(block.chainid, "swapAdapter", swapAdater_);
 
   }
 
