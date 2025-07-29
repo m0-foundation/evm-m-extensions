@@ -171,7 +171,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param  account   The account from which M is deposited.
      * @param  recipient The account receiving the minted M Extension token.
      */
-    function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view override {
+    function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view virtual override {
         BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
 
         _revertIfBlacklisted($, account);
@@ -182,7 +182,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @dev   Hook called before unwrapping M Extension token.
      * @param account The account from which M Extension token is burned.
      */
-    function _beforeUnwrap(address account, uint256 /* amount */) internal view override {
+    function _beforeUnwrap(address account, uint256 /* amount */) internal view virtual override {
         _revertIfBlacklisted(_getBlacklistableStorageLocation(), account);
     }
 
@@ -191,7 +191,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param sender    The address from which the tokens are being transferred.
      * @param recipient The address to which the tokens are being transferred.
      */
-    function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view override {
+    function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view virtual override {
         BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
 
         _revertIfBlacklisted($, msg.sender);
