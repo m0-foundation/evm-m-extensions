@@ -219,7 +219,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), 5e6);
         assertEq(mToken.balanceOf(alice), 5e6);
 
-        _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+        _swapInMWithPermitSignature(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
         assertEq(mYieldToOne.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);
@@ -266,7 +266,27 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.totalSupply(), 0);
     }
 
-    // TODO: add tests to unwrap with permits
+    function test_unwrapWithPermits() external {
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
+
+        mYieldToOne.setBalanceOf(alice, 11e6);
+        mYieldToOne.setTotalSupply(11e6);
+        _giveM(address(mYieldToOne), 11e6);
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.balanceOf(alice), 11e6);
+
+        _swapOutMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+
+        assertEq(mYieldToOne.balanceOf(alice), 6e6);
+        assertEq(mToken.balanceOf(alice), 15e6);
+
+        _swapOutMWithPermitSignature(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+
+        assertEq(mYieldToOne.balanceOf(alice), 1e6);
+        assertEq(mToken.balanceOf(alice), 20e6);
+    }
 
     /* ============ claimYield ============ */
 

@@ -201,6 +201,52 @@ contract BaseIntegrationTest is Helpers, Test {
         swapFacility.swapOutM(mExtension_, amount, recipient);
     }
 
+    function _swapOutMWithPermitVRS(
+        address mExtension_,
+        address account,
+        uint256 signerPrivateKey,
+        address recipient,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal {
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getExtensionPermit(
+            mExtension_,
+            address(swapFacility),
+            account,
+            signerPrivateKey,
+            amount,
+            nonce,
+            deadline
+        );
+
+        vm.prank(account);
+        swapFacility.swapOutMWithPermit(mExtension_, amount, recipient, deadline, v_, r_, s_);
+    }
+
+    function _swapOutMWithPermitSignature(
+        address mExtension_,
+        address account,
+        uint256 signerPrivateKey,
+        address recipient,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal {
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getExtensionPermit(
+            mExtension_,
+            address(swapFacility),
+            account,
+            signerPrivateKey,
+            amount,
+            nonce,
+            deadline
+        );
+
+        vm.prank(account);
+        swapFacility.swapOutMWithPermit(mExtension_, amount, recipient, deadline, abi.encodePacked(r_, s_, v_));
+    }
+
     function _set(bytes32 key, bytes32 value) internal {
         vm.prank(standardGovernor);
         IRegistrarLike(registrar).setKey(key, value);
