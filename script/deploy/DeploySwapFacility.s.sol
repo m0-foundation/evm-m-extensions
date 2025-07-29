@@ -2,39 +2,30 @@
 
 pragma solidity 0.8.26;
 
-import { DeployBase } from "./DeployBase.s.sol";  
+import { DeploySwapFacilityBase } from "./DeploySwapFacilityBase.s.sol";  
+import { console } from "forge-std/console.sol";
 
 import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
-contract DeploySwapFacility is DeployBase {
+contract DeploySwapFacility is DeploySwapFacilityBase {
 
   SwapFacility public swapFacility;
 
   function run () public {
 
-    vm.startBroadcast();
-
     address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
 
-    Options memory opts;
+    vm.startBroadcast();
 
-    opts.constructorData = abi.encode(
-      _getMToken(),
-      _getRegistrar()
-    );
-
-    swapFacility = SwapFacility(
-      Upgrades.deployTransparentProxy(
-        "SwapFacility.sol:SwapFacility",
-        deployer,
-        abi.encodeWithSelector(SwapFacility.initialize.selector, deployer),
-        opts
-      )
-    );
+    address swapFacility_ = _deploySwapFacility(block.chainid, deployer);
 
     vm.stopBroadcast();
+
+    console.log("SwapFacility:", swapFacility_);
+
+    _writeDeployment(block.chainid, "swapFacility", swapFacility_);
 
   }
 

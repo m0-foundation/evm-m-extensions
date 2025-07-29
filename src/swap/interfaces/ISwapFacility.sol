@@ -48,6 +48,13 @@ interface ISwapFacility {
     /// @notice Thrown in `swapOutM` function if the caller is not approved swapper.
     error NotApprovedSwapper(address account);
 
+    /* ============ Initialization Function ============ */
+
+    /**
+     * @notice Initializes the SwapFacility.
+     */
+    function initialize(address admin) external;
+
     /* ============ Interactive Functions ============ */
 
     /**

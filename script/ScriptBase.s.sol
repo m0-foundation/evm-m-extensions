@@ -6,6 +6,49 @@ import { Script } from "forge-std/Script.sol";
 
 contract ScriptBase is Script {
 
+      struct Deployments {
+        address swapFacility;
+        address swapAdapter;
+    }
+
+    function _deployOutputPath(uint256 chainId_) internal view returns (string memory) {
+        return string.concat(vm.projectRoot(), "/deployments/", vm.toString(chainId_), ".json");
+    }
+
+  function _writeDeployment(
+      uint256 chainId_,
+      string memory key_,
+      address value_
+  ) internal {
+      string memory root = "";
+
+      Deployments memory deployments_ = _readDeployment(chainId_);
+
+      vm.serializeAddress(root, "swapFacility", 
+        keccak256(bytes(key_)) == keccak256("swapFacility") 
+          ? value_ : deployments_.swapFacility);
+
+      vm.writeJson(
+        vm.serializeAddress(root, "swapAdapter",
+          keccak256(bytes(key_)) == keccak256("swapAdapter") 
+            ? value_ : deployments_.swapAdapter),
+        _deployOutputPath(chainId_)
+      );
+
+  }
+
+  function _readDeployment(uint256 chainId_)
+    internal view
+    returns (Deployments memory)
+  {
+      if (!vm.isFile(_deployOutputPath(chainId_))) {
+          revert("Deployment artifacts not found");
+      }
+
+      bytes memory data = vm.parseJson(vm.readFile(_deployOutputPath(chainId_)));
+      return abi.decode(data, (Deployments));
+  }
+
   function _getMToken() internal view returns (address) {
     return vm.envAddress("M_TOKEN");
   }
