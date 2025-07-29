@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
+import { Migratable } from "../../lib/common/src/Migratable.sol";
+
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
 
@@ -17,7 +19,7 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, ReentrancyLock {
+contract SwapFacility is ISwapFacility, ReentrancyLock, Migratable {
     bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
     bytes32 public constant EARNERS_LIST_NAME = "earners";
 
@@ -52,6 +54,12 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
      */
     function initialize(address admin) external initializer {
         __ReentrancyLock_init(admin);
+    }
+
+    /* ============ Migratable *============ */
+
+    function migrate(address migrator) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _migrate(migrator);
     }
 
     /* ============ Interactive Functions ============ */
@@ -291,5 +299,11 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
         return
             IRegistrarLike(registrar).get(EARNERS_LIST_IGNORED_KEY) != bytes32(0) ||
             IRegistrarLike(registrar).listContains(EARNERS_LIST_NAME, extension);
+    }
+
+    /// @inheritdoc Migratable
+    function _getMigrator() internal pure override returns (address migrator_) {
+        // NOTE: in this version only the owner-controlled migration via `migrate()` function is supported
+        return address(0);
     }
 }
