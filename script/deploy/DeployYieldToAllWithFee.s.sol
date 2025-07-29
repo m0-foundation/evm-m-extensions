@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.26;
 
-import { ScriptBase } from "./ScriptBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 
 import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
-contract DeployYeildToAllWithFee is ScriptBase {
+contract DeployYeildToAllWithFee is DeployBase {
 
   MYieldFee public yieldToAllWithFee;
 

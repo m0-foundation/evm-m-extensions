@@ -6,9 +6,9 @@ import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/U
 
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 
-import { ScriptBase } from "./ScriptBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 
-contract DeployYieldToOne is ScriptBase {
+contract DeployYieldToOne is DeployBase {
 
   MYieldToOne public yieldToOne;
 

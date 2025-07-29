@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.26;
 
-import { ScriptBase } from "./ScriptBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 
 import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
-contract DeploySwapAdapter is ScriptBase {
+contract DeploySwapAdapter is DeployBase {
 
   UniswapV3SwapAdapter public swapAdapter;
 

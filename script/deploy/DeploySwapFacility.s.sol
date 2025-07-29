@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.26;
 
-import { ScriptBase } from "./ScriptBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 
 import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
-contract DeploySwapFacility is ScriptBase {
+contract DeploySwapFacility is DeployBase {
 
   SwapFacility public swapFacility;
 

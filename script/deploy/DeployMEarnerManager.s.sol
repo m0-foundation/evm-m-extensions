@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.26;
 
-import { ScriptBase } from "./ScriptBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 
 import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 
-contract DeployMEarnerManager is ScriptBase {
+contract DeployMEarnerManager is DeployBase {
 
   MEarnerManager public earnerManager;
 
