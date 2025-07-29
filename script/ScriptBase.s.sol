@@ -49,8 +49,16 @@ contract ScriptBase is Script {
       return abi.decode(data, (Deployments));
   }
 
-  function _getMToken() internal view returns (address) {
-    return vm.envAddress("M_TOKEN");
+  function _getMToken() internal pure returns (address) {
+    return 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
+  }
+
+  function _getWrappedMToken () internal pure returns (address) {
+    return 0x437cc33344a0B27A429f795ff6B469C72698B291;
+  }
+
+  function _getRegistrar() internal pure returns (address) {
+    return 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
   }
 
   function _getSwapFacility() internal view returns (address) {
@@ -67,10 +75,6 @@ contract ScriptBase is Script {
 
   function _getUniswapRouter() internal view returns (address) {
     return vm.envAddress("UNISWAP_ROUTER");
-  }
-
-  function _getRegistrar() internal view returns (address) {
-    return vm.envAddress("REGISTRAR");
   }
 
   function _getEarnerManager() internal view returns (address) {
