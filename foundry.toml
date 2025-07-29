@@ -14,6 +14,9 @@ build_info = true
 extra_output = ["storageLayout"]
 no_match_coverage = "script|test"
 ignored_warnings_from = ["lib", "test", "script"]
+fs_permissions = [
+  { access = "read-write", path = "./deployments" }
+]
 
 [profile.production]
 build_info = true

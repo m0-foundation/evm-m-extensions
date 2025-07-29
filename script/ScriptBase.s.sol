@@ -7,8 +7,8 @@ import { Script } from "forge-std/Script.sol";
 contract ScriptBase is Script {
 
       struct Deployments {
-        address swapFacility;
         address swapAdapter;
+        address swapFacility;
     }
 
     function _deployOutputPath(uint256 chainId_) internal view returns (string memory) {
@@ -24,14 +24,14 @@ contract ScriptBase is Script {
 
       Deployments memory deployments_ = _readDeployment(chainId_);
 
-      vm.serializeAddress(root, "swapFacility", 
-        keccak256(bytes(key_)) == keccak256("swapFacility") 
-          ? value_ : deployments_.swapFacility);
+      vm.serializeAddress(root, "swapAdapter",
+        keccak256(bytes(key_)) == keccak256("swapAdapter") 
+          ? value_ : deployments_.swapAdapter);
 
       vm.writeJson(
-        vm.serializeAddress(root, "swapAdapter",
-          keccak256(bytes(key_)) == keccak256("swapAdapter") 
-            ? value_ : deployments_.swapAdapter),
+        vm.serializeAddress(root, "swapFacility", 
+          keccak256(bytes(key_)) == keccak256("swapFacility") 
+            ? value_ : deployments_.swapFacility),
         _deployOutputPath(chainId_)
       );
 

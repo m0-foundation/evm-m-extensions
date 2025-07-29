@@ -83,7 +83,19 @@ deploy-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeploySwapFacility.s.sol:DeploySwapFacility \
 	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast
 
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: deploy-swap-facility
+
+upgrade-swap-facility:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive --broadcast
+
+upgrade-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+upgrade-swap-facility-sepolia: upgrade-swap-facility
+
