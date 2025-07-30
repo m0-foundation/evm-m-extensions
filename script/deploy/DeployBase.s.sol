@@ -2,12 +2,21 @@
 
 pragma solidity 0.8.26;
 
-import { ERC1967Proxy } from "../../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { console } from "forge-std/console.sol";
+
+import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
+import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
+import { TransparentUpgradeableProxy } from "../../lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import { ScriptBase } from "../ScriptBase.s.sol";
 import { ICreateXLike } from "./interfaces/ICreateXLike.sol";
+import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 contract DeployBase is ScriptBase {
+
+    Options public deployOptions;
 
     // Same address across all supported mainnet and testnets networks.
     address internal constant _CREATE_X_FACTORY = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
@@ -40,11 +49,50 @@ contract DeployBase is ScriptBase {
         }
     }
 
-    function _deployCreate3Proxy(address implementation_, bytes32 salt_, bytes memory data_) internal returns (address) {
-        return ICreateXLike(_CREATE_X_FACTORY).deployCreate3(
-            salt_, abi.encodePacked(type(ERC1967Proxy).creationCode, abi.encode(address(implementation_), data_))
+    function _deploySwapFacility(
+        address deployer,
+        address admin
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+
+        // Deploy implementation directly since it has immutable variables
+        implementation = address(new SwapFacility(_getMToken(), _getRegistrar()));
+
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            admin,
+            abi.encodeWithSelector(
+                SwapFacility.initialize.selector,
+                admin
+            ),
+            _computeSalt(deployer, "SwapFacility01")
         );
+
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
     }
+
+    function _deploySwapAdapter(
+        address deployer,
+        address admin
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+
+        // Deploy implementation directly since it has immutable variables
+        implementation = address(new UniswapV3SwapAdapter(_getMToken(), _getSwapFacility(), _getUniswapRouter()));
+
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            admin,
+            abi.encodeWithSelector(
+                UniswapV3SwapAdapter.initialize.selector,
+                admin,
+                new address[](0)
+            ),
+            _computeSalt(deployer, "SwapAdapter01")
+        );
+
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
+        
+    }
+
 
     function _deployCreate3(bytes memory initCode_, bytes32 salt_) internal returns (address) {
         return ICreateXLike(_CREATE_X_FACTORY).deployCreate3(salt_, initCode_);
@@ -53,5 +101,22 @@ contract DeployBase is ScriptBase {
     function _getCreate3Address(address deployer_, bytes32 salt_) internal view virtual returns (address) {
         return ICreateXLike(_CREATE_X_FACTORY).computeCreate3Address(_computeGuardedSalt(deployer_, salt_));
     }
+
+    function _deployCreate3TransparentProxy(
+        address implementation,
+        address initialOwner,
+        bytes memory initializerData,
+        bytes32 salt
+    ) internal returns (address) {
+        return
+            ICreateXLike(_CREATE_X_FACTORY).deployCreate3(
+                salt,
+                abi.encodePacked(
+                    type(TransparentUpgradeableProxy).creationCode,
+                    abi.encode(implementation, initialOwner, initializerData)
+                )
+            );
+    }
+
 
 }

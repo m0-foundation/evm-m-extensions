@@ -2,12 +2,12 @@
 
 pragma solidity 0.8.26;
 
-import { DeploySwapFacilityBase } from "./DeploySwapFacilityBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 import { console } from "forge-std/console.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
-contract DeploySwapFacility is DeploySwapFacilityBase {
+contract DeploySwapFacility is DeployBase {
 
   function run () public {
 
@@ -15,13 +15,18 @@ contract DeploySwapFacility is DeploySwapFacilityBase {
 
     vm.startBroadcast();
 
-    address swapFacility_ = _deploySwapFacility(block.chainid, deployer);
+    ( address swapFacilityImplementation, 
+      address swapFacilityProxy, 
+      address swapFacilityProxyAdmin
+    ) = _deploySwapFacility(deployer, deployer);
 
     vm.stopBroadcast();
 
-    console.log("SwapFacility:", swapFacility_);
+    console.log("SwapFacilityImplementation:", swapFacilityImplementation);
+    console.log("SwapFacilityProxy:", swapFacilityProxy);
+    console.log("SwapFacilityProxyAdmin:", swapFacilityProxyAdmin);
 
-    _writeDeployment(block.chainid, "swapFacility", swapFacility_);
+    _writeDeployment(block.chainid, "swapFacility", swapFacilityProxy);
 
   }
 

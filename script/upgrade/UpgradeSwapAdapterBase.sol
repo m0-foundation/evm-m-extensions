@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: UNLICENSED
+
 pragma solidity 0.8.26;
 
-import { ERC1967Proxy } from "../../lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { ITransparentUpgradeableProxy } from "../../lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import { console } from "forge-std/console.sol";
 
@@ -18,8 +20,6 @@ contract UpgradeSwapAdapterBase is ScriptBase {
         _getWrappedMToken(), _getSwapFacility(), _getUniswapRouter()
       );
 
-      Migrator migrator_ = new Migrator(address(implementation_));
-
-      UniswapV3SwapAdapter(swapAdapter_).migrate(address(migrator_));
+      ITransparentUpgradeableProxy(swapAdapter_).upgradeToAndCall(address(implementation_), "");
     }
 }

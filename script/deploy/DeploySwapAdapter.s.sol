@@ -2,14 +2,10 @@
 
 pragma solidity 0.8.26;
 
-import { DeploySwapAdapterBase } from "./DeploySwapAdapterBase.s.sol";  
+import { DeployBase } from "./DeployBase.s.sol";  
 import { console } from "forge-std/console.sol";
 
-import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
-
-import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
-
-contract DeploySwapAdapter is DeploySwapAdapterBase {
+contract DeploySwapAdapter is DeployBase {
 
   function run () public {
 
@@ -17,13 +13,18 @@ contract DeploySwapAdapter is DeploySwapAdapterBase {
 
     vm.startBroadcast();
 
-    address swapAdater_ = _deploySwapAdapter(block.chainid, deployer_);
+    ( address swapAdaterImplementation, 
+      address swapAdapterProxy, 
+      address swapAdapterProxyAdmin 
+    ) = _deploySwapAdapter(deployer_, deployer_);
 
     vm.stopBroadcast();
 
-    console.log("SwapAdapter:", swapAdater_);
+    console.log("SwapAdapterImplementation:", swapAdaterImplementation);
+    console.log("SwapAdapterProxy:", swapAdapterProxy);
+    console.log("SwapAdapterProxyAdmin:", swapAdapterProxyAdmin);
 
-    _writeDeployment(block.chainid, "swapAdapter", swapAdater_);
+    _writeDeployment(block.chainid, "swapAdapter", swapAdapterProxy);
 
   }
 
