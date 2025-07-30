@@ -19,6 +19,7 @@ import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
+
 contract DeployBase is ScriptBase {
 
     Options public deployOptions;
@@ -59,8 +60,12 @@ contract DeployBase is ScriptBase {
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
-        // Deploy implementation directly since it has immutable variables
-        implementation = address(new SwapFacility(M_TOKEN, REGISTRAR));
+        DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        implementation = address(new SwapFacility(
+            config.mToken, 
+            config.registrar
+        ));
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
@@ -80,8 +85,13 @@ contract DeployBase is ScriptBase {
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
-        // Deploy implementation directly since it has immutable variables
-        implementation = address(new UniswapV3SwapAdapter(M_TOKEN, _getSwapFacility(), UNISWAP_V3_ROUTER));
+        DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        implementation = address(new UniswapV3SwapAdapter(
+            config.mToken, 
+            _getSwapFacility(), 
+            config.uniswapV3Router
+        ));
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
@@ -103,7 +113,9 @@ contract DeployBase is ScriptBase {
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
-        deployOptions.constructorData = abi.encode(M_TOKEN, _getSwapFacility());
+        DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
         proxy = Upgrades.deployTransparentProxy(
             "MEarnerManager.sol:MEarnerManager",
@@ -131,10 +143,9 @@ contract DeployBase is ScriptBase {
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
-        deployOptions.constructorData = abi.encode(
-        M_TOKEN,
-        _getSwapFacility()
-        );
+        DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
         proxy = Upgrades.deployTransparentProxy(
             "MYieldToOne.sol:MYieldToOne",
@@ -161,27 +172,25 @@ contract DeployBase is ScriptBase {
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
-    deployOptions.constructorData = abi.encode(
-      M_TOKEN,
-      _getSwapFacility()
-    );
+        DeployConfig memory config = _getDeployConfig(block.chainid);
 
-    proxy = 
-      Upgrades.deployTransparentProxy(
-        "MYieldFee.sol:MYieldFee",
-        deployer,
-        abi.encodeWithSelector(
-          MYieldFee.initialize.selector, 
-          _getName(),
-          _getSymbol(),
-          _getFeeRate(),
-          _getFeeRecipient(),
-          _getAdmin(),
-          _getFeeManager(),
-          _getClaimRecipientManager()
-        ),
-        deployOptions
-      );
+        deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
+
+        proxy = Upgrades.deployTransparentProxy(
+            "MYieldFee.sol:MYieldFee",
+            deployer,
+            abi.encodeWithSelector(
+                MYieldFee.initialize.selector, 
+                _getName(),
+                _getSymbol(),
+                _getFeeRate(),
+                _getFeeRecipient(),
+                _getAdmin(),
+                _getFeeManager(),
+                _getClaimRecipientManager()
+            ),
+            deployOptions
+        );
 
       implementation = Upgrades.getImplementationAddress(proxy);
       proxyAdmin = Upgrades.getAdminAddress(proxy);

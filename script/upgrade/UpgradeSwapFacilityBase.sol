@@ -14,7 +14,10 @@ contract UpgradeSwapFacilityBase is ScriptBase {
     function _upgradeSwapFacility(
       address swapFacility_
     ) internal {
-      SwapFacility implementation_ = new SwapFacility(M_TOKEN, REGISTRAR);
+
+      DeployConfig memory config = _getDeployConfig(block.chainid);
+
+      SwapFacility implementation_ = new SwapFacility(config.mToken, config.registrar);
 
       ITransparentUpgradeableProxy(swapFacility_).upgradeToAndCall(address(implementation_), "");
     }

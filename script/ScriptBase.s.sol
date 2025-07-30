@@ -4,12 +4,9 @@ pragma solidity 0.8.26;
 
 import { Script } from "forge-std/Script.sol";  
 
-contract ScriptBase is Script {
+import { Config } from "./Config.sol";
 
-  address constant M_TOKEN = 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
-  address constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
-  address constant REGISTRAR = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
-  address constant UNISWAP_V3_ROUTER = 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b;
+contract ScriptBase is Script, Config {
 
   struct Deployments {
     address swapAdapter;
