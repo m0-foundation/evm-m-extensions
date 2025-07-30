@@ -48,7 +48,6 @@ The `SwapFacility` contract acts as the **exclusive router** for all wrapping an
 
 - `swap()` – Switch between extensions by unwrapping and re-wrapping
 - `swapInM()`, `swapInMWithPermit()` – Accept `$M` and wrap into the selected extension
-- `swapInToken()`, `swapOutToken()` – Swap ERC-20 tokens to/from wrapped `$M` via Uniswap V3
 - `swapOutM()` – Unwrap to `$M` (restricted to whitelisted addresses only)
 
 > All actions are subject to the rules defined by each extension (e.g., blacklists, whitelists)

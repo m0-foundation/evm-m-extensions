@@ -42,10 +42,9 @@ abstract contract MEarnerManagerStorageLayout {
         uint256 totalSupply;
         // Slot 3
         uint112 totalPrincipal;
-        // Slot 4
         bool wasEarningEnabled;
         uint128 disableIndex;
-        // Slot 5
+        // Slot 4
         mapping(address account => Account) accounts;
     }
 
