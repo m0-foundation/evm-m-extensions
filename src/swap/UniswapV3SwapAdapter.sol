@@ -48,6 +48,7 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock, AccessCo
     mapping(address token => bool whitelisted) public whitelistedToken;
 
     /**
+     * @custom:oz-upgrades-unsafe-allow constructor
      * @notice Constructs UniswapV3SwapAdapter contract
      * @param  wrappedMToken_      The address of Wrapped $M token.
      * @param  swapFacility_       The address of SwapFacility.

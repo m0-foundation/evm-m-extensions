@@ -32,6 +32,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
     address public immutable registrar;
 
     /**
+     * @custom:oz-upgrades-unsafe-allow constructor
      * @notice Constructs SwapFacility Implementation contract
      * @dev    Sets immutable storage.
      * @param  mToken_      The address of $M token.
