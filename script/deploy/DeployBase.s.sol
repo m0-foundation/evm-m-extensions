@@ -69,7 +69,7 @@ contract DeployBase is ScriptBase {
                 SwapFacility.initialize.selector,
                 admin
             ),
-            _computeSalt(deployer, "SwapFacility01")
+            _computeSalt(deployer, "SwapFacility02")
         );
 
         proxyAdmin = Upgrades.getAdminAddress(proxy);

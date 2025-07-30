@@ -10,40 +10,22 @@ import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
 contract DeployYeildToAllWithFee is DeployBase {
 
-  MYieldFee public yieldToAllWithFee;
-
   function run () public {
-
-    vm.startBroadcast();
 
     address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
 
-    Options memory opts;
+    vm.startBroadcast();
 
-    opts.constructorData = abi.encode(
-      _getMToken(),
-      _getSwapFacility()
-    );
-
-    yieldToAllWithFee = MYieldFee(
-      Upgrades.deployTransparentProxy(
-        "MYieldFee.sol:MYieldFee",
-        deployer,
-        abi.encodeWithSelector(
-          MYieldFee.initialize.selector, 
-          _getName(),
-          _getSymbol(),
-          _getFeeRate(),
-          _getFeeRecipient(),
-          _getAdmin(),
-          _getFeeManager(),
-          _getClaimRecipientManager()
-        ),
-        opts
-      )
-    );
+    ( address yieldToAllWithFeeImplementation, 
+      address yieldToAllWithFeeProxy, 
+      address yieldToAllWithFeeProxyAdmin 
+    ) = _deployYieldToAllWithFee(deployer, deployer);
 
     vm.stopBroadcast();
+
+    console.log("YieldToAllWithFeeImplementation:", yieldToAllWithFeeImplementation);
+    console.log("YieldToAllWithFeeProxy:", yieldToAllWithFeeProxy);
+    console.log("YieldToAllWithFeeProxyAdmin:", yieldToAllWithFeeProxyAdmin);
 
   }
 

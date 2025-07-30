@@ -7,8 +7,6 @@ import { console } from "forge-std/console.sol";
 
 contract DeployYieldToOne is DeployBase {
 
-  MYieldToOne public yieldToOne;
-
   function run () public {
 
     address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
