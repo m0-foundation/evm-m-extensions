@@ -60,7 +60,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
         // Deploy implementation directly since it has immutable variables
-        implementation = address(new SwapFacility(_getMToken(), _getRegistrar()));
+        implementation = address(new SwapFacility(M_TOKEN, REGISTRAR));
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
@@ -81,7 +81,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
         // Deploy implementation directly since it has immutable variables
-        implementation = address(new UniswapV3SwapAdapter(_getMToken(), _getSwapFacility(), _getUniswapRouter()));
+        implementation = address(new UniswapV3SwapAdapter(M_TOKEN, _getSwapFacility(), UNISWAP_V3_ROUTER));
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
@@ -103,7 +103,7 @@ contract DeployBase is ScriptBase {
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
-        deployOptions.constructorData = abi.encode(_getMToken(), _getSwapFacility());
+        deployOptions.constructorData = abi.encode(M_TOKEN, _getSwapFacility());
 
         proxy = Upgrades.deployTransparentProxy(
             "MEarnerManager.sol:MEarnerManager",
@@ -132,7 +132,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
         deployOptions.constructorData = abi.encode(
-        _getMToken(),
+        M_TOKEN,
         _getSwapFacility()
         );
 
@@ -162,7 +162,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
 
     deployOptions.constructorData = abi.encode(
-      _getMToken(),
+      M_TOKEN,
       _getSwapFacility()
     );
 

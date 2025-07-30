@@ -14,7 +14,7 @@ contract UpgradeSwapFacilityBase is ScriptBase {
     function _upgradeSwapFacility(
       address swapFacility_
     ) internal {
-      SwapFacility implementation_ = new SwapFacility(_getMToken(), _getRegistrar());
+      SwapFacility implementation_ = new SwapFacility(M_TOKEN, REGISTRAR);
 
       ITransparentUpgradeableProxy(swapFacility_).upgradeToAndCall(address(implementation_), "");
     }

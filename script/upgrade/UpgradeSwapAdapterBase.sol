@@ -17,7 +17,7 @@ contract UpgradeSwapAdapterBase is ScriptBase {
       address swapAdapter_
     ) internal {
       UniswapV3SwapAdapter implementation_ = new UniswapV3SwapAdapter(
-        _getWrappedMToken(), _getSwapFacility(), _getUniswapRouter()
+        WRAPPED_M_TOKEN, _getSwapFacility(), UNISWAP_V3_ROUTER
       );
 
       ITransparentUpgradeableProxy(swapAdapter_).upgradeToAndCall(address(implementation_), "");

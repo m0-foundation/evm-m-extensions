@@ -6,14 +6,19 @@ import { Script } from "forge-std/Script.sol";
 
 contract ScriptBase is Script {
 
-      struct Deployments {
-        address swapAdapter;
-        address swapFacility;
-    }
+  address constant M_TOKEN = 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
+  address constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
+  address constant REGISTRAR = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
+  address constant UNISWAP_V3_ROUTER = 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b;
 
-    function _deployOutputPath(uint256 chainId_) internal view returns (string memory) {
-        return string.concat(vm.projectRoot(), "/deployments/", vm.toString(chainId_), ".json");
-    }
+  struct Deployments {
+    address swapAdapter;
+    address swapFacility;
+  }
+
+  function _deployOutputPath(uint256 chainId_) internal view returns (string memory) {
+      return string.concat(vm.projectRoot(), "/deployments/", vm.toString(chainId_), ".json");
+  }
 
   function _writeDeployment(
       uint256 chainId_,
@@ -49,18 +54,6 @@ contract ScriptBase is Script {
       return abi.decode(data, (Deployments));
   }
 
-  function _getMToken() internal pure returns (address) {
-    return 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
-  }
-
-  function _getWrappedMToken () internal pure returns (address) {
-    return 0x437cc33344a0B27A429f795ff6B469C72698B291;
-  }
-
-  function _getRegistrar() internal pure returns (address) {
-    return 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
-  }
-
   function _getSwapFacility() internal view returns (address) {
     Deployments memory deployments_ = _readDeployment(block.chainid);
     return deployments_.swapFacility;
@@ -72,10 +65,6 @@ contract ScriptBase is Script {
 
   function _getSymbol() internal view returns (string memory) {
     return vm.envString("SYMBOL");
-  }
-
-  function _getUniswapRouter() internal pure returns (address) {
-    return 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b;
   }
 
   function _getEarnerManager() internal view returns (address) {
