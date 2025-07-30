@@ -5,8 +5,6 @@ pragma solidity 0.8.26;
 import { DeployBase } from "./DeployBase.s.sol";  
 import { console } from "forge-std/console.sol";
 
-import { SwapFacility } from "../../src/swap/SwapFacility.sol";
-
 contract DeploySwapFacility is DeployBase {
 
   function run () public {

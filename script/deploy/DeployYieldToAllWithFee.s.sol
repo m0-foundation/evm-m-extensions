@@ -3,10 +3,7 @@
 pragma solidity 0.8.26;
 
 import { DeployBase } from "./DeployBase.s.sol";  
-
-import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
-
-import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { console } from "forge-std/console.sol";
 
 contract DeployYeildToAllWithFee is DeployBase {
 
