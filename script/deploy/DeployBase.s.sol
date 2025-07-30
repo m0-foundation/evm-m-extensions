@@ -11,6 +11,11 @@ import { TransparentUpgradeableProxy } from "../../lib/openzeppelin-contracts/co
 
 import { ScriptBase } from "../ScriptBase.s.sol";
 import { ICreateXLike } from "./interfaces/ICreateXLike.sol";
+
+import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
+import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
+import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
@@ -93,6 +98,97 @@ contract DeployBase is ScriptBase {
         
     }
 
+    function _deployMEarnerManager(
+        address deployer,
+        address admin
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+
+        deployOptions.constructorData = abi.encode(_getMToken(), _getSwapFacility());
+
+        proxy = Upgrades.deployTransparentProxy(
+            "MEarnerManager.sol:MEarnerManager",
+            deployer,
+            abi.encodeWithSelector(
+                MEarnerManager.initialize.selector,
+                _getName(),
+                _getSymbol(),
+                _getAdmin(),
+                _getEarnerManager(),
+                _getFeeRecipient()
+            ),
+            deployOptions
+        );
+
+        implementation = Upgrades.getImplementationAddress(proxy);
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
+
+        return (implementation, proxy, proxyAdmin);
+        
+    }
+
+    function _deployYieldToOne(
+        address deployer,
+        address admin
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+
+        deployOptions.constructorData = abi.encode(
+        _getMToken(),
+        _getSwapFacility()
+        );
+
+        proxy = Upgrades.deployTransparentProxy(
+            "MYieldToOne.sol:MYieldToOne",
+            deployer,
+            abi.encodeWithSelector(
+                MYieldToOne.initialize.selector, 
+                _getName(), 
+                _getSymbol(), 
+                _getYieldRecipient(),
+                _getAdmin(),
+                _getBlacklistManager(), 
+                _getYieldRecipientManager()
+            ),
+            deployOptions
+        );
+
+        implementation = Upgrades.getImplementationAddress(proxy);
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
+            
+    }
+
+    function _deployYieldToAllWithFee(
+        address deployer,
+        address admin
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+
+    deployOptions.constructorData = abi.encode(
+      _getMToken(),
+      _getSwapFacility()
+    );
+
+    proxy = 
+      Upgrades.deployTransparentProxy(
+        "MYieldFee.sol:MYieldFee",
+        deployer,
+        abi.encodeWithSelector(
+          MYieldFee.initialize.selector, 
+          _getName(),
+          _getSymbol(),
+          _getFeeRate(),
+          _getFeeRecipient(),
+          _getAdmin(),
+          _getFeeManager(),
+          _getClaimRecipientManager()
+        ),
+        deployOptions
+      );
+
+      implementation = Upgrades.getImplementationAddress(proxy);
+      proxyAdmin = Upgrades.getAdminAddress(proxy);
+
+      return (implementation, proxy, proxyAdmin);
+    }
+        
 
     function _deployCreate3(bytes memory initCode_, bytes32 salt_) internal returns (address) {
         return ICreateXLike(_CREATE_X_FACTORY).deployCreate3(salt_, initCode_);

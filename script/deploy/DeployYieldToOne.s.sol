@@ -2,11 +2,8 @@
 
 pragma solidity 0.8.26;
 
-import { Upgrades, Options } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
-
-import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
-
 import { DeployBase } from "./DeployBase.s.sol";  
+import { console } from "forge-std/console.sol";
 
 contract DeployYieldToOne is DeployBase {
 
@@ -14,35 +11,20 @@ contract DeployYieldToOne is DeployBase {
 
   function run () public {
 
-    vm.startBroadcast();
-
     address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
 
-    Options memory opts;
+    vm.startBroadcast();
 
-    opts.constructorData = abi.encode(
-      _getMToken(),
-      _getSwapFacility()
-    );
-
-    yieldToOne = MYieldToOne(
-      Upgrades.deployTransparentProxy(
-        "MYieldToOne.sol:MYieldToOne",
-        deployer,
-        abi.encodeWithSelector(
-          MYieldToOne.initialize.selector, 
-          _getName(), 
-          _getSymbol(), 
-          _getYieldRecipient(),
-          _getAdmin(),
-          _getBlacklistManager(), 
-          _getYieldRecipientManager()
-        ),
-        opts
-      )
-    );
+    ( address yieldToOneImplementation, 
+      address yieldToOneProxy, 
+      address yieldToOneProxyAdmin 
+    ) = _deployYieldToOne(deployer, deployer);
 
     vm.stopBroadcast();
+
+    console.log("YieldToOneImplementation:", yieldToOneImplementation);
+    console.log("YieldToOneProxy:", yieldToOneProxy);
+    console.log("YieldToOneProxyAdmin:", yieldToOneProxyAdmin);
 
   }
 
