@@ -80,7 +80,7 @@ contract DeployBase is ScriptBase {
             abi.encodePacked(
                 type(UniswapV3SwapAdapter).creationCode,
                 abi.encode(
-                    config.mToken,
+                    config.wrappedMToken,
                     _getSwapFacility(),
                     config.uniswapV3Router,
                     config.admin,
