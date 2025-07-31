@@ -54,23 +54,20 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock {
      * @param  swapFacility_       The address of SwapFacility.
      * @param  uniswapRouter_      The address of the Uniswap V3 swap router.
      */
-    constructor(address wrappedMToken_, address swapFacility_, address uniswapRouter_) {
+    constructor(
+        address wrappedMToken_, 
+        address swapFacility_, 
+        address uniswapRouter_,
+        address admin, 
+        address[] memory whitelistedTokens
+    ) {
         _disableInitializers();
 
         if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
         if ((swapFacility = swapFacility_) == address(0)) revert ZeroSwapFacility();
         if ((uniswapRouter = uniswapRouter_) == address(0)) revert ZeroUniswapRouter();
-    }
 
-    /* ============ Initializer ============ */
-
-    /**
-     * @notice Initializes the UniswapV3SwapAdapter contract.
-     * @param  admin The address of the admin.
-     * @param  whitelistedTokens The list of whitelisted tokens for swapping.
-     */
-    function initialize(address admin, address[] memory whitelistedTokens) external initializer {
-        __ReentrancyLock_init(admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
 
         for (uint256 i; i < whitelistedTokens.length; ++i) {
             _whitelistToken(whitelistedTokens[i], true);

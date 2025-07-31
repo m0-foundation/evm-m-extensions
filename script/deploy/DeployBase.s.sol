@@ -83,28 +83,23 @@ contract DeployBase is ScriptBase {
     function _deploySwapAdapter(
         address deployer,
         address admin
-    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+    ) internal returns (address swapAdapter) {
 
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
-        implementation = address(new UniswapV3SwapAdapter(
-            config.mToken, 
-            _getSwapFacility(), 
-            config.uniswapV3Router
-        ));
-
-        proxy = _deployCreate3TransparentProxy(
-            implementation,
-            admin,
-            abi.encodeWithSelector(
-                UniswapV3SwapAdapter.initialize.selector,
-                admin,
-                new address[](0)
+        swapAdapter = _deployCreate3(
+            abi.encodePacked(
+                type(UniswapV3SwapAdapter).creationCode,
+                abi.encode(
+                    config.mToken, 
+                    _getSwapFacility(), 
+                    config.uniswapV3Router,
+                    admin,
+                    new address[](0)
+                )
             ),
-            _computeSalt(deployer, "SwapAdapter01")
+            _computeSalt(deployer, "SwapAdapter03")
         );
-
-        proxyAdmin = Upgrades.getAdminAddress(proxy);
         
     }
 

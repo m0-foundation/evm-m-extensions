@@ -6,8 +6,6 @@ import { ITransparentUpgradeableProxy } from "../../lib/openzeppelin-contracts/c
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
-import { Migrator } from "./Migrator.sol";
-
 import { ScriptBase } from "../ScriptBase.s.sol";
 
 contract UpgradeSwapFacilityBase is ScriptBase {

@@ -13,18 +13,13 @@ contract DeploySwapAdapter is DeployBase {
 
     vm.startBroadcast();
 
-    ( address swapAdaterImplementation, 
-      address swapAdapterProxy, 
-      address swapAdapterProxyAdmin 
-    ) = _deploySwapAdapter(deployer_, deployer_);
+    address swapAdater = _deploySwapAdapter(deployer_, deployer_);
 
     vm.stopBroadcast();
 
-    console.log("SwapAdapterImplementation:", swapAdaterImplementation);
-    console.log("SwapAdapterProxy:", swapAdapterProxy);
-    console.log("SwapAdapterProxyAdmin:", swapAdapterProxyAdmin);
+    console.log("SwapAdapter:", swapAdater);
 
-    _writeDeployment(block.chainid, "swapAdapter", swapAdapterProxy);
+    _writeDeployment(block.chainid, "swapAdapter", swapAdater);
 
   }
 
