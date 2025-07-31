@@ -67,6 +67,7 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock {
     /**
      * @notice Initializes the UniswapV3SwapAdapter contract.
      * @param  admin The address of the admin.
+     * @param  whitelistedTokens The list of whitelisted tokens for swapping.
      */
     function initialize(address admin, address[] memory whitelistedTokens) external initializer {
         __ReentrancyLock_init(admin);
