@@ -57,8 +57,7 @@ contract DeployBase is ScriptBase {
     }
 
     function _deploySwapFacility(
-        address deployer,
-        address admin
+        address deployer
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
@@ -66,15 +65,15 @@ contract DeployBase is ScriptBase {
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            admin,
-            abi.encodeWithSelector(SwapFacility.initialize.selector, admin),
+            config.admin,
+            abi.encodeWithSelector(SwapFacility.initialize.selector, config.admin),
             _computeSalt(deployer, "SwapFacility")
         );
 
         proxyAdmin = Upgrades.getAdminAddress(proxy);
     }
 
-    function _deploySwapAdapter(address deployer, address admin) internal returns (address swapAdapter) {
+    function _deploySwapAdapter(address deployer) internal returns (address swapAdapter) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
         swapAdapter = _deployCreate3(
@@ -84,7 +83,7 @@ contract DeployBase is ScriptBase {
                     config.mToken,
                     _getSwapFacility(),
                     config.uniswapV3Router,
-                    admin,
+                    config.admin,
                     _getWhitelistedTokens(block.chainid)
                 )
             ),
@@ -98,7 +97,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
-        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(_getExtensionName());
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
         deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
@@ -128,7 +127,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
-        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(_getExtensionName());
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
         deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
@@ -157,7 +156,7 @@ contract DeployBase is ScriptBase {
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
-        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(_getExtensionName());
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
         deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 

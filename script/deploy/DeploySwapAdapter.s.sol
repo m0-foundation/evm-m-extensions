@@ -11,7 +11,7 @@ contract DeploySwapAdapter is DeployBase {
 
         vm.startBroadcast();
 
-        address swapAdater = _deploySwapAdapter(deployer_, deployer_);
+        address swapAdater = _deploySwapAdapter(deployer_);
 
         vm.stopBroadcast();
 

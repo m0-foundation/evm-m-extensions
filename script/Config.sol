@@ -11,6 +11,7 @@ contract Config {
         address wrappedMToken;
         address registrar;
         address uniswapV3Router;
+        address admin;
     }
 
     struct DeployExtensionConfig {
@@ -61,91 +62,92 @@ contract Config {
     address public constant WHITELISTED_TOKEN_1_SEPOLIA = address(0);
 
     function _getDeployConfig(uint256 chainId_) internal pure returns (DeployConfig memory) {
+        DeployConfig memory config;
+
         // Mainnet configs
-        if (chainId_ == ETHEREUM_CHAIN_ID)
-            return
-                DeployConfig({
-                    mToken: M_TOKEN,
-                    wrappedMToken: WRAPPED_M_TOKEN,
-                    registrar: REGISTRAR,
-                    uniswapV3Router: UNISWAP_ROUTER_ETHEREUM
-                });
+        if (chainId_ == ETHEREUM_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN;
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
+            config.admin = address(0);
+        }
 
-        if (chainId_ == ARBITRUM_CHAIN_ID)
-            return
-                DeployConfig({
-                    mToken: M_TOKEN,
-                    wrappedMToken: WRAPPED_M_TOKEN,
-                    registrar: REGISTRAR,
-                    uniswapV3Router: UNISWAP_ROUTER_ARBITRUM
-                });
+        if (chainId_ == ARBITRUM_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN;
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM;
+            config.admin = address(0);
+        }
 
-        if (chainId_ == OPTIMISM_CHAIN_ID)
-            return
-                DeployConfig({
-                    mToken: M_TOKEN,
-                    wrappedMToken: WRAPPED_M_TOKEN,
-                    registrar: REGISTRAR,
-                    uniswapV3Router: UNISWAP_ROUTER_OPTIMISM
-                });
+        if (chainId_ == OPTIMISM_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN;
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = UNISWAP_ROUTER_OPTIMISM;
+            config.admin = address(0);
+        }
 
         // Testnet configs
-        if (chainId_ == LOCAL_CHAIN_ID)
-            return
-                DeployConfig({
-                    mToken: M_TOKEN,
-                    wrappedMToken: WRAPPED_M_TOKEN,
-                    registrar: REGISTRAR,
-                    uniswapV3Router: UNISWAP_ROUTER_ETHEREUM
-                });
+        if (chainId_ == LOCAL_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN;
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
+            config.admin = address(0);
+        }
 
-        if (chainId_ == SEPOLIA_CHAIN_ID)
-            return
-                DeployConfig({
-                    mToken: M_TOKEN,
-                    wrappedMToken: WRAPPED_M_TOKEN,
-                    registrar: REGISTRAR,
-                    uniswapV3Router: UNISWAP_ROUTER_SEPOLIA
-                });
+        if (chainId_ == SEPOLIA_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN;
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = UNISWAP_ROUTER_SEPOLIA;
+            config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+        }
 
-        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID)
-            return
-                DeployConfig({
-                    mToken: M_TOKEN,
-                    wrappedMToken: WRAPPED_M_TOKEN,
-                    registrar: REGISTRAR,
-                    uniswapV3Router: UNISWAP_ROUTER_ARBITRUM_SEPOLIA
-                });
+        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN;
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM_SEPOLIA;
+            config.admin = address(0);
+        }
 
         revert UnsupportedChain(chainId_);
     }
 
-    function _getExtensionConfig(string memory name) internal pure returns (DeployExtensionConfig memory config) {
-        if (keccak256(bytes(name)) == keccak256(bytes("MEarnerManagerTestnet"))) {
-            config.name = name;
-            config.symbol = "M0EMTest";
-            config.admin = address(0);
-            config.earnerManager = address(0);
-            config.feeRecipient = address(0);
-        }
+    function _getExtensionConfig(
+        uint256 chainId_,
+        string memory name
+    ) internal pure returns (DeployExtensionConfig memory config) {
+        if (chainId_ == SEPOLIA_CHAIN_ID) {
+            if (keccak256(bytes(name)) == keccak256(bytes("MEarnerManagerTestnet"))) {
+                config.name = name;
+                config.symbol = "M0EMTest";
+                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.earnerManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.feeRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            }
 
-        if (keccak256(bytes(name)) == keccak256(bytes("MYieldToAllTestnet"))) {
-            config.name = name;
-            config.symbol = "M0YTATest";
-            config.admin = address(0);
-            config.feeRate = 1000;
-            config.feeRecipient = address(0);
-            config.feeManager = address(0);
-            config.claimRecipientManager = address(0);
-        }
+            if (keccak256(bytes(name)) == keccak256(bytes("MYieldToAllTestnet"))) {
+                config.name = name;
+                config.symbol = "M0YTATest";
+                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.feeRate = 1000;
+                config.feeRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.feeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.claimRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            }
 
-        if (keccak256(bytes(name)) == keccak256(bytes("MYieldToOneTestnet"))) {
-            config.name = name;
-            config.symbol = "M0YTOTest";
-            config.admin = address(1);
-            config.yieldRecipient = address(2);
-            config.blacklistManager = address(3);
-            config.yieldRecipientManager = address(4);
+            if (keccak256(bytes(name)) == keccak256(bytes("MYieldToOneTestnet"))) {
+                config.name = name;
+                config.symbol = "M0YTOTest";
+                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.blacklistManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            }
         }
     }
 
