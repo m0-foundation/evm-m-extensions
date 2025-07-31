@@ -8,8 +8,6 @@ import { console } from "forge-std/console.sol";
 import { Config } from "./Config.sol";
 
 contract ScriptBase is Script, Config {
-    string extensionName;
-
     struct Deployments {
         address[] extensionAddresses;
         string[] extensionNames;
@@ -17,12 +15,8 @@ contract ScriptBase is Script, Config {
         address swapFacility;
     }
 
-    function _setExtensionName(string memory extensionName_) internal {
-        extensionName = extensionName_;
-    }
-
     function _getExtensionName() internal view returns (string memory) {
-        return extensionName;
+        return vm.envString("EXTENSION_NAME");
     }
 
     function _setExtensionDeployment(
@@ -103,53 +97,5 @@ contract ScriptBase is Script, Config {
     function _getSwapFacility() internal view returns (address) {
         Deployments memory deployments_ = _readDeployment(block.chainid);
         return deployments_.swapFacility;
-    }
-
-    function _getName() internal view returns (string memory) {
-        return vm.envString("NAME");
-    }
-
-    function _getSymbol() internal view returns (string memory) {
-        return vm.envString("SYMBOL");
-    }
-
-    function _getEarnerManager() internal view returns (address) {
-        return vm.envAddress("EARNER_MANAGER");
-    }
-
-    function _getWhitelistedTokens() internal view returns (address[] memory) {
-        return vm.envOr("WHITELISTED_TOKENS", ",", new address[](0));
-    }
-
-    function _getFeeRate() internal view returns (uint16) {
-        return uint16(vm.envUint("FEE_RATE"));
-    }
-
-    function _getFeeRecipient() internal view returns (address) {
-        return vm.envAddress("FEE_RECIPIENT");
-    }
-
-    function _getFeeManager() internal view returns (address) {
-        return vm.envAddress("FEE_MANAGER");
-    }
-
-    function _getYieldRecipient() internal view returns (address) {
-        return vm.envAddress("YIELD_RECIPIENT");
-    }
-
-    function _getClaimRecipientManager() internal view returns (address) {
-        return vm.envAddress("CLAIM_RECIPIENT_MANAGER");
-    }
-
-    function _getAdmin() internal view returns (address) {
-        return vm.envAddress("ADMIN");
-    }
-
-    function _getBlacklistManager() internal view returns (address) {
-        return vm.envAddress("BLACKLIST_MANAGER");
-    }
-
-    function _getYieldRecipientManager() internal view returns (address) {
-        return vm.envAddress("YIELD_RECIPIENT_MANAGER");
     }
 }
