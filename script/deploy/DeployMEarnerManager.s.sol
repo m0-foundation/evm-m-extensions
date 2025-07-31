@@ -6,9 +6,7 @@ import { DeployBase } from "./DeployBase.s.sol";
 import { console } from "forge-std/console.sol";
 
 contract DeployMEarnerManager is DeployBase {
-    function run(string memory extensionName) public {
-        _setExtensionName(extensionName);
-
+    function run() public {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
 
         vm.startBroadcast();

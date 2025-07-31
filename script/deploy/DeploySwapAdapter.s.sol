@@ -6,11 +6,7 @@ import { DeployBase } from "./DeployBase.s.sol";
 import { console } from "forge-std/console.sol";
 
 contract DeploySwapAdapter is DeployBase {
-    function run(string memory extensionName) public {
-        require(keccak256(bytes(extensionName)) != keccak256(""), "Run script with EXTENSION_NAME=...");
-
-        _setExtensionName(extensionName);
-
+    function run() public {
         address deployer_ = vm.addr(vm.envUint("PRIVATE_KEY"));
 
         vm.startBroadcast();
