@@ -55,10 +55,10 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock {
      * @param  uniswapRouter_      The address of the Uniswap V3 swap router.
      */
     constructor(
-        address wrappedMToken_, 
-        address swapFacility_, 
+        address wrappedMToken_,
+        address swapFacility_,
         address uniswapRouter_,
-        address admin, 
+        address admin,
         address[] memory whitelistedTokens
     ) {
         _disableInitializers();

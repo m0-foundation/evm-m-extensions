@@ -103,13 +103,13 @@ contract BaseIntegrationTest is Helpers, Test {
         whitelistedTokens[2] = USDT;
 
         swapAdapter = new UniswapV3SwapAdapter(
-            WRAPPED_M, 
-            address(swapFacility), 
+            WRAPPED_M,
+            address(swapFacility),
             UNISWAP_V3_ROUTER,
-            admin, 
+            admin,
             whitelistedTokens
         );
-        
+
         mExtensionDeployOptions.constructorData = abi.encode(address(mToken), address(swapFacility));
 
         vm.startPrank(admin);

@@ -35,13 +35,12 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         wrappedM = new MockMExtension(address(new MockM()), swapFacility);
 
         swapAdapter = new UniswapV3SwapAdapter(
-            address(wrappedM), 
-            address(swapFacility), 
+            address(wrappedM),
+            address(swapFacility),
             UNISWAP_V3_ROUTER,
-            admin, 
+            admin,
             whitelistedToken
         );
-        
     }
 
     function test_initialState() public {
