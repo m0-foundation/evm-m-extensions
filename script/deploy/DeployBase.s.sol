@@ -68,7 +68,7 @@ contract DeployBase is ScriptBase {
             implementation,
             admin,
             abi.encodeWithSelector(SwapFacility.initialize.selector, admin),
-            _computeSalt(deployer, "SwapFacility02")
+            _computeSalt(deployer, "SwapFacility")
         );
 
         proxyAdmin = Upgrades.getAdminAddress(proxy);
@@ -82,7 +82,7 @@ contract DeployBase is ScriptBase {
                 type(UniswapV3SwapAdapter).creationCode,
                 abi.encode(config.mToken, _getSwapFacility(), config.uniswapV3Router, admin, new address[](0))
             ),
-            _computeSalt(deployer, "SwapAdapter03")
+            _computeSalt(deployer, "SwapAdapter")
         );
     }
 
