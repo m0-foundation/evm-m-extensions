@@ -11,8 +11,8 @@ contract ScriptBase is Script, Config {
     string extensionName;
 
     struct Deployments {
-        string[] extensionNames;
         address[] extensionAddresses;
+        string[] extensionNames;
         address swapAdapter;
         address swapFacility;
     }
