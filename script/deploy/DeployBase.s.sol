@@ -80,7 +80,13 @@ contract DeployBase is ScriptBase {
         swapAdapter = _deployCreate3(
             abi.encodePacked(
                 type(UniswapV3SwapAdapter).creationCode,
-                abi.encode(config.mToken, _getSwapFacility(), config.uniswapV3Router, admin, new address[](0))
+                abi.encode(
+                    config.mToken,
+                    _getSwapFacility(),
+                    config.uniswapV3Router,
+                    admin,
+                    _getWhitelistedTokens(block.chainid)
+                )
             ),
             _computeSalt(deployer, "SwapAdapter")
         );

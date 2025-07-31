@@ -48,11 +48,12 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, Reentranc
     mapping(address token => bool whitelisted) public whitelistedToken;
 
     /**
-     * @custom:oz-upgrades-unsafe-allow constructor
      * @notice Constructs UniswapV3SwapAdapter contract
      * @param  wrappedMToken_      The address of Wrapped $M token.
      * @param  swapFacility_       The address of SwapFacility.
      * @param  uniswapRouter_      The address of the Uniswap V3 swap router.
+     * @param  admin               The address of the admin.
+     * @param  whitelistedTokens_  The list of whitelisted tokens.
      */
     constructor(
         address wrappedMToken_,

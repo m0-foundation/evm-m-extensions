@@ -6,8 +6,6 @@ import { Test } from "../../../lib/forge-std/src/Test.sol";
 
 import { IAccessControl } from "../../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
-import { UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
-
 import { IUniswapV3SwapAdapter } from "../../../src/swap/interfaces/IUniswapV3SwapAdapter.sol";
 import { UniswapV3SwapAdapter } from "../../../src/swap/UniswapV3SwapAdapter.sol";
 
@@ -36,7 +34,7 @@ contract UniswapV3SwapAdapterUnitTests is Test {
 
         swapAdapter = new UniswapV3SwapAdapter(
             address(wrappedM),
-            address(swapFacility),
+            swapFacility,
             UNISWAP_V3_ROUTER,
             admin,
             whitelistedToken
