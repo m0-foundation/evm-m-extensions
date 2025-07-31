@@ -4,12 +4,12 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { AccessControl } from "../../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
 
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
-
-import { ReentrancyLock } from "./ReentrancyLock.sol";
 
 /**
  * @title  Uniswap V3 Swap Adapter
@@ -17,7 +17,7 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
  *         MetaStreet Foundation
  *         Adapted from https://github.com/metastreet-labs/metastreet-usdai-contracts/blob/main/src/swapAdapters/UniswapV3SwapAdapter.sol
  */
-contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock {
+contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, AccessControl, ReentrancyLock {
     using SafeERC20 for IERC20;
 
     /// @notice Fee for Uniswap V3 USDC - Wrapped $M pool.
@@ -59,18 +59,16 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock {
         address swapFacility_,
         address uniswapRouter_,
         address admin,
-        address[] memory whitelistedTokens
+        address[] memory whitelistedTokens_
     ) {
-        _disableInitializers();
-
         if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
         if ((swapFacility = swapFacility_) == address(0)) revert ZeroSwapFacility();
         if ((uniswapRouter = uniswapRouter_) == address(0)) revert ZeroUniswapRouter();
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
 
-        for (uint256 i; i < whitelistedTokens.length; ++i) {
-            _whitelistToken(whitelistedTokens[i], true);
+        for (uint256 i; i < whitelistedTokens_.length; ++i) {
+            _whitelistToken(whitelistedTokens_[i], true);
         }
 
         // Max approve SwapFacility and Uniswap Router to spend Wrapped $M to save gas
