@@ -7,7 +7,9 @@ import { console } from "forge-std/console.sol";
 import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { TransparentUpgradeableProxy } from "../../lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy
+} from "../../lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import { ScriptBase } from "../ScriptBase.s.sol";
 import { ICreateXLike } from "./interfaces/ICreateXLike.sol";
@@ -19,22 +21,21 @@ import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
-
 contract DeployBase is ScriptBase {
-
     Options public deployOptions;
 
     // Same address across all supported mainnet and testnets networks.
     address internal constant _CREATE_X_FACTORY = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
 
     function _computeSalt(address deployer_, string memory contractName_) internal pure returns (bytes32) {
-        return bytes32(
-            abi.encodePacked(
-                bytes20(deployer_), // used to implement permissioned deploy protection
-                bytes1(0), // disable cross-chain redeploy protection
-                bytes11(keccak256(bytes(contractName_)))
-            )
-        );
+        return
+            bytes32(
+                abi.encodePacked(
+                    bytes20(deployer_), // used to implement permissioned deploy protection
+                    bytes1(0), // disable cross-chain redeploy protection
+                    bytes11(keccak256(bytes(contractName_)))
+                )
+            );
     }
 
     function _computeGuardedSalt(address deployer_, bytes32 salt_) internal pure returns (bytes32) {
@@ -59,56 +60,39 @@ contract DeployBase is ScriptBase {
         address deployer,
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
-
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
-        implementation = address(new SwapFacility(
-            config.mToken, 
-            config.registrar
-        ));
+        implementation = address(new SwapFacility(config.mToken, config.registrar));
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
             admin,
-            abi.encodeWithSelector(
-                SwapFacility.initialize.selector,
-                admin
-            ),
+            abi.encodeWithSelector(SwapFacility.initialize.selector, admin),
             _computeSalt(deployer, "SwapFacility02")
         );
 
         proxyAdmin = Upgrades.getAdminAddress(proxy);
     }
 
-    function _deploySwapAdapter(
-        address deployer,
-        address admin
-    ) internal returns (address swapAdapter) {
-
+    function _deploySwapAdapter(address deployer, address admin) internal returns (address swapAdapter) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
         swapAdapter = _deployCreate3(
             abi.encodePacked(
                 type(UniswapV3SwapAdapter).creationCode,
-                abi.encode(
-                    config.mToken, 
-                    _getSwapFacility(), 
-                    config.uniswapV3Router,
-                    admin,
-                    new address[](0)
-                )
+                abi.encode(config.mToken, _getSwapFacility(), config.uniswapV3Router, admin, new address[](0))
             ),
             _computeSalt(deployer, "SwapAdapter03")
         );
-        
     }
 
     function _deployMEarnerManager(
         address deployer,
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
-
         DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(_getExtensionName());
 
         deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
@@ -117,11 +101,11 @@ contract DeployBase is ScriptBase {
             deployer,
             abi.encodeWithSelector(
                 MEarnerManager.initialize.selector,
-                _getName(),
-                _getSymbol(),
-                _getAdmin(),
-                _getEarnerManager(),
-                _getFeeRecipient()
+                extensionConfig.name,
+                extensionConfig.symbol,
+                extensionConfig.admin,
+                extensionConfig.earnerManager,
+                extensionConfig.feeRecipient
             ),
             deployOptions
         );
@@ -130,15 +114,15 @@ contract DeployBase is ScriptBase {
         proxyAdmin = Upgrades.getAdminAddress(proxy);
 
         return (implementation, proxy, proxyAdmin);
-        
     }
 
     function _deployYieldToOne(
         address deployer,
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
-
         DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(_getExtensionName());
 
         deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
@@ -146,28 +130,28 @@ contract DeployBase is ScriptBase {
             "MYieldToOne.sol:MYieldToOne",
             deployer,
             abi.encodeWithSelector(
-                MYieldToOne.initialize.selector, 
-                _getName(), 
-                _getSymbol(), 
-                _getYieldRecipient(),
-                _getAdmin(),
-                _getBlacklistManager(), 
-                _getYieldRecipientManager()
+                MYieldToOne.initialize.selector,
+                extensionConfig.name,
+                extensionConfig.symbol,
+                extensionConfig.yieldRecipient,
+                extensionConfig.admin,
+                extensionConfig.blacklistManager,
+                extensionConfig.yieldRecipientManager
             ),
             deployOptions
         );
 
         implementation = Upgrades.getImplementationAddress(proxy);
         proxyAdmin = Upgrades.getAdminAddress(proxy);
-            
     }
 
     function _deployYieldToAllWithFee(
         address deployer,
         address admin
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
-
         DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(_getExtensionName());
 
         deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
 
@@ -175,24 +159,23 @@ contract DeployBase is ScriptBase {
             "MYieldFee.sol:MYieldFee",
             deployer,
             abi.encodeWithSelector(
-                MYieldFee.initialize.selector, 
-                _getName(),
-                _getSymbol(),
-                _getFeeRate(),
-                _getFeeRecipient(),
-                _getAdmin(),
-                _getFeeManager(),
-                _getClaimRecipientManager()
+                MYieldFee.initialize.selector,
+                extensionConfig.name,
+                extensionConfig.symbol,
+                extensionConfig.feeRate,
+                extensionConfig.feeRecipient,
+                extensionConfig.admin,
+                extensionConfig.feeManager,
+                extensionConfig.claimRecipientManager
             ),
             deployOptions
         );
 
-      implementation = Upgrades.getImplementationAddress(proxy);
-      proxyAdmin = Upgrades.getAdminAddress(proxy);
+        implementation = Upgrades.getImplementationAddress(proxy);
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
 
-      return (implementation, proxy, proxyAdmin);
+        return (implementation, proxy, proxyAdmin);
     }
-        
 
     function _deployCreate3(bytes memory initCode_, bytes32 salt_) internal returns (address) {
         return ICreateXLike(_CREATE_X_FACTORY).deployCreate3(salt_, initCode_);
@@ -217,6 +200,4 @@ contract DeployBase is ScriptBase {
                 )
             );
     }
-
-
 }

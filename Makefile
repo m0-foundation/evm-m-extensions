@@ -46,6 +46,7 @@ clean:
 deploy-yield-to-one:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeployYieldToOne.s.sol:DeployYieldToOne \
+	--sig "run(string memory)" $(EXTENSION_NAME) \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast
@@ -56,6 +57,7 @@ deploy-yield-to-one-sepolia: deploy-yield-to-one
 deploy-yield-to-all:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYieldToAllWithFee \
+	--sig "run(string)" $(EXTENSION_NAME) \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast
@@ -66,6 +68,7 @@ deploy-yield-to-all-sepolia: deploy-yield-to-all
 deploy-m-earner-manager:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeployMEarnerManager.s.sol:DeployMEarnerManager \
+	--sig "run(string)" $(EXTENSION_NAME) \
 	--private-key $(PRIVATE_KEY) \
 	--rpc-url $(RPC_URL) \
 	--skip test --slow --non-interactive --broadcast

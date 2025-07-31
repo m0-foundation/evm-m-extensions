@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+import { Vm } from "forge-std/Vm.sol";
+
 contract Config {
     error UnsupportedChain(uint256 chainId);
 
@@ -9,6 +11,25 @@ contract Config {
         address wrappedMToken;
         address registrar;
         address uniswapV3Router;
+    }
+
+    struct DeployExtensionConfig {
+        // common
+        string name;
+        string symbol;
+        address admin;
+        // earner manager and yield to all
+        address feeRecipient;
+        // earner manager
+        address earnerManager;
+        // yield to all
+        uint16 feeRate;
+        address feeManager;
+        address claimRecipientManager;
+        // yield to one
+        address yieldRecipient;
+        address blacklistManager;
+        address yieldRecipientManager;
     }
 
     // Mainnet chain IDs
@@ -113,5 +134,34 @@ contract Config {
                 });
 
         revert UnsupportedChain(chainId_);
+    }
+
+    function _getExtensionConfig(string memory name) internal pure returns (DeployExtensionConfig memory config) {
+        if (keccak256(bytes(name)) == keccak256(bytes("MEarnerManagerTestnet"))) {
+            config.name = name;
+            config.symbol = "M0EMTest";
+            config.admin = address(0);
+            config.earnerManager = address(0);
+            config.feeRecipient = address(0);
+        }
+
+        if (keccak256(bytes(name)) == keccak256(bytes("MYieldToAllTestnet"))) {
+            config.name = name;
+            config.symbol = "M0YTATest";
+            config.admin = address(0);
+            config.feeRate = 1000;
+            config.feeRecipient = address(0);
+            config.feeManager = address(0);
+            config.claimRecipientManager = address(0);
+        }
+
+        if (keccak256(bytes(name)) == keccak256(bytes("MYieldToOneTestnet"))) {
+            config.name = name;
+            config.symbol = "M0YTOTest";
+            config.admin = address(1);
+            config.yieldRecipient = address(2);
+            config.blacklistManager = address(3);
+            config.yieldRecipientManager = address(4);
+        }
     }
 }
