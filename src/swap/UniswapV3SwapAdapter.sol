@@ -4,12 +4,12 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
-import { AccessControlUpgradeable } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
+
+import { ReentrancyLock } from "./ReentrancyLock.sol";
 
 /**
  * @title  Uniswap V3 Swap Adapter
@@ -17,7 +17,7 @@ import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
  *         MetaStreet Foundation
  *         Adapted from https://github.com/metastreet-labs/metastreet-usdai-contracts/blob/main/src/swapAdapters/UniswapV3SwapAdapter.sol
  */
-contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock, AccessControlUpgradeable {
+contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock {
     using SafeERC20 for IERC20;
 
     /// @notice Fee for Uniswap V3 USDC - Wrapped $M pool.
@@ -54,11 +54,9 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock, AccessCo
      * @param  swapFacility_       The address of SwapFacility.
      * @param  uniswapRouter_      The address of the Uniswap V3 swap router.
      */
-    constructor(
-        address wrappedMToken_,
-        address swapFacility_,
-        address uniswapRouter_
-    ) {
+    constructor(address wrappedMToken_, address swapFacility_, address uniswapRouter_) {
+        _disableInitializers();
+
         if ((wrappedMToken = wrappedMToken_) == address(0)) revert ZeroWrappedMToken();
         if ((swapFacility = swapFacility_) == address(0)) revert ZeroSwapFacility();
         if ((uniswapRouter = uniswapRouter_) == address(0)) revert ZeroUniswapRouter();
@@ -70,11 +68,8 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock, AccessCo
      * @notice Initializes the UniswapV3SwapAdapter contract.
      * @param  admin The address of the admin.
      */
-    function initialize(
-        address admin,
-        address[] memory whitelistedTokens
-    ) external initializer {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+    function initialize(address admin, address[] memory whitelistedTokens) external initializer {
+        __ReentrancyLock_init(admin);
 
         for (uint256 i; i < whitelistedTokens.length; ++i) {
             _whitelistToken(whitelistedTokens[i], true);
@@ -268,5 +263,4 @@ contract UniswapV3SwapAdapter is IUniswapV3SwapAdapter, ReentrancyLock, AccessCo
             if (decodedTokenIn != wrappedMToken || decodedTokenOut != tokenOut) revert InvalidPath();
         }
     }
-
 }

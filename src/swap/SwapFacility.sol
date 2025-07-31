@@ -293,5 +293,4 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
             IRegistrarLike(registrar).get(EARNERS_LIST_IGNORED_KEY) != bytes32(0) ||
             IRegistrarLike(registrar).listContains(EARNERS_LIST_NAME, extension);
     }
-
 }

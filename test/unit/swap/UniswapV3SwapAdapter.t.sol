@@ -6,6 +6,8 @@ import { Test } from "../../../lib/forge-std/src/Test.sol";
 
 import { IAccessControl } from "../../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
+import { UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { IUniswapV3SwapAdapter } from "../../../src/swap/interfaces/IUniswapV3SwapAdapter.sol";
 import { UniswapV3SwapAdapter } from "../../../src/swap/UniswapV3SwapAdapter.sol";
 
@@ -31,14 +33,13 @@ contract UniswapV3SwapAdapterUnitTests is Test {
         whitelistedToken[1] = USDT;
 
         wrappedM = new MockMExtension(address(new MockM()), swapFacility);
-        swapAdapter = new UniswapV3SwapAdapter(
-            address(wrappedM),
-            swapFacility,
-            UNISWAP_V3_ROUTER
-        );
-        swapAdapter.initialize(
-            admin,
-            whitelistedToken
+
+        swapAdapter = UniswapV3SwapAdapter(
+            UnsafeUpgrades.deployTransparentProxy(
+                address(new UniswapV3SwapAdapter(address(wrappedM), address(swapFacility), UNISWAP_V3_ROUTER)),
+                admin,
+                abi.encodeWithSelector(UniswapV3SwapAdapter.initialize.selector, admin, whitelistedToken)
+            )
         );
     }
 

@@ -102,14 +102,12 @@ contract BaseIntegrationTest is Helpers, Test {
         whitelistedTokens[1] = USDC;
         whitelistedTokens[2] = USDT;
 
-        swapAdapter = new UniswapV3SwapAdapter(
-            WRAPPED_M,
-            address(swapFacility),
-            UNISWAP_V3_ROUTER
-        );
-        swapAdapter.initialize(
-            admin,
-            whitelistedTokens
+        swapAdapter = UniswapV3SwapAdapter(
+            UnsafeUpgrades.deployTransparentProxy(
+                address(new UniswapV3SwapAdapter(WRAPPED_M, address(swapFacility), UNISWAP_V3_ROUTER)),
+                admin,
+                abi.encodeWithSelector(UniswapV3SwapAdapter.initialize.selector, admin, whitelistedTokens)
+            )
         );
 
         mExtensionDeployOptions.constructorData = abi.encode(address(mToken), address(swapFacility));
