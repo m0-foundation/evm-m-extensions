@@ -48,7 +48,7 @@ deploy-yield-to-one:
 	forge script script/deploy/DeployYieldToOne.s.sol:DeployYieldToOne \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-yield-to-one-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-sepolia: deploy-yield-to-one
@@ -58,7 +58,7 @@ deploy-yield-to-all:
 	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYeildToAllWithFee \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-yield-to-all-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-all-sepolia: deploy-yield-to-all
@@ -68,7 +68,7 @@ deploy-m-earner-manager:
 	forge script script/deploy/DeployMEarnerManager.s.sol:DeployMEarnerManager \
 	--private-key $(PRIVATE_KEY) \
 	--rpc-url $(RPC_URL) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-m-earner-manager-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-m-earner-manager-sepolia: deploy-m-earner-manager
@@ -78,7 +78,7 @@ deploy-swap-adapter:
 	forge script script/deploy/DeploySwapAdapter.s.sol:DeploySwapAdapter \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-swap-adapter-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-adapter-sepolia: deploy-swap-adapter
@@ -98,7 +98,7 @@ deploy-swap-facility:
 	forge script script/deploy/DeploySwapFacility.s.sol:DeploySwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: deploy-swap-facility
