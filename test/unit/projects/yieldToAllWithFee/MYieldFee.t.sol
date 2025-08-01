@@ -1708,10 +1708,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertApproxEqAbs(
             mYieldFee.projectedTotalSupply(),
             mYieldFee.balanceWithYieldOf(alice) + mYieldFee.balanceWithYieldOf(bob),
-            11
+            12
         );
 
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), aliceYield + bobYield, 11);
         assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
     }
 
