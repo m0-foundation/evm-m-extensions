@@ -164,6 +164,7 @@ contract DeployBase is ScriptBase {
                 MYieldFee.initialize.selector,
                 extensionConfig.name,
                 extensionConfig.symbol,
+                extensionConfig.feeRate,
                 extensionConfig.feeRecipient,
                 extensionConfig.admin,
                 extensionConfig.feeManager,
