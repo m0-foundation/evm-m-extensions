@@ -63,8 +63,8 @@ contract ScriptBase is Script, Config {
         Deployments memory deployments_ = _readDeployment(chainId_);
 
         if (
-            keccak256(bytes(key)) != keccak256(bytes("swapAdapter")) &&
-            keccak256(bytes(key)) != keccak256(bytes("swapFacility"))
+            keccak256(bytes(key_)) != keccak256(bytes("swapAdapter")) &&
+            keccak256(bytes(key_)) != keccak256(bytes("swapFacility"))
         ) {
             deployments_ = _setExtensionDeployment(deployments_, key_, value_);
         }
