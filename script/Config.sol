@@ -58,8 +58,8 @@ contract Config {
     address public constant WHITELISTED_TOKEN_0_ETHEREUM = address(0);
     address public constant WHITELISTED_TOKEN_1_ETHEREUM = address(0);
 
-    address public constant WHITELISTED_TOKEN_0_SEPOLIA = address(0);
-    address public constant WHITELISTED_TOKEN_1_SEPOLIA = address(0);
+    address public constant WHITELISTED_TOKEN_0_SEPOLIA = address(M_TOKEN);
+    address public constant WHITELISTED_TOKEN_1_SEPOLIA = address(WRAPPED_M_TOKEN);
 
     function _getDeployConfig(uint256 chainId_) internal pure returns (DeployConfig memory) {
         DeployConfig memory config;

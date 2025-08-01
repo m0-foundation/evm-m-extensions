@@ -62,7 +62,12 @@ contract ScriptBase is Script, Config {
 
         Deployments memory deployments_ = _readDeployment(chainId_);
 
-        deployments_ = _setExtensionDeployment(deployments_, key_, value_);
+        if (
+            keccak256(bytes(key)) != keccak256(bytes("swapAdapter")) &&
+            keccak256(bytes(key)) != keccak256(bytes("swapFacility"))
+        ) {
+            deployments_ = _setExtensionDeployment(deployments_, key_, value_);
+        }
 
         vm.serializeAddress(
             root,
