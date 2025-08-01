@@ -99,11 +99,11 @@ contract DeployBase is ScriptBase {
 
         DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
-        deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
+        implementation = address(new MEarnerManager(config.mToken, _getSwapFacility()));
 
-        proxy = Upgrades.deployTransparentProxy(
-            "MEarnerManager.sol:MEarnerManager",
-            deployer,
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            extensionConfig.admin,
             abi.encodeWithSelector(
                 MEarnerManager.initialize.selector,
                 extensionConfig.name,
@@ -112,11 +112,10 @@ contract DeployBase is ScriptBase {
                 extensionConfig.earnerManager,
                 extensionConfig.feeRecipient
             ),
-            deployOptions
+            _computeSalt(deployer, "MEarnerManager")
         );
 
-        implementation = Upgrades.getImplementationAddress(proxy);
-        proxyAdmin = Upgrades.getAdminAddress(proxy);
+        proxyAdmin = extensionConfig.admin;
 
         return (implementation, proxy, proxyAdmin);
     }
@@ -129,25 +128,23 @@ contract DeployBase is ScriptBase {
 
         DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
-        deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
+        implementation = address(new MYieldToOne(config.mToken, _getSwapFacility()));
 
-        proxy = Upgrades.deployTransparentProxy(
-            "MYieldToOne.sol:MYieldToOne",
-            deployer,
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldToOne.initialize.selector,
                 extensionConfig.name,
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
-                extensionConfig.admin,
                 extensionConfig.blacklistManager,
                 extensionConfig.yieldRecipientManager
             ),
-            deployOptions
+            _computeSalt(deployer, "MYieldToOne")
         );
 
-        implementation = Upgrades.getImplementationAddress(proxy);
-        proxyAdmin = Upgrades.getAdminAddress(proxy);
+        proxyAdmin = extensionConfig.admin;
     }
 
     function _deployYieldToAllWithFee(
@@ -158,26 +155,24 @@ contract DeployBase is ScriptBase {
 
         DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
-        deployOptions.constructorData = abi.encode(config.mToken, _getSwapFacility());
+        implementation = address(new MYieldFee(config.mToken, _getSwapFacility()));
 
-        proxy = Upgrades.deployTransparentProxy(
-            "MYieldFee.sol:MYieldFee",
-            deployer,
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldFee.initialize.selector,
                 extensionConfig.name,
                 extensionConfig.symbol,
-                extensionConfig.feeRate,
                 extensionConfig.feeRecipient,
                 extensionConfig.admin,
                 extensionConfig.feeManager,
                 extensionConfig.claimRecipientManager
             ),
-            deployOptions
+            _computeSalt(deployer, "MYieldFee")
         );
 
-        implementation = Upgrades.getImplementationAddress(proxy);
-        proxyAdmin = Upgrades.getAdminAddress(proxy);
+        proxyAdmin = extensionConfig.admin;
 
         return (implementation, proxy, proxyAdmin);
     }

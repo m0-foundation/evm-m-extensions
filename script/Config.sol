@@ -71,6 +71,7 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
             config.admin = address(0);
+            return config;
         }
 
         if (chainId_ == ARBITRUM_CHAIN_ID) {
@@ -79,6 +80,7 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM;
             config.admin = address(0);
+            return config;
         }
 
         if (chainId_ == OPTIMISM_CHAIN_ID) {
@@ -87,6 +89,7 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_OPTIMISM;
             config.admin = address(0);
+            return config;
         }
 
         // Testnet configs
@@ -96,6 +99,7 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
             config.admin = address(0);
+            return config;
         }
 
         if (chainId_ == SEPOLIA_CHAIN_ID) {
@@ -104,6 +108,7 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_SEPOLIA;
             config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            return config;
         }
 
         if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) {
@@ -112,6 +117,7 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM_SEPOLIA;
             config.admin = address(0);
+            return config;
         }
 
         revert UnsupportedChain(chainId_);
@@ -124,7 +130,7 @@ contract Config {
         if (chainId_ == SEPOLIA_CHAIN_ID) {
             if (keccak256(bytes(name)) == keccak256(bytes("MEarnerManagerTestnet"))) {
                 config.name = name;
-                config.symbol = "M0EMTest";
+                config.symbol = "MEM";
                 config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.earnerManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.feeRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
@@ -132,7 +138,7 @@ contract Config {
 
             if (keccak256(bytes(name)) == keccak256(bytes("MYieldToAllTestnet"))) {
                 config.name = name;
-                config.symbol = "M0YTATest";
+                config.symbol = "MYTA";
                 config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.feeRate = 1000;
                 config.feeRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
@@ -142,7 +148,7 @@ contract Config {
 
             if (keccak256(bytes(name)) == keccak256(bytes("MYieldToOneTestnet"))) {
                 config.name = name;
-                config.symbol = "M0YTOTest";
+                config.symbol = "MYT1";
                 config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.blacklistManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
