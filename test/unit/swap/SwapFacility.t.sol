@@ -4,7 +4,10 @@ pragma solidity 0.8.26;
 
 import { Test } from "../../../lib/forge-std/src/Test.sol";
 
-import { IAccessControl } from "../../../lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import {
+    IAccessControl
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
 import { UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";

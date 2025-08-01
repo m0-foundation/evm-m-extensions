@@ -5,10 +5,7 @@
 [submodule "lib/common"]
 	path = lib/common
 	url = https://github.com/m0-foundation/common
-	branch = feat/upgradeable-contracts
-[submodule "lib/openzeppelin-contracts"]
-	path = lib/openzeppelin-contracts
-	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+	branch = proto-313-chore-add-create3-deploy-helpers-to-common
 [submodule "lib/openzeppelin-foundry-upgrades"]
 	path = lib/openzeppelin-foundry-upgrades
 	url = https://github.com/OpenZeppelin/openzeppelin-foundry-upgrades
