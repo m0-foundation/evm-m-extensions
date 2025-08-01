@@ -2,12 +2,20 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import {
+    IERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
+import {
+    SafeERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+
 import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
 import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
 import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
+
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
 import { IBlacklistable } from "../../src/components/IBlacklistable.sol";
