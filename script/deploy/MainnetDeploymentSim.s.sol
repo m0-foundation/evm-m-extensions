@@ -23,7 +23,7 @@ contract MainnetDeploymentSim is DeployBase {
 
         console.log("SwapFacilityProxy:", swapFacilityProxy);
 
-        vm.writeJson(vm.toString(swapFacilityProxy), "deployments/1.json", ".swapFacility");
+        vm.setEnv("SWAP_FACILITY", vm.toString(swapFacilityProxy));
 
         address swapAdapter = _deploySwapAdapter(deployer);
 
@@ -31,6 +31,8 @@ contract MainnetDeploymentSim is DeployBase {
 
         SwapFacility facility = SwapFacility(swapFacilityProxy);
         UniswapV3SwapAdapter adapter = UniswapV3SwapAdapter(swapAdapter);
+
+        facility.grantRole(facility.M_SWAPPER_ROLE(), deployer);
 
         IMTokenLike m = IMTokenLike(M_TOKEN);
         IMExtension wm = IMExtension(WRAPPED_M_TOKEN);
@@ -60,7 +62,13 @@ contract MainnetDeploymentSim is DeployBase {
 
         console.log("wmBalance", wmBalance);
 
+        uint256 mBalanceBefore = m.balanceOf(deployer);
+
         facility.swapOutM(WRAPPED_M_TOKEN, wmBalance, deployer);
+
+        uint256 mBalanceAfter = m.balanceOf(deployer);
+
+        console.log("mBalance", mBalanceAfter - mBalanceBefore);
 
         vm.stopPrank();
     }

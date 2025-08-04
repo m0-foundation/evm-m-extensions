@@ -100,6 +100,10 @@ contract ScriptBase is Script, Config {
 
     function _getSwapFacility() internal view returns (address) {
         Deployments memory deployments_ = _readDeployment(block.chainid);
-        return deployments_.swapFacility;
+        if (deployments_.swapFacility == address(0)) {
+            return vm.envAddress("SWAP_FACILITY");
+        } else {
+            return deployments_.swapFacility;
+        }
     }
 }
