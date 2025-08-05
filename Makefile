@@ -80,6 +80,9 @@ deploy-swap-adapter:
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast --verify
 
+deploy-swap-adapter-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-swap-adapter-mainnet: deploy-swap-adapter
+
 deploy-swap-adapter-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-adapter-sepolia: deploy-swap-adapter
 
@@ -89,6 +92,9 @@ deploy-swap-facility:
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast --verify
+
+deploy-swap-facility-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-swap-facility-mainnet: deploy-swap-facility
 
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: deploy-swap-facility
