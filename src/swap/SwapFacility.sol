@@ -12,16 +12,37 @@ import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 
 import { ReentrancyLock } from "./ReentrancyLock.sol";
 
+abstract contract SwapFacilityUpgradeableStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.SwapFacility
+    struct SwapFacilityStorageStruct {
+        mapping(address extension => bool permissioned) permissionedExtensions;
+        mapping(address extension => mapping(address mSwapper => bool allowed)) permissionedMSwappers;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.SwapFacility")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _SWAP_FACILITY_EXTENDED_STORAGE_LOCATION =
+        0x2f6671d90ec6fb8a38d5fa4043e503b2789e716b6e5219d1b20da9c6434dde00;
+
+    function _getSwapFacilityStorageLocation() internal pure returns (SwapFacilityStorageStruct storage $) {
+        assembly {
+            $.slot := _SWAP_FACILITY_EXTENDED_STORAGE_LOCATION
+        }
+    }
+}
+
 /**
  * @title  Swap Facility
  * @notice A contract responsible for swapping between $M Extensions.
  * @author M0 Labs
  */
-contract SwapFacility is ISwapFacility, ReentrancyLock {
-    bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
+contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableStorageLayout {
+    /// @inheritdoc ISwapFacility
     bytes32 public constant EARNERS_LIST_NAME = "earners";
 
-    // @dev swapper role for permissioned extensions
+    /// @inheritdoc ISwapFacility
+    bytes32 public constant EARNERS_LIST_IGNORED_KEY = "earners_list_ignored";
+
+    /// @inheritdoc ISwapFacility
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
 
     /// @inheritdoc ISwapFacility
@@ -31,12 +52,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
     /// @inheritdoc ISwapFacility
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable registrar;
-
-    // TODO: move to OZ storage layout
-    mapping(address extension => bool permissioned) public permissionedExtensions;
-
-    // TODO: move to OZ storage layout
-    mapping(address extension => mapping(address mSwapper => bool allowed)) public permissionedMSwappers;
 
     /**
      * @custom:oz-upgrades-unsafe-allow constructor
@@ -154,7 +169,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
         bytes calldata signature
     ) external isNotLocked {
         _revertIfNotApprovedExtension(extensionOut);
-
         _revertIfNotApprovedSwapper(extensionOut, msg.sender);
 
         try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
@@ -165,9 +179,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
     /// @inheritdoc ISwapFacility
     function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
         _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(msg.sender);
-
-        if (!permissionedMSwappers[extensionIn][msg.sender]) revert NotApprovedMSwapper(msg.sender);
+        _revertIfNotApprovedSwapper(extensionIn, msg.sender);
 
         _swapOutM(extensionIn, amount, recipient);
     }
@@ -206,17 +218,20 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
         _swapOutM(extensionIn, amount, recipient);
     }
 
-    /// @inheritdoc IReentrancyLock
+    /// @inheritdoc ISwapFacility
     function setPermissionedExtension(address extension, bool permissioned) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (extension == address(0)) revert ZeroExtension();
 
-        if (permissionedExtensions[extension] == permissioned) return;
+        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
 
-        permissionedExtensions[extension] = permissioned;
+        if ($.permissionedExtensions[extension] == permissioned) return;
+
+        $.permissionedExtensions[extension] = permissioned;
 
         emit PermissionedExtensionSet(extension, permissioned);
     }
 
+    /// @inheritdoc ISwapFacility
     function setPermissionedMSwapper(
         address extension,
         address swapper,
@@ -225,14 +240,26 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
         if (extension == address(0)) revert ZeroExtension();
         if (swapper == address(0)) revert ZeroSwapper();
 
-        if (permissionedMSwappers[extension][swapper] == allowed) return;
+        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
 
-        permissionedMSwappers[extension][swapper] = allowed;
+        if ($.permissionedMSwappers[extension][swapper] == allowed) return;
+
+        $.permissionedMSwappers[extension][swapper] = allowed;
 
         emit PermissionedMSwapperSet(extension, swapper, allowed);
     }
 
     /* ============ View/Pure Functions ============ */
+
+    /// @inheritdoc ISwapFacility
+    function isExtensionPermissioned(address extension) external view returns (bool) {
+        return _getSwapFacilityStorageLocation().permissionedExtensions[extension];
+    }
+
+    /// @inheritdoc ISwapFacility
+    function isMSwapperPermissioned(address extension, address swapper) external view returns (bool) {
+        return _getSwapFacilityStorageLocation().permissionedMSwappers[extension][swapper];
+    }
 
     /// @inheritdoc ISwapFacility
     function msgSender() public view returns (address) {
@@ -327,19 +354,23 @@ contract SwapFacility is ISwapFacility, ReentrancyLock {
 
     /**
      * @dev   Reverts if `extension` is a permissioned extension.
+     *        A permissioned extension can only be swapped from/to M by an approved swapper.
      * @param extension Address of an extension.
      */
     function _revertIfPermissionedExtension(address extension) private view {
-        if (permissionedExtensions[extension]) revert PermissionedExtension(extension);
+        if (_getSwapFacilityStorageLocation().permissionedExtensions[extension])
+            revert PermissionedExtension(extension);
     }
 
     /**
-     * @dev   Reverts if `account` is not an approved M token swapper.
-     * @param account Address of the account to check.
+     * @dev   Reverts if `swapper` is not an approved M token swapper.
+     * @param swapper Address of the account to check.
      */
     function _revertIfNotApprovedSwapper(address extension, address swapper) private view {
-        if (permissionedExtensions[extension]) {
-            if (!permissionedMSwappers[extension][swapper]) revert NotApprovedSwapper(extension, swapper);
+        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
+
+        if ($.permissionedExtensions[extension]) {
+            if (!$.permissionedMSwappers[extension][swapper]) revert NotApprovedSwapper(extension, swapper);
         }
 
         if (!hasRole(M_SWAPPER_ROLE, swapper)) revert NotApprovedSwapper(extension, swapper);

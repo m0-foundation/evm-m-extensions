@@ -34,6 +34,21 @@ interface ISwapFacility {
      */
     event SwappedOutM(address indexed extensionIn, uint256 amount, address indexed recipient);
 
+    /**
+     * @notice Emitted when an $M Extension is set as permissioned or not.
+     * @param  extension The address of an $M Extension.
+     * @param  allowed   True if the extension is allowed, false otherwise.
+     */
+    event PermissionedExtensionSet(address indexed extension, bool allowed);
+
+    /**
+     * @notice Emitted when a `swapper` is allowed or not to swap the permissioned `extension` from/to M.
+     * @param  extension The address of an $M extension.
+     * @param  swapper   The address of the swapper.
+     * @param  allowed   True if the swapper is allowed, false otherwise.
+     */
+    event PermissionedMSwapperSet(address indexed extension, address indexed swapper, bool allowed);
+
     /* ============ Custom Errors ============ */
 
     /// @notice Thrown in the constructor if $M Token is 0x0.
@@ -42,11 +57,20 @@ interface ISwapFacility {
     /// @notice Thrown in the constructor if Registrar is 0x0.
     error ZeroRegistrar();
 
+    /// @notice Thrown in `setPermissionedMSwapper()` if the $M extension is 0x0.
+    error ZeroExtension();
+
+    /// @notice Thrown in `setPermissionedMSwapper()` if the swapper is 0x0.
+    error ZeroSwapper();
+
     /// @notice Thrown in `swap` and `swapM` functions if the extension is not TTG approved earner.
     error NotApprovedExtension(address extension);
 
-    /// @notice Thrown in `swapOutM` function if the caller is not approved swapper.
-    error NotApprovedSwapper(address account);
+    /// @notice Thrown in `swapInM` and `swapOutM` functions if `swapper` is not approved to swap the `extension`.
+    error NotApprovedSwapper(address extension, address swapper);
+
+    /// @notice Thrown in `swap` function if the extension is permissioned.
+    error PermissionedExtension(address extension);
 
     /* ============ Interactive Functions ============ */
 
@@ -187,6 +211,23 @@ interface ISwapFacility {
         bytes calldata signature
     ) external;
 
+    /**
+     * @notice Sets whether the `extension` is permissioned.
+     * @dev    MUST only be callable by an address with the `DEFAULT_ADMIN_ROLE` role.
+     * @param  extension    The address of an $M Extension.
+     * @param  permissioned True if the extension is permissioned, false otherwise.
+     */
+    function setPermissionedExtension(address extension, bool permissioned) external;
+
+    /**
+     * @notice Sets wheter `swapper` is allowed to swap the permissioned `extension` from/to M.
+     * @dev    MUST only be callable by an address with the `DEFAULT_ADMIN_ROLE` role.
+     * @param  extension The address of an extension to set permission for.
+     * @param  swapper   The address of the swapper to set permission for.
+     * @param  allowed   True if the swapper is allowed, false otherwise.
+     */
+    function setPermissionedMSwapper(address extension, address swapper, bool allowed) external;
+
     /* ============ View/Pure Functions ============ */
 
     /// @notice The address of the $M Token contract.
@@ -200,4 +241,28 @@ interface ISwapFacility {
      * @dev    Must be used instead of `msg.sender` in $M Extensions contracts to get the original sender.
      */
     function msgSender() external view returns (address msgSender);
+
+    /**
+     * @notice Checks if the extension is permissioned.
+     * @param  extension The extension address to check.
+     * @return True if permissioned, false otherwise.
+     */
+    function isExtensionPermissioned(address extension) external view returns (bool);
+
+    /**
+     * @notice Checks if `swapper` is allowed to swap the permissioned `extension` from/to M.
+     * @param  extension The $M extension address.
+     * @param  swapper   The swapper address to check.
+     * @return True if permissioned, false otherwise.
+     */
+    function isMSwapperPermissioned(address extension, address swapper) external view returns (bool);
+
+    /// @notice The parameter name in the Registrar that defines the earners list.
+    function EARNERS_LIST_NAME() external pure returns (bytes32);
+
+    /// @notice The parameter name in the Registrar that defines whether to ignore the earners list.
+    function EARNERS_LIST_IGNORED_KEY() external pure returns (bytes32);
+
+    /// @notice Swapper role for permissioned extensions.
+    function M_SWAPPER_ROLE() external pure returns (bytes32);
 }
