@@ -125,11 +125,27 @@ abstract contract Blacklistable is IBlacklistable, BlacklistableStorageLayout, A
     }
 
     /**
+     * @notice Internal function that reverts if an account is blacklisted.
+     * @param account The account to check.
+     */
+    function _revertIfBlacklisted(address account) internal view {
+        if (_getBlacklistableStorageLocation().isBlacklisted[account]) revert AccountBlacklisted(account);
+    }
+
+    /**
      * @notice Internal function that reverts if an account is not blacklisted.
      * @param $ The storage location of the blacklistable contract.
      * @param account The account to check.
      */
     function _revertIfNotBlacklisted(BlacklistableStorageStruct storage $, address account) internal view {
         if (!$.isBlacklisted[account]) revert AccountNotBlacklisted(account);
+    }
+
+    /**
+     * @notice Internal function that reverts if an account is not blacklisted.
+     * @param account The account to check.
+     */
+    function _revertIfNotBlacklisted(address account) internal view {
+        if (!_getBlacklistableStorageLocation().isBlacklisted[account]) revert AccountNotBlacklisted(account);
     }
 }

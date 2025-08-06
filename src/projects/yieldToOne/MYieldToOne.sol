@@ -105,7 +105,9 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IMYieldToOne
-    function claimYield() public virtual returns (uint256) {
+    function claimYield() public returns (uint256) {
+        _beforeClaimYield();
+
         uint256 yield_ = yield();
 
         if (yield_ == 0) return 0;
@@ -200,12 +202,17 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         _revertIfBlacklisted($, recipient);
     }
 
+    /**
+     * @dev   Hook called before claiming yield from the M Extension token. To be overridden in derived extensions.
+     */
+    function _beforeClaimYield() internal view virtual {}
+
     /* ============ Internal Interactive Functions ============ */
 
     /**
      * @dev   Mints `amount` tokens to `recipient`.
      * @param recipient The address whose account balance will be incremented.
-     * @param amount    The present amount of tokens to mint.
+     * @param amount    The present amount of tokens to mint.`
      */
     function _mint(address recipient, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
