@@ -81,12 +81,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
 
     /// @inheritdoc ISwapFacility
     function swap(address extensionIn, address extensionOut, uint256 amount, address recipient) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedExtension(extensionOut);
-
-        _revertIfPermissionedExtension(extensionIn);
-        _revertIfPermissionedExtension(extensionOut);
-
         _swap(extensionIn, extensionOut, amount, recipient);
     }
 
@@ -101,12 +95,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         bytes32 r,
         bytes32 s
     ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedExtension(extensionOut);
-
-        _revertIfPermissionedExtension(extensionIn);
-        _revertIfPermissionedExtension(extensionOut);
-
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
         _swap(extensionIn, extensionOut, amount, recipient);
@@ -134,10 +122,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
 
     /// @inheritdoc ISwapFacility
     function swapInM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionOut);
-
-        _revertIfNotApprovedSwapper(extensionOut, msg.sender);
-
         _swapInM(extensionOut, amount, recipient);
     }
 
@@ -151,10 +135,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         bytes32 r,
         bytes32 s
     ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionOut);
-
-        _revertIfNotApprovedSwapper(extensionOut, msg.sender);
-
         try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
@@ -168,9 +148,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         uint256 deadline,
         bytes calldata signature
     ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionOut);
-        _revertIfNotApprovedSwapper(extensionOut, msg.sender);
-
         try IMTokenLike(mToken).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swapInM(extensionOut, amount, recipient);
@@ -178,9 +155,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
 
     /// @inheritdoc ISwapFacility
     function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(extensionIn, msg.sender);
-
         _swapOutM(extensionIn, amount, recipient);
     }
 
@@ -194,9 +168,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         bytes32 r,
         bytes32 s
     ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(extensionIn, msg.sender);
-
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
 
         _swapOutM(extensionIn, amount, recipient);
@@ -210,9 +181,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         uint256 deadline,
         bytes calldata signature
     ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedSwapper(extensionIn, msg.sender);
-
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swapOutM(extensionIn, amount, recipient);
@@ -222,11 +190,9 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     function setPermissionedExtension(address extension, bool permissioned) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (extension == address(0)) revert ZeroExtension();
 
-        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
+        if (isExtensionPermissioned(extension)) return;
 
-        if ($.permissionedExtensions[extension] == permissioned) return;
-
-        $.permissionedExtensions[extension] = permissioned;
+        _getSwapFacilityStorageLocation().permissionedExtensions[extension] = permissioned;
 
         emit PermissionedExtensionSet(extension, permissioned);
     }
@@ -240,11 +206,9 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         if (extension == address(0)) revert ZeroExtension();
         if (swapper == address(0)) revert ZeroSwapper();
 
-        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
+        if (isMSwapperPermissioned(extension, swapper)) return;
 
-        if ($.permissionedMSwappers[extension][swapper] == allowed) return;
-
-        $.permissionedMSwappers[extension][swapper] = allowed;
+        _getSwapFacilityStorageLocation().permissionedMSwappers[extension][swapper] = allowed;
 
         emit PermissionedMSwapperSet(extension, swapper, allowed);
     }
@@ -252,12 +216,12 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc ISwapFacility
-    function isExtensionPermissioned(address extension) external view returns (bool) {
+    function isExtensionPermissioned(address extension) public view returns (bool) {
         return _getSwapFacilityStorageLocation().permissionedExtensions[extension];
     }
 
     /// @inheritdoc ISwapFacility
-    function isMSwapperPermissioned(address extension, address swapper) external view returns (bool) {
+    function isMSwapperPermissioned(address extension, address swapper) public view returns (bool) {
         return _getSwapFacilityStorageLocation().permissionedMSwappers[extension][swapper];
     }
 
@@ -275,6 +239,12 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swap(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedExtension(extensionOut);
+
+        _revertIfPermissionedExtension(extensionIn);
+        _revertIfPermissionedExtension(extensionOut);
+
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
         // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
@@ -301,6 +271,9 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swapInM(address extensionOut, uint256 amount, address recipient) private {
+        _revertIfNotApprovedExtension(extensionOut);
+        _revertIfNotApprovedSwapper(extensionOut, msg.sender);
+
         IERC20(mToken).transferFrom(msg.sender, address(this), amount);
         IERC20(mToken).approve(extensionOut, amount);
         IMExtension(extensionOut).wrap(recipient, amount);
@@ -315,6 +288,9 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param  recipient   The address to receive $M tokens.
      */
     function _swapOutM(address extensionIn, uint256 amount, address recipient) private {
+        _revertIfNotApprovedExtension(extensionIn);
+        _revertIfNotApprovedSwapper(extensionIn, msg.sender);
+
         IERC20(extensionIn).transferFrom(msg.sender, address(this), amount);
 
         // NOTE: Added to support WrappedM V1 extension, should be removed in the future after upgrade to V2.
@@ -358,8 +334,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param extension Address of an extension.
      */
     function _revertIfPermissionedExtension(address extension) private view {
-        if (_getSwapFacilityStorageLocation().permissionedExtensions[extension])
-            revert PermissionedExtension(extension);
+        if (isExtensionPermissioned(extension)) revert PermissionedExtension(extension);
     }
 
     /**
@@ -367,10 +342,8 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param swapper Address of the account to check.
      */
     function _revertIfNotApprovedSwapper(address extension, address swapper) private view {
-        SwapFacilityStorageStruct storage $ = _getSwapFacilityStorageLocation();
-
-        if ($.permissionedExtensions[extension]) {
-            if (!$.permissionedMSwappers[extension][swapper]) revert NotApprovedSwapper(extension, swapper);
+        if (isExtensionPermissioned(extension)) {
+            if (!isMSwapperPermissioned(extension, swapper)) revert NotApprovedPermissionedSwapper(extension, swapper);
         }
 
         if (!hasRole(M_SWAPPER_ROLE, swapper)) revert NotApprovedSwapper(extension, swapper);

@@ -73,17 +73,26 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         uint256 amount = 10e6;
 
         // Wraps
+        vm.prank(admin);
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+
         vm.prank(alice);
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(alice);
         swapFacility.swapInM(address(mEarnerManager), amount, alice);
 
+        vm.prank(admin);
+        swapFacility.grantRole(M_SWAPPER_ROLE, bob);
+
         vm.prank(bob);
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(bob);
         swapFacility.swapInM(address(mEarnerManager), amount, bob);
+
+        vm.prank(admin);
+        swapFacility.grantRole(M_SWAPPER_ROLE, carol);
 
         vm.prank(carol);
         mToken.approve(address(swapFacility), amount);

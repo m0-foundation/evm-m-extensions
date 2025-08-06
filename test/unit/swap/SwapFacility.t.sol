@@ -55,6 +55,8 @@ contract SwapFacilityUnitTests is Test {
         registrar.setEarner(address(extensionB), true);
     }
 
+    /* ============ initialize ============ */
+
     function test_initialState() external {
         assertEq(swapFacility.mToken(), address(mToken));
         assertEq(swapFacility.registrar(), address(registrar));
@@ -71,23 +73,25 @@ contract SwapFacilityUnitTests is Test {
         new SwapFacility(address(mToken), address(0));
     }
 
+    /* ============ swap ============ */
+
     function test_swap() external {
         uint256 amount = 1_000;
-        mToken.setBalanceOf(alice, amount);
 
-        vm.startPrank(alice);
-        mToken.approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(extensionA), amount, alice);
+        extensionA.setBalanceOf(alice, amount);
+        mToken.setBalanceOf(address(extensionA), amount);
 
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(extensionA.balanceOf(alice), amount);
         assertEq(extensionB.balanceOf(alice), 0);
 
+        vm.prank(alice);
         extensionA.approve(address(swapFacility), amount);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit ISwapFacility.Swapped(address(extensionA), address(extensionB), amount, alice);
 
+        vm.prank(alice);
         swapFacility.swap(address(extensionA), address(extensionB), amount, alice);
 
         assertEq(mToken.balanceOf(alice), 0);
@@ -105,14 +109,19 @@ contract SwapFacilityUnitTests is Test {
         swapFacility.swap(address(extensionB), address(0x123), 1_000, alice);
     }
 
+    /* ============ swapInM ============ */
+
     function test_swapInM() external {
         uint256 amount = 1_000;
         mToken.setBalanceOf(alice, amount);
 
+        vm.prank(owner);
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+
         vm.prank(alice);
         mToken.approve(address(swapFacility), amount);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit ISwapFacility.SwappedInM(address(extensionA), amount, alice);
 
         vm.prank(alice);
@@ -126,8 +135,29 @@ contract SwapFacilityUnitTests is Test {
         address notApprovedExtension = address(0x123);
 
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
-        swapFacility.swapInM(address(0x123), 1, alice);
+        swapFacility.swapInM(notApprovedExtension, 1, alice);
     }
+
+    function test_swapInM_notApprovedPermissionedMSwapper() external {
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(address(extensionA), true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(ISwapFacility.NotApprovedPermissionedSwapper.selector, address(extensionA), alice)
+        );
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(extensionA), 1, alice);
+    }
+
+    function test_swapInM_notApprovedMSwapper() external {
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedSwapper.selector, address(extensionA), alice));
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(extensionA), 1, alice);
+    }
+
+    /* ============ swapOutM ============ */
 
     function test_swapOutM() external {
         uint256 amount = 1_000;
@@ -144,7 +174,7 @@ contract SwapFacilityUnitTests is Test {
 
         extensionA.approve(address(swapFacility), amount);
 
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit();
         emit ISwapFacility.SwappedOutM(address(extensionA), amount, alice);
 
         swapFacility.swapOutM(address(extensionA), amount, alice);
@@ -157,15 +187,147 @@ contract SwapFacilityUnitTests is Test {
         address notApprovedExtension = address(0x123);
 
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedExtension.selector, notApprovedExtension));
-        swapFacility.swapOutM(address(0x123), 1, alice);
+        swapFacility.swapOutM(notApprovedExtension, 1, alice);
     }
 
-    function test_swapOutM_notApprovedSwapper() external {
-        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedSwapper.selector, alice));
+    function test_swapOutM_notApprovedPermissionedMSwapper() external {
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(address(extensionA), true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(ISwapFacility.NotApprovedPermissionedSwapper.selector, address(extensionA), alice)
+        );
 
         vm.prank(alice);
         swapFacility.swapOutM(address(extensionA), 1, alice);
     }
+
+    function test_swapOutM_notApprovedMSwapper() external {
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedSwapper.selector, address(extensionA), alice));
+
+        vm.prank(alice);
+        swapFacility.swapOutM(address(extensionA), 1, alice);
+    }
+
+    /* ============ setPermissionedExtension ============ */
+
+    function test_setPermissionedExtension() external {
+        address extension = address(0x123);
+        bool permission = true;
+
+        vm.expectEmit();
+        emit ISwapFacility.PermissionedExtensionSet(extension, permission);
+
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(extension, permission);
+
+        assertTrue(swapFacility.isExtensionPermissioned(extension));
+
+        vm.prank(owner);
+
+        // Return early if already permissioned
+        swapFacility.setPermissionedExtension(extension, permission);
+
+        assertTrue(swapFacility.isExtensionPermissioned(extension));
+    }
+
+    function test_setPermissionedExtension_notAdmin() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                alice,
+                swapFacility.DEFAULT_ADMIN_ROLE()
+            )
+        );
+
+        vm.prank(alice);
+        swapFacility.setPermissionedExtension(address(0x123), true);
+    }
+
+    function test_setPermissionedExtension_zeroAddress() external {
+        vm.expectRevert(ISwapFacility.ZeroExtension.selector);
+
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(address(0), true);
+    }
+
+    /* ============ setPermissionedMSwapper ============ */
+
+    function test_setPermissionedMSwapper() external {
+        address extension = address(0x123);
+        address swapper = address(0x456);
+        bool allowed = true;
+
+        vm.expectEmit();
+        emit ISwapFacility.PermissionedMSwapperSet(extension, swapper, allowed);
+
+        vm.prank(owner);
+        swapFacility.setPermissionedMSwapper(extension, swapper, allowed);
+
+        assertTrue(swapFacility.isMSwapperPermissioned(extension, swapper));
+
+        vm.prank(owner);
+
+        // Return early if already permissioned
+        swapFacility.setPermissionedMSwapper(extension, swapper, allowed);
+
+        assertTrue(swapFacility.isMSwapperPermissioned(extension, swapper));
+    }
+
+    function test_setPermissionedMSwapper_notAdmin() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                alice,
+                swapFacility.DEFAULT_ADMIN_ROLE()
+            )
+        );
+
+        vm.prank(alice);
+        swapFacility.setPermissionedMSwapper(address(0x123), address(0x456), true);
+    }
+
+    function test_setPermissionedMSwapper_zeroExtension() external {
+        vm.expectRevert(ISwapFacility.ZeroExtension.selector);
+
+        vm.prank(owner);
+        swapFacility.setPermissionedMSwapper(address(0), address(0x456), true);
+    }
+
+    function test_setPermissionedMSwapper_zeroSwapper() external {
+        vm.expectRevert(ISwapFacility.ZeroSwapper.selector);
+
+        vm.prank(owner);
+        swapFacility.setPermissionedMSwapper(address(0x123), address(0), true);
+    }
+
+    /* ============ isExtensionPermissioned ============ */
+
+    function test_isExtensionPermissioned() external {
+        address extension = address(0x123);
+        assertFalse(swapFacility.isExtensionPermissioned(extension));
+
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(extension, true);
+
+        assertTrue(swapFacility.isExtensionPermissioned(extension));
+    }
+
+    /* ============ isMSwapperPermissioned ============ */
+
+    function test_isMSwapperPermissioned() external {
+        address extension = address(0x123);
+        address swapper = address(0x456);
+
+        assertFalse(swapFacility.isMSwapperPermissioned(extension, swapper));
+
+        vm.prank(owner);
+        swapFacility.setPermissionedMSwapper(extension, swapper, true);
+
+        assertTrue(swapFacility.isMSwapperPermissioned(extension, swapper));
+    }
+
+    /* ============ upgrade ============ */
 
     function test_upgrade() external {
         // Current version does not have foo() function

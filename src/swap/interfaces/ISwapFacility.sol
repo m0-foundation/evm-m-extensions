@@ -66,6 +66,9 @@ interface ISwapFacility {
     /// @notice Thrown in `swap` and `swapM` functions if the extension is not TTG approved earner.
     error NotApprovedExtension(address extension);
 
+    /// @notice Thrown in `swapInM` and `swapOutM` functions if `swapper` is not approved to swap a permissioned `extension`.
+    error NotApprovedPermissionedSwapper(address extension, address swapper);
+
     /// @notice Thrown in `swapInM` and `swapOutM` functions if `swapper` is not approved to swap the `extension`.
     error NotApprovedSwapper(address extension, address swapper);
 

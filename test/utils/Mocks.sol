@@ -196,6 +196,10 @@ contract MockMExtension is MockERC20 {
         swapFacility = swapFacility_;
     }
 
+    function setBalanceOf(address account, uint256 balance) external {
+        balanceOf[account] = balance;
+    }
+
     function wrap(address recipient, uint256 amount) external {
         uint256 startingBalance = mToken.balanceOf(address(this));
         mToken.transferFrom(msg.sender, address(this), amount);
