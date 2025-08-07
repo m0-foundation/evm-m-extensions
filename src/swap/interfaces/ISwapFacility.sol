@@ -223,7 +223,7 @@ interface ISwapFacility {
     function setPermissionedExtension(address extension, bool permissioned) external;
 
     /**
-     * @notice Sets wheter `swapper` is allowed to swap the permissioned `extension` from/to M.
+     * @notice Sets whether `swapper` is allowed to swap the permissioned `extension` from/to M.
      * @dev    MUST only be callable by an address with the `DEFAULT_ADMIN_ROLE` role.
      * @param  extension The address of an extension to set permission for.
      * @param  swapper   The address of the swapper to set permission for.
@@ -248,17 +248,24 @@ interface ISwapFacility {
     /**
      * @notice Checks if the extension is permissioned.
      * @param  extension The extension address to check.
-     * @return True if permissioned, false otherwise.
+     * @return true if allowed, false otherwise.
      */
-    function isExtensionPermissioned(address extension) external view returns (bool);
+    function isPermissionedExtension(address extension) external view returns (bool);
 
     /**
-     * @notice Checks if `swapper` is allowed to swap the permissioned `extension` from/to M.
+     * @notice Checks if `swapper` is allowed to swap the permissioned extension from/to M.
      * @param  extension The $M extension address.
      * @param  swapper   The swapper address to check.
-     * @return True if permissioned, false otherwise.
+     * @return true if allowed, false otherwise.
      */
-    function isMSwapperPermissioned(address extension, address swapper) external view returns (bool);
+    function isPermissionedMSwapper(address extension, address swapper) external view returns (bool);
+
+    /**
+     * @notice Checks if `swapper` is allowed to swap the permissionless (common) extension from/to M.
+     * @param  swapper   The swapper address to check.
+     * @return true if allowed, false otherwise.
+     */
+    function isMSwapper(address swapper) external view returns (bool);
 
     /// @notice The parameter name in the Registrar that defines the earners list.
     function EARNERS_LIST_NAME() external pure returns (bytes32);
