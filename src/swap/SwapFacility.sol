@@ -344,9 +344,9 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     function _revertIfNotApprovedSwapper(address extension, address swapper) private view {
         if (isExtensionPermissioned(extension)) {
             if (!isMSwapperPermissioned(extension, swapper)) revert NotApprovedPermissionedSwapper(extension, swapper);
+        } else {
+            if (!hasRole(M_SWAPPER_ROLE, swapper)) revert NotApprovedSwapper(extension, swapper);
         }
-
-        if (!hasRole(M_SWAPPER_ROLE, swapper)) revert NotApprovedSwapper(extension, swapper);
     }
 
     /**
