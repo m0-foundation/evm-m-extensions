@@ -221,14 +221,14 @@ contract SwapFacilityUnitTests is Test {
         vm.prank(owner);
         swapFacility.setPermissionedExtension(extension, permission);
 
-        assertTrue(swapFacility.isExtensionPermissioned(extension));
+        assertTrue(swapFacility.isPermissionedExtension(extension));
 
         vm.prank(owner);
 
         // Return early if already permissioned
         swapFacility.setPermissionedExtension(extension, permission);
 
-        assertTrue(swapFacility.isExtensionPermissioned(extension));
+        assertTrue(swapFacility.isPermissionedExtension(extension));
     }
 
     function test_setPermissionedExtension_notAdmin() external {
@@ -264,14 +264,14 @@ contract SwapFacilityUnitTests is Test {
         vm.prank(owner);
         swapFacility.setPermissionedMSwapper(extension, swapper, allowed);
 
-        assertTrue(swapFacility.isMSwapperPermissioned(extension, swapper));
+        assertTrue(swapFacility.isPermissionedMSwapper(extension, swapper));
 
         vm.prank(owner);
 
         // Return early if already permissioned
         swapFacility.setPermissionedMSwapper(extension, swapper, allowed);
 
-        assertTrue(swapFacility.isMSwapperPermissioned(extension, swapper));
+        assertTrue(swapFacility.isPermissionedMSwapper(extension, swapper));
     }
 
     function test_setPermissionedMSwapper_notAdmin() external {
@@ -301,30 +301,30 @@ contract SwapFacilityUnitTests is Test {
         swapFacility.setPermissionedMSwapper(address(0x123), address(0), true);
     }
 
-    /* ============ isExtensionPermissioned ============ */
+    /* ============ isPermissionedExtension ============ */
 
-    function test_isExtensionPermissioned() external {
+    function test_isPermissionedExtension() external {
         address extension = address(0x123);
-        assertFalse(swapFacility.isExtensionPermissioned(extension));
+        assertFalse(swapFacility.isPermissionedExtension(extension));
 
         vm.prank(owner);
         swapFacility.setPermissionedExtension(extension, true);
 
-        assertTrue(swapFacility.isExtensionPermissioned(extension));
+        assertTrue(swapFacility.isPermissionedExtension(extension));
     }
 
-    /* ============ isMSwapperPermissioned ============ */
+    /* ============ isPermissionedMSwapper ============ */
 
-    function test_isMSwapperPermissioned() external {
+    function test_isPermissionedMSwapper() external {
         address extension = address(0x123);
         address swapper = address(0x456);
 
-        assertFalse(swapFacility.isMSwapperPermissioned(extension, swapper));
+        assertFalse(swapFacility.isPermissionedMSwapper(extension, swapper));
 
         vm.prank(owner);
         swapFacility.setPermissionedMSwapper(extension, swapper, true);
 
-        assertTrue(swapFacility.isMSwapperPermissioned(extension, swapper));
+        assertTrue(swapFacility.isPermissionedMSwapper(extension, swapper));
     }
 
     /* ============ upgrade ============ */

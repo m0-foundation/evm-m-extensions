@@ -190,7 +190,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     function setPermissionedExtension(address extension, bool permissioned) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (extension == address(0)) revert ZeroExtension();
 
-        if (isExtensionPermissioned(extension)) return;
+        if (isPermissionedExtension(extension)) return;
 
         _getSwapFacilityStorageLocation().permissionedExtensions[extension] = permissioned;
 
@@ -206,7 +206,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         if (extension == address(0)) revert ZeroExtension();
         if (swapper == address(0)) revert ZeroSwapper();
 
-        if (isMSwapperPermissioned(extension, swapper)) return;
+        if (isPermissionedMSwapper(extension, swapper)) return;
 
         _getSwapFacilityStorageLocation().permissionedMSwappers[extension][swapper] = allowed;
 
@@ -216,13 +216,18 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc ISwapFacility
-    function isExtensionPermissioned(address extension) public view returns (bool) {
+    function isPermissionedExtension(address extension) public view returns (bool) {
         return _getSwapFacilityStorageLocation().permissionedExtensions[extension];
     }
 
     /// @inheritdoc ISwapFacility
-    function isMSwapperPermissioned(address extension, address swapper) public view returns (bool) {
+    function isPermissionedMSwapper(address extension, address swapper) public view returns (bool) {
         return _getSwapFacilityStorageLocation().permissionedMSwappers[extension][swapper];
+    }
+
+    /// @inheritdoc ISwapFacility
+    function isMSwapper(address swapper) public view returns (bool) {
+        return hasRole(M_SWAPPER_ROLE, swapper);
     }
 
     /// @inheritdoc ISwapFacility
@@ -334,7 +339,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param extension Address of an extension.
      */
     function _revertIfPermissionedExtension(address extension) private view {
-        if (isExtensionPermissioned(extension)) revert PermissionedExtension(extension);
+        if (isPermissionedExtension(extension)) revert PermissionedExtension(extension);
     }
 
     /**
@@ -342,10 +347,10 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
      * @param swapper Address of the account to check.
      */
     function _revertIfNotApprovedSwapper(address extension, address swapper) private view {
-        if (isExtensionPermissioned(extension)) {
-            if (!isMSwapperPermissioned(extension, swapper)) revert NotApprovedPermissionedSwapper(extension, swapper);
+        if (isPermissionedExtension(extension)) {
+            if (!isPermissionedMSwapper(extension, swapper)) revert NotApprovedPermissionedSwapper(extension, swapper);
         } else {
-            if (!hasRole(M_SWAPPER_ROLE, swapper)) revert NotApprovedSwapper(extension, swapper);
+            if (!isMSwapper(swapper)) revert NotApprovedSwapper(extension, swapper);
         }
     }
 
