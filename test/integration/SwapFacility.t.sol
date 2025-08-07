@@ -38,7 +38,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    freezelistManager,
+                    freezeManager,
                     yieldRecipientManager
                 ),
                 mExtensionDeployOptions
@@ -185,7 +185,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
     function test_swap_wrappedM_to_mYieldToOne_frozenAccount() public {
         uint256 amount = 1_000_000;
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(USER);
 
         vm.startPrank(USER);

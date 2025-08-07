@@ -24,7 +24,7 @@ contract FreezableUnitTests is BaseUnitTest {
             Upgrades.deployTransparentProxy(
                 "FreezableHarness.sol:FreezableHarness",
                 admin,
-                abi.encodeWithSelector(FreezableHarness.initialize.selector, freezelistManager)
+                abi.encodeWithSelector(FreezableHarness.initialize.selector, freezeManager)
             )
         );
     }
@@ -32,13 +32,13 @@ contract FreezableUnitTests is BaseUnitTest {
     /* ============ initialize ============ */
 
     function test_initialize() external view {
-        assertTrue(IAccessControl(address(freezable)).hasRole(FREEZELIST_MANAGER_ROLE, freezelistManager));
+        assertTrue(IAccessControl(address(freezable)).hasRole(FREEZE_MANAGER_ROLE, freezeManager));
     }
 
-    function test_initialize_zeroFreezelistManager() external {
+    function test_initialize_zeroFreezeManager() external {
         address implementation = address(new FreezableHarness());
 
-        vm.expectRevert(IFreezable.ZeroFreezelistManager.selector);
+        vm.expectRevert(IFreezable.ZeroFreezeManager.selector);
         UnsafeUpgrades.deployTransparentProxy(
             implementation,
             admin,
@@ -48,13 +48,9 @@ contract FreezableUnitTests is BaseUnitTest {
 
     /* ============ freeze ============ */
 
-    function test_freeze_onlyFreezelistManager() public {
+    function test_freeze_onlyFreezeManager() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                alice,
-                FREEZELIST_MANAGER_ROLE
-            )
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, FREEZE_MANAGER_ROLE)
         );
 
         vm.prank(alice);
@@ -62,12 +58,12 @@ contract FreezableUnitTests is BaseUnitTest {
     }
 
     function test_freeze_revertIfFrozen() public {
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freeze(alice);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freeze(alice);
     }
 
@@ -75,7 +71,7 @@ contract FreezableUnitTests is BaseUnitTest {
         vm.expectEmit();
         emit IFreezable.Frozen(alice, block.timestamp);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freeze(alice);
 
         assertTrue(freezable.isFrozen(alice));
@@ -83,13 +79,9 @@ contract FreezableUnitTests is BaseUnitTest {
 
     /* ============ freezeAccounts ============ */
 
-    function test_freezeAccounts_onlyFreezelistManager() public {
+    function test_freezeAccounts_onlyFreezeManager() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                alice,
-                FREEZELIST_MANAGER_ROLE
-            )
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, FREEZE_MANAGER_ROLE)
         );
 
         vm.prank(alice);
@@ -103,7 +95,7 @@ contract FreezableUnitTests is BaseUnitTest {
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freezeAccounts(accounts);
     }
 
@@ -113,7 +105,7 @@ contract FreezableUnitTests is BaseUnitTest {
             emit IFreezable.Frozen(accounts[i], block.timestamp);
         }
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freezeAccounts(accounts);
 
         for (uint256 i; i < accounts.length; ++i) {
@@ -123,13 +115,9 @@ contract FreezableUnitTests is BaseUnitTest {
 
     /* ============ unfreeze ============ */
 
-    function test_unfreeze_onlyFreezelistManager() public {
+    function test_unfreeze_onlyFreezeManager() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                alice,
-                FREEZELIST_MANAGER_ROLE
-            )
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, FREEZE_MANAGER_ROLE)
         );
 
         vm.prank(alice);
@@ -139,12 +127,12 @@ contract FreezableUnitTests is BaseUnitTest {
     function test_freeze_revertIfNotFrozen() public {
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.unfreeze(alice);
     }
 
     function test_unfreeze() public {
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freeze(alice);
 
         assertTrue(freezable.isFrozen(alice));
@@ -152,7 +140,7 @@ contract FreezableUnitTests is BaseUnitTest {
         vm.expectEmit();
         emit IFreezable.Unfrozen(alice, block.timestamp);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.unfreeze(alice);
 
         assertFalse(freezable.isFrozen(alice));
@@ -160,13 +148,9 @@ contract FreezableUnitTests is BaseUnitTest {
 
     /* ============ unfreezeAccounts ============ */
 
-    function test_unfreezeAccounts_onlyFreezelistManager() public {
+    function test_unfreezeAccounts_onlyFreezeManager() public {
         vm.expectRevert(
-            abi.encodeWithSelector(
-                IAccessControl.AccessControlUnauthorizedAccount.selector,
-                alice,
-                FREEZELIST_MANAGER_ROLE
-            )
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, FREEZE_MANAGER_ROLE)
         );
 
         vm.prank(alice);
@@ -180,12 +164,12 @@ contract FreezableUnitTests is BaseUnitTest {
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.unfreezeAccounts(accounts);
     }
 
     function test_unfreezeAccounts() public {
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.freezeAccounts(accounts);
 
         for (uint256 i; i < accounts.length; ++i) {
@@ -193,7 +177,7 @@ contract FreezableUnitTests is BaseUnitTest {
             emit IFreezable.Unfrozen(accounts[i], block.timestamp);
         }
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         freezable.unfreezeAccounts(accounts);
 
         for (uint256 i; i < accounts.length; ++i) {

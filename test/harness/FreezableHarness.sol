@@ -10,7 +10,7 @@ contract FreezableHarness is Freezable {
         _disableInitializers();
     }
 
-    function initialize(address freezelistManager) public initializer {
-        __Freezable_init(freezelistManager);
+    function initialize(address freezeManager) public initializer {
+        __Freezable_init(freezeManager);
     }
 }

@@ -37,14 +37,14 @@ interface IFreezable {
      */
     error AccountNotFrozen(address account);
 
-    /// @notice Emitted if no freezelist manager is set.
-    error ZeroFreezelistManager();
+    /// @notice Emitted if no freeze manager is set.
+    error ZeroFreezeManager();
 
     /* ============ Interactive Functions ============ */
 
     /**
      * @notice Freezes an account.
-     * @dev MUST only be callable by the FREEZELIST_MANAGER_ROLE.
+     * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
      * @dev SHOULD revert if the account is already frozen.
      * @param account The address of the account to freeze.
      */
@@ -52,7 +52,7 @@ interface IFreezable {
 
     /**
      * @notice Freezes multiple accounts.
-     * @dev MUST only be callable by the FREEZELIST_MANAGER_ROLE.
+     * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
      * @dev SHOULD revert if any of the accounts are already frozen.
      * @param accounts The list of addresses to freeze.
      */
@@ -60,7 +60,7 @@ interface IFreezable {
 
     /**
      * @notice Unfreezes an account.
-     * @dev MUST only be callable by the FREEZELIST_MANAGER_ROLE.
+     * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
      * @dev SHOULD revert if the account is not frozen.
      * @param account The address of the account to unfreeze.
      */
@@ -68,7 +68,7 @@ interface IFreezable {
 
     /**
      * @notice Unfreezes multiple accounts.
-     * @dev MUST only be callable by the FREEZELIST_MANAGER_ROLE.
+     * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
      * @dev SHOULD revert if any of the accounts are not frozen.
      * @param accounts The list of addresses to unfreeze.
      */
@@ -77,7 +77,7 @@ interface IFreezable {
     /* ============ View/Pure Functions ============ */
 
     /// @notice The role that can manage the freezelist.
-    function FREEZELIST_MANAGER_ROLE() external view returns (bytes32);
+    function FREEZE_MANAGER_ROLE() external view returns (bytes32);
 
     /**
      * @notice Returns whether an account is frozen or not.

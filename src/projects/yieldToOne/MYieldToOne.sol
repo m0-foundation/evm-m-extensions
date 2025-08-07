@@ -59,7 +59,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param symbol                The symbol of the token (e.g. "MYO").
      * @param yieldRecipient_       The address of a yield destination.
      * @param admin                 The address of an admin.
-     * @param freezelistManager      The address of a freezelist manager.
+     * @param freezeManager         The address of a freeze manager.
      * @param yieldRecipientManager The address of a yield recipient setter.
      */
     function initialize(
@@ -67,10 +67,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         string memory symbol,
         address yieldRecipient_,
         address admin,
-        address freezelistManager,
+        address freezeManager,
         address yieldRecipientManager
     ) public virtual initializer {
-        __MYieldToOne_init(name, symbol, yieldRecipient_, admin, freezelistManager, yieldRecipientManager);
+        __MYieldToOne_init(name, symbol, yieldRecipient_, admin, freezeManager, yieldRecipientManager);
     }
 
     /**
@@ -79,7 +79,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param symbol                The symbol of the token (e.g. "MYO").
      * @param yieldRecipient_       The address of a yield destination.
      * @param admin                 The address of an admin.
-     * @param freezelistManager     The address of a freezelist manager.
+     * @param freezeManager         The address of a freeze manager.
      * @param yieldRecipientManager The address of a yield recipient setter.
      */
     function __MYieldToOne_init(
@@ -87,14 +87,14 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         string memory symbol,
         address yieldRecipient_,
         address admin,
-        address freezelistManager,
+        address freezeManager,
         address yieldRecipientManager
     ) internal onlyInitializing {
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (admin == address(0)) revert ZeroAdmin();
 
         __MExtension_init(name, symbol);
-        __Freezable_init(freezelistManager);
+        __Freezable_init(freezeManager);
 
         _setYieldRecipient(yieldRecipient_);
 

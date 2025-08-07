@@ -46,7 +46,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    freezelistManager,
+                    freezeManager,
                     yieldRecipientManager
                 ),
                 mExtensionDeployOptions
@@ -150,7 +150,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         uint256 amountIn = 1_000_000;
         uint256 minAmountOut = 997_000;
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(USER);
 
         vm.startPrank(USER);

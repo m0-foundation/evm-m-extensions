@@ -35,28 +35,28 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
     /* ============ Variables ============ */
 
     /// @inheritdoc IFreezable
-    bytes32 public constant FREEZELIST_MANAGER_ROLE = keccak256("FREEZELIST_MANAGER_ROLE");
+    bytes32 public constant FREEZE_MANAGER_ROLE = keccak256("FREEZE_MANAGER_ROLE");
 
     /* ============ Initializer ============ */
 
     /**
-     * @notice Initializes the contract with the given freezelist manager.
-     * @param freezelistManager The address of a freezelist manager.
+     * @notice Initializes the contract with the given freeze manager.
+     * @param freezeManager The address of a freeze manager.
      */
-    function __Freezable_init(address freezelistManager) internal onlyInitializing {
-        if (freezelistManager == address(0)) revert ZeroFreezelistManager();
-        _grantRole(FREEZELIST_MANAGER_ROLE, freezelistManager);
+    function __Freezable_init(address freezeManager) internal onlyInitializing {
+        if (freezeManager == address(0)) revert ZeroFreezeManager();
+        _grantRole(FREEZE_MANAGER_ROLE, freezeManager);
     }
 
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IFreezable
-    function freeze(address account) external onlyRole(FREEZELIST_MANAGER_ROLE) {
+    function freeze(address account) external onlyRole(FREEZE_MANAGER_ROLE) {
         _freeze(_getFreezableStorageLocation(), account);
     }
 
     /// @inheritdoc IFreezable
-    function freezeAccounts(address[] calldata accounts) external onlyRole(FREEZELIST_MANAGER_ROLE) {
+    function freezeAccounts(address[] calldata accounts) external onlyRole(FREEZE_MANAGER_ROLE) {
         FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
         for (uint256 i; i < accounts.length; ++i) {
@@ -65,12 +65,12 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
     }
 
     /// @inheritdoc IFreezable
-    function unfreeze(address account) external onlyRole(FREEZELIST_MANAGER_ROLE) {
+    function unfreeze(address account) external onlyRole(FREEZE_MANAGER_ROLE) {
         _unfreeze(_getFreezableStorageLocation(), account);
     }
 
     /// @inheritdoc IFreezable
-    function unfreezeAccounts(address[] calldata accounts) external onlyRole(FREEZELIST_MANAGER_ROLE) {
+    function unfreezeAccounts(address[] calldata accounts) external onlyRole(FREEZE_MANAGER_ROLE) {
         FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
         for (uint256 i; i < accounts.length; ++i) {

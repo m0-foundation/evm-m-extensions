@@ -44,7 +44,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    freezelistManager,
+                    freezeManager,
                     yieldRecipientManager
                 ),
                 mExtensionDeployOptions
@@ -65,7 +65,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
         assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(FREEZELIST_MANAGER_ROLE, freezelistManager));
+        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(FREEZE_MANAGER_ROLE, freezeManager));
         assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
     }
 
@@ -83,7 +83,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     address(0),
                     admin,
-                    freezelistManager,
+                    freezeManager,
                     yieldRecipientManager
                 )
             )
@@ -104,7 +104,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     address(yieldRecipient),
                     address(0),
-                    freezelistManager,
+                    freezeManager,
                     yieldRecipientManager
                 )
             )
@@ -125,7 +125,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     address(yieldRecipient),
                     admin,
-                    freezelistManager,
+                    freezeManager,
                     address(0)
                 )
             )
@@ -135,7 +135,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     /* ============ _approve ============ */
 
     function test_approve_frozenAccount() public {
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(alice);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
@@ -145,7 +145,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_approve_frozenSpender() public {
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(bob);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
@@ -160,7 +160,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mToken.setBalanceOf(alice, amount);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(alice);
 
         vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
@@ -175,7 +175,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mToken.setBalanceOf(alice, amount);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(bob);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
@@ -211,7 +211,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(alice);
 
         vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
@@ -274,7 +274,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.prank(alice);
         mYieldToOne.approve(carol, amount);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(carol);
 
         // Reverts cause Carol is frozen and cannot transfer tokens on Alice's behalf
@@ -288,7 +288,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(alice);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
@@ -301,7 +301,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.prank(freezelistManager);
+        vm.prank(freezeManager);
         mYieldToOne.freeze(bob);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));

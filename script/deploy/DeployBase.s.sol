@@ -100,7 +100,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
                 extensionConfig.admin,
-                extensionConfig.freezelistManager,
+                extensionConfig.freezeManager,
                 extensionConfig.yieldRecipientManager
             ),
             _computeSalt(deployer, "MYieldToOne")
