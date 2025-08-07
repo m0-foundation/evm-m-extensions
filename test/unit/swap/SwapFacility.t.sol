@@ -161,7 +161,7 @@ contract SwapFacilityUnitTests is Test {
     }
 
     function test_swapOutM_notApprovedSwapper() external {
-        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedSwapper.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotApprovedSwapper.selector, address(extensionA), alice));
 
         vm.prank(alice);
         swapFacility.swapOutM(address(extensionA), 1, alice);

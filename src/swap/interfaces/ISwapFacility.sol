@@ -28,11 +28,18 @@ interface ISwapFacility {
 
     /**
      * @notice Emitted when $M Extension is swapped for $M token.
-     * @param extensionIn  The address of the input $M Extension.
-     * @param amount       The amount swapped.
-     * @param recipient    The address to receive the $M token.
+     * @param extensionIn The address of the input $M Extension.
+     * @param amount      The amount swapped.
+     * @param recipient   The address to receive the $M token.
      */
     event SwappedOutM(address indexed extensionIn, uint256 amount, address indexed recipient);
+
+    /**
+     * @notice Emitted when the swapper role for an extension is set.
+     * @param extension The address of the extension.
+     * @param role      The role that allows swapping the extension in and out of $M tokens.
+     */
+    event ExtensionSwapperRoleSet(address indexed extension, bytes32 role);
 
     /* ============ Custom Errors ============ */
 
@@ -45,8 +52,11 @@ interface ISwapFacility {
     /// @notice Thrown in `swap` and `swapM` functions if the extension is not TTG approved earner.
     error NotApprovedExtension(address extension);
 
-    /// @notice Thrown in `swapOutM` function if the caller is not approved swapper.
-    error NotApprovedSwapper(address account);
+    /// @notice Thrown in `swap` and `swapM` functions if the caller is not approved swapper.
+    error NotApprovedSwapper(address extension, address swapper);
+
+    /// @notice Thrown in `swap` function if the extension is a permissioned extension.
+    error PermissionedExtension(address extension);
 
     /* ============ Interactive Functions ============ */
 
@@ -186,6 +196,13 @@ interface ISwapFacility {
         uint256 deadline,
         bytes calldata signature
     ) external;
+
+    /**
+     * @notice Sets the swapper role for a permissioned extension.
+     * @param  extension The address of the $M Extension.
+     * @param  role      The role that allows swapping the extension in and out of $M token.
+     */
+    function setExtensionSwapperRole(address extension, bytes32 role) external;
 
     /* ============ View/Pure Functions ============ */
 
