@@ -161,7 +161,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param  account The account from which M is deposited.
      * @param  spender The account spending M Extension token.
      */
-    function _beforeApprove(address account, address spender, uint256 /* amount */) internal view override {
+    function _beforeApprove(address account, address spender, uint256 /* amount */) internal view virtual override {
         BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
 
         _revertIfBlacklisted($, account);
