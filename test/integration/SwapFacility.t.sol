@@ -9,7 +9,7 @@ import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
 import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
-import { IBlacklistable } from "../../src/components/IBlacklistable.sol";
+import { IFreezable } from "../../src/components/IFreezable.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
@@ -38,7 +38,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    blacklistManager,
+                    freezelistManager,
                     yieldRecipientManager
                 ),
                 mExtensionDeployOptions
@@ -182,16 +182,16 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(USER), 0);
     }
 
-    function test_swap_wrappedM_to_mYieldToOne_blacklistedAccount() public {
+    function test_swap_wrappedM_to_mYieldToOne_frozenAccount() public {
         uint256 amount = 1_000_000;
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(USER);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(USER);
 
         vm.startPrank(USER);
         IERC20(WRAPPED_M).approve(address(swapFacility), amount);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, USER));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, USER));
         swapFacility.swap(WRAPPED_M, address(mYieldToOne), amount, USER);
     }
 

@@ -6,7 +6,7 @@ import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
 import { IMYieldToOne } from "./IMYieldToOne.sol";
 
-import { Blacklistable } from "../../components/Blacklistable.sol";
+import { Freezable } from "../../components/Freezable.sol";
 import { MExtension } from "../../MExtension.sol";
 
 abstract contract MYieldToOneStorageLayout {
@@ -34,7 +34,7 @@ abstract contract MYieldToOneStorageLayout {
  *         with yield claimable by a single recipient.
  * @author M0 Labs
  */
-contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blacklistable {
+contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Freezable {
     /* ============ Variables ============ */
 
     /// @inheritdoc IMYieldToOne
@@ -59,7 +59,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param symbol                The symbol of the token (e.g. "MYO").
      * @param yieldRecipient_       The address of a yield destination.
      * @param admin                 The address of an admin.
-     * @param blacklistManager      The address of a blacklist manager.
+     * @param freezelistManager      The address of a freezelist manager.
      * @param yieldRecipientManager The address of a yield recipient setter.
      */
     function initialize(
@@ -67,10 +67,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         string memory symbol,
         address yieldRecipient_,
         address admin,
-        address blacklistManager,
+        address freezelistManager,
         address yieldRecipientManager
     ) public virtual initializer {
-        __MYieldToOne_init(name, symbol, yieldRecipient_, admin, blacklistManager, yieldRecipientManager);
+        __MYieldToOne_init(name, symbol, yieldRecipient_, admin, freezelistManager, yieldRecipientManager);
     }
 
     /**
@@ -79,7 +79,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param symbol                The symbol of the token (e.g. "MYO").
      * @param yieldRecipient_       The address of a yield destination.
      * @param admin                 The address of an admin.
-     * @param blacklistManager      The address of a blacklist manager.
+     * @param freezelistManager     The address of a freezelist manager.
      * @param yieldRecipientManager The address of a yield recipient setter.
      */
     function __MYieldToOne_init(
@@ -87,14 +87,14 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
         string memory symbol,
         address yieldRecipient_,
         address admin,
-        address blacklistManager,
+        address freezelistManager,
         address yieldRecipientManager
     ) internal onlyInitializing {
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (admin == address(0)) revert ZeroAdmin();
 
         __MExtension_init(name, symbol);
-        __Blacklistable_init(blacklistManager);
+        __Freezable_init(freezelistManager);
 
         _setYieldRecipient(yieldRecipient_);
 
@@ -162,10 +162,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param  spender The account spending M Extension token.
      */
     function _beforeApprove(address account, address spender, uint256 /* amount */) internal view virtual override {
-        BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
+        FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
-        _revertIfBlacklisted($, account);
-        _revertIfBlacklisted($, spender);
+        _revertIfFrozen($, account);
+        _revertIfFrozen($, spender);
     }
 
     /**
@@ -174,10 +174,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param  recipient The account receiving the minted M Extension token.
      */
     function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view virtual override {
-        BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
+        FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
-        _revertIfBlacklisted($, account);
-        _revertIfBlacklisted($, recipient);
+        _revertIfFrozen($, account);
+        _revertIfFrozen($, recipient);
     }
 
     /**
@@ -185,7 +185,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param account The account from which M Extension token is burned.
      */
     function _beforeUnwrap(address account, uint256 /* amount */) internal view virtual override {
-        _revertIfBlacklisted(_getBlacklistableStorageLocation(), account);
+        _revertIfFrozen(_getFreezableStorageLocation(), account);
     }
 
     /**
@@ -194,12 +194,12 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Blac
      * @param recipient The address to which the tokens are being transferred.
      */
     function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view virtual override {
-        BlacklistableStorageStruct storage $ = _getBlacklistableStorageLocation();
+        FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
-        _revertIfBlacklisted($, msg.sender);
+        _revertIfFrozen($, msg.sender);
 
-        _revertIfBlacklisted($, sender);
-        _revertIfBlacklisted($, recipient);
+        _revertIfFrozen($, sender);
+        _revertIfFrozen($, recipient);
     }
 
     /**

@@ -18,7 +18,7 @@ import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMT
 
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
-import { IBlacklistable } from "../../src/components/IBlacklistable.sol";
+import { IFreezable } from "../../src/components/IFreezable.sol";
 
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 
@@ -46,7 +46,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    blacklistManager,
+                    freezelistManager,
                     yieldRecipientManager
                 ),
                 mExtensionDeployOptions
@@ -146,17 +146,17 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         assertEq(IERC20(USDC).balanceOf(address(swapAdapter)), 0);
     }
 
-    function test_swapIn_USDC_to_mYieldToOne_blacklistedAccount() public {
+    function test_swapIn_USDC_to_mYieldToOne_frozenAccount() public {
         uint256 amountIn = 1_000_000;
         uint256 minAmountOut = 997_000;
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(USER);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(USER);
 
         vm.startPrank(USER);
         IERC20(USDC).approve(address(swapAdapter), amountIn);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, USER));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, USER));
         swapAdapter.swapIn(USDC, amountIn, address(mYieldToOne), minAmountOut, USER, "");
     }
 

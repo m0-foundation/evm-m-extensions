@@ -16,7 +16,7 @@ import { MockM } from "../../utils/Mocks.sol";
 import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
 import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
 
-import { IBlacklistable } from "../../../src/components/IBlacklistable.sol";
+import { IFreezable } from "../../../src/components/IFreezable.sol";
 import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
@@ -44,7 +44,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    blacklistManager,
+                    freezelistManager,
                     yieldRecipientManager
                 ),
                 mExtensionDeployOptions
@@ -65,7 +65,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
         assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
+        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(FREEZELIST_MANAGER_ROLE, freezelistManager));
         assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
     }
 
@@ -83,7 +83,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     address(0),
                     admin,
-                    blacklistManager,
+                    freezelistManager,
                     yieldRecipientManager
                 )
             )
@@ -104,7 +104,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     address(yieldRecipient),
                     address(0),
-                    blacklistManager,
+                    freezelistManager,
                     yieldRecipientManager
                 )
             )
@@ -125,7 +125,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     SYMBOL,
                     address(yieldRecipient),
                     admin,
-                    blacklistManager,
+                    freezelistManager,
                     address(0)
                 )
             )
@@ -134,21 +134,21 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     /* ============ _approve ============ */
 
-    function test_approve_blacklistedAccount() public {
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+    function test_approve_frozenAccount() public {
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(alice);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
         vm.prank(alice);
         mYieldToOne.approve(bob, 1_000e6);
     }
 
-    function test_approve_blacklistedSpender() public {
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
+    function test_approve_frozenSpender() public {
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(bob);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
 
         vm.prank(alice);
         mYieldToOne.approve(bob, 1_000e6);
@@ -156,29 +156,29 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     /* ============ _wrap ============ */
 
-    function test_wrap_blacklistedAccount() external {
+    function test_wrap_frozenAccount() external {
         uint256 amount = 1_000e6;
         mToken.setBalanceOf(alice, amount);
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(alice);
 
         vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
         vm.prank(address(swapFacility));
         mYieldToOne.wrap(bob, amount);
     }
 
-    function test_wrap_blacklistedRecipient() external {
+    function test_wrap_frozenRecipient() external {
         uint256 amount = 1_000e6;
         mToken.setBalanceOf(alice, amount);
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(bob);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
 
         vm.prank(address(swapFacility));
         mYieldToOne.wrap(bob, amount);
@@ -207,16 +207,16 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     /* ============ _unwrap ============ */
-    function test_unwrap_blacklistedAccount() external {
+    function test_unwrap_frozenAccount() external {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(alice);
 
         vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
         vm.prank(address(swapFacility));
         mYieldToOne.unwrap(alice, amount);
@@ -266,7 +266,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     /* ============ _transfer ============ */
-    function test_transfer_blacklistedSender() external {
+    function test_transfer_frozenSender() external {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
@@ -274,37 +274,37 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.prank(alice);
         mYieldToOne.approve(carol, amount);
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(carol);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(carol);
 
-        // Reverts cause Carol is blacklisted and cannot transfer tokens on Alice's behalf
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, carol));
+        // Reverts cause Carol is frozen and cannot transfer tokens on Alice's behalf
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, carol));
 
         vm.prank(carol);
         mYieldToOne.transferFrom(alice, bob, amount);
     }
 
-    function test_transfer_blacklistedAccount() external {
+    function test_transfer_frozenAccount() external {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(alice);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
         vm.prank(alice);
         mYieldToOne.transfer(bob, amount);
     }
 
-    function test_transfer_blacklistedRecipient() external {
+    function test_transfer_frozenRecipient() external {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
+        vm.prank(freezelistManager);
+        mYieldToOne.freeze(bob);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
 
         vm.prank(alice);
         mYieldToOne.transfer(bob, amount);

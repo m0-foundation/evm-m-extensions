@@ -25,7 +25,7 @@ contract BaseUnitTest is Helpers, Test {
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant FREEZELIST_MANAGER_ROLE = keccak256("FREEZELIST_MANAGER_ROLE");
     bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
@@ -42,7 +42,7 @@ contract BaseUnitTest is Helpers, Test {
     uint32 public mYiedFeeEarnerRate;
 
     address public admin = makeAddr("admin");
-    address public blacklistManager = makeAddr("blacklistManager");
+    address public freezelistManager = makeAddr("freezelistManager");
     address public earnerManager = makeAddr("earnerManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");

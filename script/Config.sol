@@ -27,7 +27,7 @@ contract Config {
         address claimRecipientManager;
         // yield to one
         address yieldRecipient;
-        address blacklistManager;
+        address freezelistManager;
         address yieldRecipientManager;
     }
 
@@ -149,7 +149,7 @@ contract Config {
                 config.symbol = "MYT1";
                 config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.blacklistManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.freezelistManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
             }
         }

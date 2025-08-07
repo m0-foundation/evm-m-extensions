@@ -578,7 +578,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mEarnerManager.approve(bob, 1_000e6);
     }
 
-    function test_approve_blacklistedSpender() public {
+    function test_approve_frozenSpender() public {
         mEarnerManager.setAccountOf(alice, 1_000e6, 1_000e6, true, 1_000);
 
         vm.expectRevert(abi.encodeWithSelector(IMEarnerManager.NotWhitelisted.selector, bob));
@@ -886,7 +886,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
 
         mEarnerManager.setAccountOf(carol, 0, 0, false, 0);
 
-        // Reverts cause Carol is blacklisted and cannot transfer tokens on Alice's behalf
+        // Reverts cause Carol is frozen and cannot transfer tokens on Alice's behalf
         vm.expectRevert(abi.encodeWithSelector(IMEarnerManager.NotWhitelisted.selector, carol));
 
         vm.prank(carol);

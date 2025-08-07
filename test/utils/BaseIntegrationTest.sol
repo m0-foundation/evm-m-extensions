@@ -43,7 +43,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address public constant mSource = 0x3f0376da3Ae4313E7a5F1dA184BAFC716252d759;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant FREEZELIST_MANAGER_ROLE = keccak256("FREEZELIST_MANAGER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
@@ -55,7 +55,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
 
     address public admin = makeAddr("admin");
-    address public blacklistManager = makeAddr("blacklistManager");
+    address public freezelistManager = makeAddr("freezelistManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
     address public feeManager = makeAddr("feeManager");

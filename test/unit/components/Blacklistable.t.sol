@@ -8,23 +8,23 @@ import {
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IBlacklistable } from "../../../src/components/IBlacklistable.sol";
+import { IFreezable } from "../../../src/components/IFreezable.sol";
 
-import { BlacklistableHarness } from "../../harness/BlacklistableHarness.sol";
+import { FreezableHarness } from "../../harness/FreezableHarness.sol";
 
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
-contract BlacklistableUnitTests is BaseUnitTest {
-    BlacklistableHarness public blacklistable;
+contract FreezableUnitTests is BaseUnitTest {
+    FreezableHarness public freezable;
 
     function setUp() public override {
         super.setUp();
 
-        blacklistable = BlacklistableHarness(
+        freezable = FreezableHarness(
             Upgrades.deployTransparentProxy(
-                "BlacklistableHarness.sol:BlacklistableHarness",
+                "FreezableHarness.sol:FreezableHarness",
                 admin,
-                abi.encodeWithSelector(BlacklistableHarness.initialize.selector, blacklistManager)
+                abi.encodeWithSelector(FreezableHarness.initialize.selector, freezelistManager)
             )
         );
     }
@@ -32,172 +32,172 @@ contract BlacklistableUnitTests is BaseUnitTest {
     /* ============ initialize ============ */
 
     function test_initialize() external view {
-        assertTrue(IAccessControl(address(blacklistable)).hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
+        assertTrue(IAccessControl(address(freezable)).hasRole(FREEZELIST_MANAGER_ROLE, freezelistManager));
     }
 
-    function test_initialize_zeroBlacklistManager() external {
-        address implementation = address(new BlacklistableHarness());
+    function test_initialize_zeroFreezelistManager() external {
+        address implementation = address(new FreezableHarness());
 
-        vm.expectRevert(IBlacklistable.ZeroBlacklistManager.selector);
+        vm.expectRevert(IFreezable.ZeroFreezelistManager.selector);
         UnsafeUpgrades.deployTransparentProxy(
             implementation,
             admin,
-            abi.encodeWithSelector(BlacklistableHarness.initialize.selector, address(0))
+            abi.encodeWithSelector(FreezableHarness.initialize.selector, address(0))
         );
     }
 
-    /* ============ blacklist ============ */
+    /* ============ freeze ============ */
 
-    function test_blacklist_onlyBlacklistManager() public {
+    function test_freeze_onlyFreezelistManager() public {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 alice,
-                BLACKLIST_MANAGER_ROLE
+                FREEZELIST_MANAGER_ROLE
             )
         );
 
         vm.prank(alice);
-        blacklistable.blacklist(bob);
+        freezable.freeze(bob);
     }
 
-    function test_blacklist_revertIfBlacklisted() public {
-        vm.prank(blacklistManager);
-        blacklistable.blacklist(alice);
+    function test_freeze_revertIfFrozen() public {
+        vm.prank(freezelistManager);
+        freezable.freeze(alice);
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
-        vm.prank(blacklistManager);
-        blacklistable.blacklist(alice);
+        vm.prank(freezelistManager);
+        freezable.freeze(alice);
     }
 
-    function test_blacklist() public {
+    function test_freeze() public {
         vm.expectEmit();
-        emit IBlacklistable.Blacklisted(alice, block.timestamp);
+        emit IFreezable.Frozen(alice, block.timestamp);
 
-        vm.prank(blacklistManager);
-        blacklistable.blacklist(alice);
+        vm.prank(freezelistManager);
+        freezable.freeze(alice);
 
-        assertTrue(blacklistable.isBlacklisted(alice));
+        assertTrue(freezable.isFrozen(alice));
     }
 
-    /* ============ blacklistAccounts ============ */
+    /* ============ freezeAccounts ============ */
 
-    function test_blacklistAccounts_onlyBlacklistManager() public {
+    function test_freezeAccounts_onlyFreezelistManager() public {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 alice,
-                BLACKLIST_MANAGER_ROLE
+                FREEZELIST_MANAGER_ROLE
             )
         );
 
         vm.prank(alice);
-        blacklistable.blacklistAccounts(accounts);
+        freezable.freezeAccounts(accounts);
     }
 
-    function test_blacklistAccounts_revertIfBlacklisted() public {
+    function test_freezeAccounts_revertIfFrozen() public {
         address[] memory accounts = new address[](2);
         accounts[0] = alice;
         accounts[1] = alice;
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
-        vm.prank(blacklistManager);
-        blacklistable.blacklistAccounts(accounts);
+        vm.prank(freezelistManager);
+        freezable.freezeAccounts(accounts);
     }
 
-    function test_blacklistAccounts() public {
+    function test_freezeAccounts() public {
         for (uint256 i; i < accounts.length; ++i) {
             vm.expectEmit();
-            emit IBlacklistable.Blacklisted(accounts[i], block.timestamp);
+            emit IFreezable.Frozen(accounts[i], block.timestamp);
         }
 
-        vm.prank(blacklistManager);
-        blacklistable.blacklistAccounts(accounts);
+        vm.prank(freezelistManager);
+        freezable.freezeAccounts(accounts);
 
         for (uint256 i; i < accounts.length; ++i) {
-            assertTrue(blacklistable.isBlacklisted(accounts[i]));
+            assertTrue(freezable.isFrozen(accounts[i]));
         }
     }
 
-    /* ============ unblacklist ============ */
+    /* ============ unfreeze ============ */
 
-    function test_unblacklist_onlyBlacklistManager() public {
+    function test_unfreeze_onlyFreezelistManager() public {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 alice,
-                BLACKLIST_MANAGER_ROLE
+                FREEZELIST_MANAGER_ROLE
             )
         );
 
         vm.prank(alice);
-        blacklistable.unblacklist(bob);
+        freezable.unfreeze(bob);
     }
 
-    function test_blacklist_revertIfNotBlacklisted() public {
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountNotBlacklisted.selector, alice));
+    function test_freeze_revertIfNotFrozen() public {
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
 
-        vm.prank(blacklistManager);
-        blacklistable.unblacklist(alice);
+        vm.prank(freezelistManager);
+        freezable.unfreeze(alice);
     }
 
-    function test_unblacklist() public {
-        vm.prank(blacklistManager);
-        blacklistable.blacklist(alice);
+    function test_unfreeze() public {
+        vm.prank(freezelistManager);
+        freezable.freeze(alice);
 
-        assertTrue(blacklistable.isBlacklisted(alice));
+        assertTrue(freezable.isFrozen(alice));
 
         vm.expectEmit();
-        emit IBlacklistable.Unblacklisted(alice, block.timestamp);
+        emit IFreezable.Unfrozen(alice, block.timestamp);
 
-        vm.prank(blacklistManager);
-        blacklistable.unblacklist(alice);
+        vm.prank(freezelistManager);
+        freezable.unfreeze(alice);
 
-        assertFalse(blacklistable.isBlacklisted(alice));
+        assertFalse(freezable.isFrozen(alice));
     }
 
-    /* ============ unblacklistAccounts ============ */
+    /* ============ unfreezeAccounts ============ */
 
-    function test_unblacklistAccounts_onlyBlacklistManager() public {
+    function test_unfreezeAccounts_onlyFreezelistManager() public {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAccessControl.AccessControlUnauthorizedAccount.selector,
                 alice,
-                BLACKLIST_MANAGER_ROLE
+                FREEZELIST_MANAGER_ROLE
             )
         );
 
         vm.prank(alice);
-        blacklistable.unblacklistAccounts(accounts);
+        freezable.unfreezeAccounts(accounts);
     }
 
-    function test_unblacklistAccounts_revertIfNotBlacklisted() public {
+    function test_unfreezeAccounts_revertIfNotFrozen() public {
         address[] memory accounts = new address[](2);
         accounts[0] = alice;
         accounts[1] = bob;
 
-        vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountNotBlacklisted.selector, alice));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
 
-        vm.prank(blacklistManager);
-        blacklistable.unblacklistAccounts(accounts);
+        vm.prank(freezelistManager);
+        freezable.unfreezeAccounts(accounts);
     }
 
-    function test_unblacklistAccounts() public {
-        vm.prank(blacklistManager);
-        blacklistable.blacklistAccounts(accounts);
+    function test_unfreezeAccounts() public {
+        vm.prank(freezelistManager);
+        freezable.freezeAccounts(accounts);
 
         for (uint256 i; i < accounts.length; ++i) {
             vm.expectEmit();
-            emit IBlacklistable.Unblacklisted(accounts[i], block.timestamp);
+            emit IFreezable.Unfrozen(accounts[i], block.timestamp);
         }
 
-        vm.prank(blacklistManager);
-        blacklistable.unblacklistAccounts(accounts);
+        vm.prank(freezelistManager);
+        freezable.unfreezeAccounts(accounts);
 
         for (uint256 i; i < accounts.length; ++i) {
-            assertFalse(blacklistable.isBlacklisted(accounts[i]));
+            assertFalse(freezable.isFrozen(accounts[i]));
         }
     }
 }
