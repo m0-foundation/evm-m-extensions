@@ -231,6 +231,21 @@ contract SwapFacilityUnitTests is Test {
         assertTrue(swapFacility.isPermissionedExtension(extension));
     }
 
+    function test_setPermissionedExtension_removeExtensionFromPermissionedList() external {
+        address extension = address(0x123);
+        bool permission = true;
+
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(extension, true);
+
+        assertTrue(swapFacility.isPermissionedExtension(extension));
+
+        vm.prank(owner);
+        swapFacility.setPermissionedExtension(extension, false);
+
+        assertFalse(swapFacility.isPermissionedExtension(extension));
+    }
+
     function test_setPermissionedExtension_notAdmin() external {
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -272,6 +287,24 @@ contract SwapFacilityUnitTests is Test {
         swapFacility.setPermissionedMSwapper(extension, swapper, allowed);
 
         assertTrue(swapFacility.isPermissionedMSwapper(extension, swapper));
+    }
+
+    function test_setPermissionedMSwapper_removeSwapperFromPermissionedList() external {
+        address extension = address(0x123);
+        address swapper = address(0x456);
+
+        vm.expectEmit();
+        emit ISwapFacility.PermissionedMSwapperSet(extension, swapper, true);
+
+        vm.prank(owner);
+        swapFacility.setPermissionedMSwapper(extension, swapper, true);
+
+        assertTrue(swapFacility.isPermissionedMSwapper(extension, swapper));
+
+        vm.prank(owner);
+        swapFacility.setPermissionedMSwapper(extension, swapper, false);
+
+        assertFalse(swapFacility.isPermissionedMSwapper(extension, swapper));
     }
 
     function test_setPermissionedMSwapper_notAdmin() external {
