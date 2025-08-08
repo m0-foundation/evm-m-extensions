@@ -233,7 +233,6 @@ contract SwapFacilityUnitTests is Test {
 
     function test_setPermissionedExtension_removeExtensionFromPermissionedList() external {
         address extension = address(0x123);
-        bool permission = true;
 
         vm.prank(owner);
         swapFacility.setPermissionedExtension(extension, true);
