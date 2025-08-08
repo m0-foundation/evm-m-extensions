@@ -109,12 +109,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         uint256 deadline,
         bytes calldata signature
     ) external isNotLocked {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedExtension(extensionOut);
-
-        _revertIfPermissionedExtension(extensionIn);
-        _revertIfPermissionedExtension(extensionOut);
-
         try IMExtension(extensionIn).permit(msg.sender, address(this), amount, deadline, signature) {} catch {}
 
         _swap(extensionIn, extensionOut, amount, recipient);
