@@ -104,7 +104,11 @@ upgrade-swap-facility:
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast
+	--etherscan-api-key $(ETHERSCAN_API_KEY) \
+	--skip test --slow --non-interactive --broadcast --verify
+
+upgrade-swap-facility-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+upgrade-swap-facility-mainnet: upgrade-swap-facility
 
 upgrade-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 upgrade-swap-facility-sepolia: upgrade-swap-facility

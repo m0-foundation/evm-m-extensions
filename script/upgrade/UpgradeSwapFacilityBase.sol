@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import {
     ITransparentUpgradeableProxy
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import { UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
@@ -16,6 +17,6 @@ contract UpgradeSwapFacilityBase is ScriptBase {
 
         SwapFacility implementation_ = new SwapFacility(config.mToken, config.registrar);
 
-        ITransparentUpgradeableProxy(swapFacility_).upgradeToAndCall(address(implementation_), "");
+        UnsafeUpgrades.upgradeProxy(swapFacility_, address(implementation_), "");
     }
 }
