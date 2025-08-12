@@ -72,6 +72,22 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
                 mExtensionDeployOptions
             )
         );
+
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        _addToList(EARNERS_LIST, address(mEarnerManager));
+        _fundAccounts();
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 10_000); // 100% fee
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(address(swapFacility), true, 0);
+
+        vm.prank(admin);
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+
+        mEarnerManager.enableEarning();
     }
 
     function test_integration_constants_system() external view {
@@ -105,37 +121,32 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
     }
 
-    function test_swap_mYieldFee_to_mYieldToOne() public {
-        _addToList(EARNERS_LIST, address(mYieldFee));
-        _addToList(EARNERS_LIST, address(mYieldToOne));
+    function test_multiHopSwap_mYieldFee_to_mYieldToOne_to_wrappedM() public {
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), 10e6);
+        mYieldFee.approve(address(swapFacility), 10e6);
+        mYieldToOne.approve(address(swapFacility), 10e6);
+        mEarnerManager.approve(address(swapFacility), 10e6);
+        wrappedM.approve(address(swapFacility), 10e6);
+        vm.stopPrank();
 
-        // mYieldFee.setAccountOf(alice, 100e6, 100e6);
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldFee), 10e6, alice);
 
-        // uint256 balanceBefore = mYieldFee.balanceOf(alice);
-        // console.log("balanceBefore", balanceBefore);
+        uint256 mYieldFeeBalance = mYieldFee.balanceOf(alice);
+        assertEq(mYieldFeeBalance, 10e6);
 
-        // console.log("swapFacility", address(swapFacility));
-        // console.log("mYieldFee", address(mYieldFee));
-        // console.log("mYieldToOne", address(mYieldToOne));
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), 10e6, alice);
 
-        // vm.prank(alice);
-        // mYieldFee.approve(address(swapFacility), 100e6);
+        uint256 mYieldToOneBalance = mYieldToOne.balanceOf(alice);
+        assertEq(mYieldToOneBalance, 10e6);
 
-        // // Swap 100 mYieldFee to mYieldToOne
-        // vm.prank(alice);
-        // swapFacility.swap(address(mYieldFee), address(mYieldToOne), 100e6, alice);
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), 10e6, alice);
 
-        // // Verify alice has 100 mYieldToOne
-        // assertEq(mYieldToOne.balanceOf(alice), 100e6);
-        // // Test swapping mYieldFee to mYieldToOne
-    }
-
-    function test_swap_mEarnerManager_to_mYieldFee() public {
-        // Test swapping mEarnerManager to mYieldFee
-    }
-
-    function test_multiHopSwap_mYieldFee_to_mYieldToOne() public {
-        // Test swapping mYieldFee to mYieldToOne through mEarnerManager
+        uint256 mEarnerManagerBalance = mEarnerManager.balanceOf(alice);
+        assertEq(mEarnerManagerBalance, 10e6);
     }
 
     function test_yieldFlow_betweenExtensions() public {
