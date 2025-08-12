@@ -137,16 +137,22 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFeeBalance, 10e6);
 
         vm.prank(alice);
-        swapFacility.swap(address(mYieldFee), address(mYieldToOne), 10e6, alice);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), mYieldFeeBalance, alice);
 
         uint256 mYieldToOneBalance = mYieldToOne.balanceOf(alice);
         assertEq(mYieldToOneBalance, 10e6);
 
         vm.prank(alice);
-        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), 10e6, alice);
+        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), mYieldToOneBalance, alice);
 
         uint256 mEarnerManagerBalance = mEarnerManager.balanceOf(alice);
         assertEq(mEarnerManagerBalance, 10e6);
+
+        vm.prank(alice);
+        swapFacility.swap(address(mEarnerManager), address(wrappedM), mEarnerManagerBalance - 2, alice);
+
+        uint256 wrappedMBalance = wrappedM.balanceOf(alice);
+        assertEq(wrappedMBalance, 10e6 - 3);
     }
 
     function test_yieldFlow_betweenExtensions() public {
