@@ -59,7 +59,11 @@ contract ScriptBase is Script, Config {
     function _writeDeployment(uint256 chainId_, string memory key_, address value_) internal {
         string memory root = "";
 
-        Deployments memory deployments_ = _readDeployment(chainId_);
+        Deployments memory deployments_;
+
+        if (vm.isFile(_deployOutputPath(chainId_))) {
+            deployments_ = _readDeployment(chainId_);
+        }
 
         if (
             keccak256(bytes(key_)) != keccak256(bytes("swapAdapter")) &&

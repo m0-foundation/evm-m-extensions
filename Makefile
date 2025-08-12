@@ -99,6 +99,9 @@ deploy-swap-facility-mainnet: deploy-swap-facility
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: deploy-swap-facility
 
+deploy-swap-facility-linea: RPC_URL=$(LINEA_RPC_URL)
+deploy-swap-facility-linea: deploy-swap-facility
+
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
