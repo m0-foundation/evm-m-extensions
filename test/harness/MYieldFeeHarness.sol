@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
+import { console } from "forge-std/console.sol";
+
 contract MYieldFeeHarness is MYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address mToken, address swapFacility) MYieldFee(mToken, swapFacility) {}
@@ -33,6 +35,9 @@ contract MYieldFeeHarness is MYieldFee {
 
         $.balanceOf[account] = balance;
         $.principalOf[account] = principal;
+
+        console.log("balanceOf", $.balanceOf[account]);
+        console.log("principalOf", $.principalOf[account]);
     }
 
     function setIsEarningEnabled(bool isEarningEnabled_) external {

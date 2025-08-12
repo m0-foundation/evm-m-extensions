@@ -4,11 +4,13 @@ pragma solidity 0.8.26;
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
-import { MYeildToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
-import { MYieldFee } from "../../src/projects/yieldToAllWithFeeFee/MYieldFee.sol";
+import { MEarnerManagerHarness } from "../harness/MEarnerManagerHarness.sol";
+import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
+import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
+
+import { console } from "forge-std/console.sol";
 
 contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
@@ -20,7 +22,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mEarnerManager = MEarnerManager(
+        mEarnerManager = MEarnerManagerHarness(
             Upgrades.deployTransparentProxy(
                 "MEarnerManagerHarness.sol:MEarnerManagerHarness",
                 admin,
@@ -36,29 +38,29 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
             )
         );
 
-        mYieldToOne = MYeildToOne(
+        mYieldToOne = MYieldToOneHarness(
             Upgrades.deployTransparentProxy(
                 "MYieldToOneHarness.sol:MYieldToOneHarness",
                 admin,
                 abi.encodeWithSelector(
-                    MYieldToOne.initialize.selector,
+                    MYieldToOneHarness.initialize.selector,
                     NAME,
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    earnerManager,
-                    feeRecipient
+                    freezeManager,
+                    yieldRecipientManager
                 ),
                 mExtensionDeployOptions
             )
         );
 
-        mYieldFee = MYieldFee(
+        mYieldFee = MYieldFeeHarness(
             Upgrades.deployTransparentProxy(
                 "MYieldFeeHarness.sol:MYieldFeeHarness",
                 admin,
                 abi.encodeWithSelector(
-                    MYieldFee.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     NAME,
                     SYMBOL,
                     1e3,
@@ -72,7 +74,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         );
     }
 
-    function test_integration_constants() external view {
+    function test_integration_constants_system() external view {
         assertEq(mEarnerManager.name(), NAME);
         assertEq(mEarnerManager.symbol(), SYMBOL);
         assertEq(mEarnerManager.decimals(), 6);
@@ -86,11 +88,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.symbol(), SYMBOL);
         assertEq(mYieldToOne.decimals(), 6);
         assertEq(mYieldToOne.mToken(), address(mToken));
-        assertEq(mYieldToOne.feeRecipient(), feeRecipient);
+        assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
         assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(mYieldToOne.hasRole(FEE_MANAGER_ROLE, feeManager));
-        assertTrue(mYieldToOne.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
 
         assertEq(mYieldFee.name(), NAME);
         assertEq(mYieldFee.symbol(), SYMBOL);
@@ -104,7 +106,28 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     }
 
     function test_swap_mYieldFee_to_mYieldToOne() public {
-        // Test swapping mYieldFee to mYieldToOne
+        _addToList(EARNERS_LIST, address(mYieldFee));
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+
+        // mYieldFee.setAccountOf(alice, 100e6, 100e6);
+
+        // uint256 balanceBefore = mYieldFee.balanceOf(alice);
+        // console.log("balanceBefore", balanceBefore);
+
+        // console.log("swapFacility", address(swapFacility));
+        // console.log("mYieldFee", address(mYieldFee));
+        // console.log("mYieldToOne", address(mYieldToOne));
+
+        // vm.prank(alice);
+        // mYieldFee.approve(address(swapFacility), 100e6);
+
+        // // Swap 100 mYieldFee to mYieldToOne
+        // vm.prank(alice);
+        // swapFacility.swap(address(mYieldFee), address(mYieldToOne), 100e6, alice);
+
+        // // Verify alice has 100 mYieldToOne
+        // assertEq(mYieldToOne.balanceOf(alice), 100e6);
+        // // Test swapping mYieldFee to mYieldToOne
     }
 
     function test_swap_mEarnerManager_to_mYieldFee() public {

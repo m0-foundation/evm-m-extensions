@@ -48,6 +48,7 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
+    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
 
     address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
