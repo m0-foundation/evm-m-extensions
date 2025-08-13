@@ -227,7 +227,7 @@ abstract contract MExtension is IMExtension, ERC20ExtendedUpgradeable {
     function _burn(address account, uint256 amount) internal virtual;
 
     /**
-     * @dev   Internal ERC20 transfer function that needs to be implemented by the inheriting contract.
+     * @dev   Internal balance update function that needs to be implemented by the inheriting contract.
      * @param sender    The sender's address.
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.
@@ -235,7 +235,7 @@ abstract contract MExtension is IMExtension, ERC20ExtendedUpgradeable {
     function _update(address sender, address recipient, uint256 amount) internal virtual;
 
     /**
-     * @dev   Internal ERC20 transfer function that needs to be implemented by the inheriting contract.
+     * @dev   Internal ERC20 transfer function.
      * @param sender    The sender's address.
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.

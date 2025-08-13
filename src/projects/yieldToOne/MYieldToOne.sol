@@ -244,7 +244,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /**
-     * @dev   Internal ERC20 transfer function that needs to be implemented by the inheriting contract.
+     * @dev   Internal balance update function called on transfer.
      * @param sender    The sender's address.
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.
