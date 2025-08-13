@@ -197,7 +197,7 @@ abstract contract MExtension is IMExtension, ERC20ExtendedUpgradeable {
         // NOTE: Add extension-specific checks before unwrapping.
         _beforeUnwrap(account, amount);
 
-        _revertIfInsufficientBalance(msg.sender, balanceOf(msg.sender), amount);
+        _revertIfInsufficientBalance(msg.sender, amount);
 
         // NOTE: This method will be overridden by the inheriting M Extension contract.
         // NOTE: Computes the actual decrease in the $M balance of the $M Extension contract.
@@ -250,7 +250,7 @@ abstract contract MExtension is IMExtension, ERC20ExtendedUpgradeable {
 
         if (amount == 0) return;
 
-        _revertIfInsufficientBalance(sender, balanceOf(sender), amount);
+        _revertIfInsufficientBalance(sender, amount);
 
         // NOTE: This method will be overridden by the inheriting M Extension contract.
         _update(sender, recipient, amount);
@@ -286,10 +286,11 @@ abstract contract MExtension is IMExtension, ERC20ExtendedUpgradeable {
     /**
      * @dev   Reverts if `account` balance is below `amount`.
      * @param account Address of an account.
-     * @param balance Balance of an account.
      * @param amount  Amount to transfer or burn.
      */
-    function _revertIfInsufficientBalance(address account, uint256 balance, uint256 amount) internal pure {
+    function _revertIfInsufficientBalance(address account, uint256 amount) internal view {
+        uint256 balance = balanceOf(account);
+
         if (balance < amount) revert InsufficientBalance(account, balance, amount);
     }
 }
