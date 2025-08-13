@@ -79,7 +79,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         _fundAccounts();
 
         vm.prank(earnerManager);
-        mEarnerManager.setAccountInfo(alice, true, 10_000); // 100% fee
+        mEarnerManager.setAccountInfo(alice, true, 5_000); // 100% fee
 
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(address(swapFacility), true, 0);
@@ -158,6 +158,95 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     function test_yieldFlow_betweenExtensions() public {
         // Setup multiple extensions with different yield configurations
         // Swap between them and verify yield is properly tracked
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), 10e6);
+        mYieldFee.approve(address(swapFacility), 10e6);
+        mYieldToOne.approve(address(swapFacility), 10e6);
+        mEarnerManager.approve(address(swapFacility), 10e6);
+        wrappedM.approve(address(swapFacility), 10e6);
+        vm.stopPrank();
+
+        mYieldFee.enableEarning();
+        mYieldToOne.enableEarning();
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldFee), 10e6, alice);
+
+        uint256 mYieldFeeBalance = mYieldFee.balanceOf(alice);
+        assertEq(mYieldFeeBalance, 10e6);
+
+        // fast forward to accrue yield
+        vm.warp(vm.getBlockTimestamp() + 72_426_135);
+
+        // check and claim yield from mYieldFee
+        uint256 mYieldFeeYield = mYieldFee.accruedYieldOf(alice);
+        assertEq(mYieldFeeYield, 894400, "Should have accrued yield in mYieldFee");
+
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), mYieldFeeBalance, alice);
+
+        uint256 mYieldToOneBalance = mYieldToOne.balanceOf(alice);
+        assertEq(mYieldToOneBalance, 10e6);
+
+        // fast forward to accrue yield
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        // check and claim yield from mYieldToOne
+        uint256 mYieldToOneYield = mYieldToOne.yield();
+        assertEq(mYieldToOneYield, 11375, "Should have accrued yield in mYieldToOne");
+
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), mYieldToOneBalance, alice);
+
+        uint256 mEarnerManagerBalance = mEarnerManager.balanceOf(alice);
+        assertEq(mEarnerManagerBalance, 10e6);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        (uint256 aliceYieldWithFee, uint256 aliceFee, uint256 aliceYield) = mEarnerManager.accruedYieldAndFeeOf(alice);
+
+        assertEq(aliceYieldWithFee, 11375, "alice's yield with fee should be 11375");
+        assertEq(aliceFee, 5687, "alice's fee should be 5687");
+        assertEq(aliceYield, 5688, "alice's yield should be 5688");
+
+        vm.prank(alice);
+        swapFacility.swap(address(mEarnerManager), address(wrappedM), mEarnerManagerBalance - 2, alice);
+
+        uint256 wrappedMBalance = wrappedM.balanceOf(alice);
+        assertEq(wrappedMBalance, 10e6 - 2);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        vm.prank(alice);
+        swapFacility.swapOutM(address(wrappedM), wrappedMBalance, alice);
+
+        mEarnerManagerBalance = mEarnerManager.balanceOf(alice);
+
+        assertEq(mEarnerManagerBalance, 2);
+
+        mEarnerManager.claimFor(alice);
+
+        mEarnerManagerBalance = mEarnerManager.balanceOf(alice);
+
+        assertEq(mEarnerManagerBalance, 5696, "alice's claiming should have put her yield in her balance");
+
+        assertEq(
+            mEarnerManager.balanceOf(feeRecipient),
+            5693,
+            "Fee recipient should have fee claimed for on alice's claiming"
+        );
+
+        mYieldToOne.claimYield();
+
+        mYieldToOneBalance = mYieldToOne.balanceOf(yieldRecipient);
+
+        assertEq(mYieldToOneBalance, 11401, "yield recipient should have its yield claimed");
+
+        mYieldFee.claimYieldFor(alice);
+
+        mYieldFeeBalance = mYieldFee.balanceOf(alice);
+
+        assertEq(mYieldFeeBalance, 897145, "alice should have her yield claimed");
     }
 
     function test_yieldClaim_afterMultipleSwaps() public {
