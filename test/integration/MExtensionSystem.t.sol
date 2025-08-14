@@ -485,10 +485,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         return (priorYield == 0 ? amount - 2 : amount, yields);
     }
 
-    function test_feeCollection_multipleExtensions() public {
-        // Test fee collection from multiple extensions
-    }
-
     function test_feeRecipientChange_duringActiveYield() public {
         // Test changing fee recipient while yield is accruing
     }
@@ -543,11 +539,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     function test_maxValueScenarios() public {
         // Test with maximum possible balances
         // Test principal/index calculations at extremes
-    }
-
-    function test_rapidSwapping() public {
-        // Test many swaps in quick succession
-        // Verify no precision loss or unexpected behavior
     }
 
     function test_upgrade_withActiveYield() public {
