@@ -363,6 +363,19 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
             extensionIndex = nextExtensionIndex;
         }
+
+        vm.prank(alice);
+        swapFacility.swapOutM(extensions[extensionIndex], amount, alice);
+
+        mYieldToOne.claimYield();
+        assertApproxEqAbs(mYieldToOne.balanceOf(yieldRecipient), yields[M_YIELD_TO_ONE], 20);
+
+        mYieldFee.claimYieldFor(alice);
+        assertApproxEqAbs(mYieldFee.balanceOf(alice), yields[M_YIELD_FEE], 50);
+
+        mEarnerManager.claimFor(alice);
+        assertApproxEqAbs(mEarnerManager.balanceOf(alice), yields[M_EARNER_MANAGER] / 2, 50);
+        assertApproxEqAbs(mEarnerManager.balanceOf(feeRecipient), yields[M_EARNER_MANAGER] / 2, 50);
     }
 
     function _testYieldCapture_mYieldFee(
