@@ -121,38 +121,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         swapFacility.grantRole(M_SWAPPER_ROLE, alice);
     }
 
-    function _currentMYieldFeeIndex() public view returns (uint128) {
-        unchecked {
-            return
-                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
-                UIntMath.bound128(
-                    ContinuousIndexingMath.multiplyIndicesDown(
-                        mYieldFeeIndexInitial,
-                        ContinuousIndexingMath.getContinuousIndex(
-                            ContinuousIndexingMath.convertFromBasisPoints(mYieldFeeRate),
-                            uint32(vm.getBlockTimestamp() - mYieldFeeIndexStart)
-                        )
-                    )
-                );
-        }
-    }
-
-    function _currentMIndex() public view returns (uint128) {
-        unchecked {
-            return
-                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
-                UIntMath.bound128(
-                    ContinuousIndexingMath.multiplyIndicesDown(
-                        mIndexInitial,
-                        ContinuousIndexingMath.getContinuousIndex(
-                            ContinuousIndexingMath.convertFromBasisPoints(mRate),
-                            uint32(block.timestamp - mRateStart)
-                        )
-                    )
-                );
-        }
-    }
-
     function calculateMYieldFeeYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
 
     function calculateMYieldToOneYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
@@ -421,20 +389,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         return (priorYield == 0 ? amount - 2 : amount, yields);
     }
 
-    function _calcMYieldFeePrincipal(uint256 amount) public view returns (uint112) {
-        uint128 _index = _currentMYieldFeeIndex();
-
-        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
-    }
-
-    function _calcMYieldFeeYield(uint256 priorAmount, uint112 _principal) public view returns (uint256) {
-        uint128 _index = _currentMYieldFeeIndex();
-
-        uint256 _amountPlusYield = IndexingMath.getPresentAmountRoundedUp(_principal, _index);
-
-        return _amountPlusYield - priorAmount;
-    }
-
     function _testYieldCapture_mYieldToOne(
         address from,
         uint256[] memory yields,
@@ -531,21 +485,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         return (priorYield == 0 ? amount - 2 : amount, yields);
     }
 
-    function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
-        uint128 _index = _currentMIndex();
-
-        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
-    }
-
-    function _calcMYearnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
-        uint128 currentIndex = _currentMIndex();
-
-        uint256 balanceWithYield = IndexingMath.getPresentAmountRoundedUp(principal, currentIndex);
-
-        // Yield is the difference between present value and current balance
-        return balanceWithYield > balance ? balanceWithYield - balance : 0;
-    }
-
     function test_feeCollection_multipleExtensions() public {
         // Test fee collection from multiple extensions
     }
@@ -629,5 +568,66 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     function test_roleInteractions_complex() public {
         // Test scenarios where users have multiple roles
         // Test role changes during active operations
+    }
+
+    function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
+    }
+
+    function _calcMYearnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
+        uint128 currentIndex = _currentMIndex();
+
+        uint256 balanceWithYield = IndexingMath.getPresentAmountRoundedUp(principal, currentIndex);
+
+        // Yield is the difference between present value and current balance
+        return balanceWithYield > balance ? balanceWithYield - balance : 0;
+    }
+
+    function _calcMYieldFeePrincipal(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMYieldFeeIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
+    }
+
+    function _calcMYieldFeeYield(uint256 priorAmount, uint112 _principal) public view returns (uint256) {
+        uint128 _index = _currentMYieldFeeIndex();
+
+        uint256 _amountPlusYield = IndexingMath.getPresentAmountRoundedUp(_principal, _index);
+
+        return _amountPlusYield - priorAmount;
+    }
+
+    function _currentMYieldFeeIndex() public view returns (uint128) {
+        unchecked {
+            return
+                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
+                UIntMath.bound128(
+                    ContinuousIndexingMath.multiplyIndicesDown(
+                        mYieldFeeIndexInitial,
+                        ContinuousIndexingMath.getContinuousIndex(
+                            ContinuousIndexingMath.convertFromBasisPoints(mYieldFeeRate),
+                            uint32(vm.getBlockTimestamp() - mYieldFeeIndexStart)
+                        )
+                    )
+                );
+        }
+    }
+
+    function _currentMIndex() public view returns (uint128) {
+        unchecked {
+            return
+                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
+                UIntMath.bound128(
+                    ContinuousIndexingMath.multiplyIndicesDown(
+                        mIndexInitial,
+                        ContinuousIndexingMath.getContinuousIndex(
+                            ContinuousIndexingMath.convertFromBasisPoints(mRate),
+                            uint32(block.timestamp - mRateStart)
+                        )
+                    )
+                );
+        }
     }
 }
