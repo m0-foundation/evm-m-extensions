@@ -22,7 +22,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
 
     uint128 public mIndexInitial;
-    uint128 public mEarnerIndexInitial;
     uint128 public mYieldFeeIndexInitial;
 
     uint32 public mRate;
@@ -30,6 +29,8 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
     uint32 public mYieldFeeRate;
     uint32 public mYieldFeeIndexStart;
+
+    uint16 public mEarnerFeeRate;
 
     function setUp() public override {
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
@@ -98,7 +99,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         mYieldToOne.enableEarning();
 
         mIndexInitial = mToken.currentIndex();
-        mEarnerIndexInitial = mEarnerManager.currentIndex();
         mYieldFeeIndexInitial = mYieldFee.currentIndex();
 
         mRate = mToken.earnerRate();
@@ -112,6 +112,8 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(alice, true, 5_000); // 50% fee
 
+        mEarnerFeeRate = 5_000;
+
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(address(swapFacility), true, 0);
 
@@ -120,12 +122,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     }
 
     function _currentMYieldFeeIndex() public view returns (uint128) {
-        // console.log("\n outside");
-        // console.log("mYieldFeeIndexInitial", mYieldFeeIndexInitial);
-        // console.log("mYieldFeeRate", mYieldFeeRate);
-        // console.log("latestUpdateTimestamp", vm.getBlockTimestamp());
-        // console.log("mYieldFeeIndexStart", mYieldFeeIndexStart);
-
         unchecked {
             return
                 // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
@@ -328,10 +324,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     /// forge-config: default.fuzz.depth = 20
     /// forge-config: ci.fuzz.runs = 10
     /// forge-config: ci.fuzz.depth = 2
-    function test_yieldClaim_afterMultipleSwaps() public {
-        uint256 seed = type(uint256).max;
-        uint256 swaps = 10;
-
+    function testFuzz_yieldClaim_afterMultipleSwaps(uint256 seed) public {
         vm.startPrank(alice);
         mToken.approve(address(swapFacility), type(uint256).max);
         mYieldFee.approve(address(swapFacility), type(uint256).max);
@@ -357,44 +350,19 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
         uint256[] memory yields = new uint256[](3);
 
-        console.log("...");
-
         (amount, yields) = yieldAssertions[M_YIELD_TO_ONE](address(mToken), yields, 10e6);
-        (amount, yields) = yieldAssertions[M_YIELD_FEE](extensions[M_YIELD_TO_ONE], yields, amount);
-        (amount, yields) = yieldAssertions[M_YIELD_TO_ONE](extensions[M_YIELD_FEE], yields, amount);
-        (amount, yields) = yieldAssertions[M_YIELD_FEE](extensions[M_YIELD_TO_ONE], yields, amount);
-        (amount, yields) = yieldAssertions[M_YIELD_TO_ONE](extensions[M_YIELD_FEE], yields, amount);
-        (amount, yields) = yieldAssertions[M_YIELD_FEE](extensions[M_YIELD_TO_ONE], yields, amount);
-        (amount, yields) = yieldAssertions[0](extensions[1], yields, amount);
-        (amount, yields) = yieldAssertions[1](extensions[0], yields, amount);
-        (amount, yields) = yieldAssertions[0](extensions[1], yields, amount);
-        (amount, yields) = yieldAssertions[1](extensions[0], yields, amount);
-        (amount, yields) = yieldAssertions[0](extensions[1], yields, amount);
-        (amount, yields) = yieldAssertions[1](extensions[0], yields, amount);
-        (amount, yields) = yieldAssertions[0](extensions[1], yields, amount);
-        (amount, yields) = yieldAssertions[1](extensions[0], yields, amount);
-        (amount, yields) = yieldAssertions[0](extensions[1], yields, amount);
-        (amount, yields) = yieldAssertions[1](extensions[0], yields, amount);
-        (amount, yields) = yieldAssertions[0](extensions[1], yields, amount);
 
-        //     uint256 extensionIndex;
+        uint256 extensionIndex;
 
-        //     for (uint256 i = 0; i < swaps; i++) {
-        //         uint256 nextExtensionIndex = uint256(keccak256(abi.encode(seed, i))) % 3;
+        for (uint256 i = 0; i < 20; i++) {
+            uint256 nextExtensionIndex = uint256(keccak256(abi.encode(seed, i))) % 3;
 
-        //         if (nextExtensionIndex == extensionIndex) nextExtensionIndex = (nextExtensionIndex + 1) % 3;
+            if (nextExtensionIndex == extensionIndex) nextExtensionIndex = (nextExtensionIndex + 1) % 3;
 
-        //         console.log("nextExtensionIndex", nextExtensionIndex);
+            (amount, yields) = yieldAssertions[nextExtensionIndex](extensions[extensionIndex], yields, amount);
 
-        //         (amount, yields[nextExtensionIndex]) = yieldAssertions[nextExtensionIndex](
-        //             extensions[extensionIndex],
-        //             yields[nextExtensionIndex],
-        //             amount
-        //         );
-
-        //         extensionIndex = nextExtensionIndex;
-
-        //     }
+            extensionIndex = nextExtensionIndex;
+        }
     }
 
     function _testYieldCapture_mYieldFee(
@@ -407,6 +375,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         if (from == address(mToken)) swapFacility.swapInM(address(mYieldFee), amount, alice);
         else swapFacility.swap(from, address(mYieldFee), amount, alice);
 
+        // Prep MEarnerManager
+        uint112 mEarnerManagerPrincipal = yields[M_EARNER_MANAGER] == 0
+            ? 0
+            : _calcMEarnerManagerPrincipal(yields[M_EARNER_MANAGER]);
+
         // Prep MYieldToOne
         uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
 
@@ -415,12 +388,13 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
+        // Collect MEarnerManager yield
+        yields[M_EARNER_MANAGER] += mEarnerManagerPrincipal == 0
+            ? 0
+            : _calcMYearnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
+
         // Collect MYieldToOne yield
-        uint256 mBalanceAfter = mToken.balanceOf(address(mYieldToOne));
-
-        uint256 mYieldToOneYield = mYieldToOne.yield();
-
-        yields[M_YIELD_TO_ONE] += mBalanceAfter - mBalanceBefore;
+        yields[M_YIELD_TO_ONE] += mBalanceBefore == 0 ? 0 : mToken.balanceOf(address(mYieldToOne)) - mBalanceBefore;
 
         // Collect MYieldFee yield
         uint256 priorYield = yields[M_YIELD_FEE];
@@ -453,22 +427,32 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint256[] memory yields,
         uint256 amount
     ) public returns (uint256, uint256[] memory) {
-        console.log("\n`````````````````````````");
-
         vm.prank(alice);
         if (from == address(mToken)) swapFacility.swapInM(address(mYieldToOne), amount, alice);
         else swapFacility.swap(from, address(mYieldToOne), amount, alice);
 
+        // Prep MEarnerManager
+        uint112 mEarnerManagerPrincipal = yields[M_EARNER_MANAGER] == 0
+            ? 0
+            : _calcMEarnerManagerPrincipal(yields[M_EARNER_MANAGER]);
+
         // Prep MYieldFee
-        uint112 mYieldFeePrincipal = _calcMYieldFeePrincipal(yields[M_YIELD_FEE]);
+        uint112 mYieldFeePrincipal = yields[M_YIELD_FEE] == 0 ? 0 : _calcMYieldFeePrincipal(yields[M_YIELD_FEE]);
 
         // Prep MYieldToOne
         uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
+        // Collect MEarnerManager yield
+        yields[M_EARNER_MANAGER] += mEarnerManagerPrincipal == 0
+            ? 0
+            : _calcMYearnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
+
         // Collect MYieldFee yield
-        yields[M_YIELD_FEE] += _calcMYieldFeeYield(yields[M_YIELD_FEE], mYieldFeePrincipal);
+        yields[M_YIELD_FEE] += mYieldFeePrincipal == 0
+            ? 0
+            : _calcMYieldFeeYield(yields[M_YIELD_FEE], mYieldFeePrincipal);
 
         // Assert MYieldToOne yield
         uint256 mBalanceAfter = mToken.balanceOf(address(mYieldToOne));
@@ -491,30 +475,62 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint256[] memory yields,
         uint256 amount
     ) public returns (uint256, uint256[] memory) {
-        console.log("\n-------------------------");
+        vm.prank(alice);
+        swapFacility.swap(from, address(mEarnerManager), amount, alice);
 
-        // vm.prank(alice);
-        // swapFacility.swap(from, address(mEarnerManager), amount, alice);
+        // Prep MYieldFee
+        uint112 mYieldFeePrincipal = yields[M_YIELD_FEE] == 0 ? 0 : _calcMYieldFeePrincipal(yields[M_YIELD_FEE]);
 
-        // uint256 mBalance = mToken.balanceOf(address(mEarnerManager));
+        // Prep MYieldToOne
+        uint256 mBalanceBefore = yields[M_YIELD_TO_ONE] == 0 ? 0 : mToken.balanceOf(address(mYieldToOne));
 
-        // vm.warp(vm.getBlockTimestamp() + 10 days);
+        // Prep MYearnerManager
+        uint112 principal = _calcMEarnerManagerPrincipal(amount + yields[M_EARNER_MANAGER]);
 
-        // (uint256 aliceYieldWithFee, uint256 aliceFee, uint256 aliceYield) = mEarnerManager.accruedYieldAndFeeOf(alice);
+        vm.warp(vm.getBlockTimestamp() + 10 days);
 
-        // uint256 yield;
-        // yield = 11375;
+        // Collect MYieldFee yield
+        yields[M_YIELD_FEE] += mYieldFeePrincipal == 0
+            ? 0
+            : _calcMYieldFeeYield(yields[M_YIELD_FEE], mYieldFeePrincipal);
 
-        // assertApproxEqAbs(
-        //     aliceYieldWithFee,
-        //     (priorYield + yield),
-        //     500,
-        //     "unexpected alice's mEarnerManager yield with fee"
-        // );
-        // assertApproxEqAbs(aliceFee, (priorYield + yield) / 2, 500, "unexpected alice's mEarnerManager fee");
-        // assertApproxEqAbs(aliceYield, (priorYield + yield) / 2, 500, "unexpected alice's mEarnerManager yield");
+        // Collect MYieldToOne yield
+        yields[M_YIELD_TO_ONE] += mBalanceBefore == 0 ? 0 : mToken.balanceOf(address(mYieldToOne)) - mBalanceBefore;
 
-        // return (priorYield == 0 ? amount - 2 : amount, yield + priorYield);
+        // Assert MEarnerManager yield
+        uint256 yield = _calcMYearnerManagerYield(amount + yields[M_EARNER_MANAGER], principal);
+
+        (uint256 aliceYieldWithFee, uint256 aliceFee, uint256 aliceYield) = mEarnerManager.accruedYieldAndFeeOf(alice);
+
+        uint256 priorYield = yields[M_EARNER_MANAGER];
+
+        yields[M_EARNER_MANAGER] += yield;
+
+        assertApproxEqAbs(
+            aliceYieldWithFee,
+            yields[M_EARNER_MANAGER],
+            50,
+            "unexpected alice's mEarnerManager yield with fee"
+        );
+        assertApproxEqAbs(aliceFee, yields[M_EARNER_MANAGER] / 2, 50, "unexpected alice's mEarnerManager fee");
+        assertApproxEqAbs(aliceYield, yields[M_EARNER_MANAGER] / 2, 50, "unexpected alice's mEarnerManager yield");
+
+        return (priorYield == 0 ? amount - 2 : amount, yields);
+    }
+
+    function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
+    }
+
+    function _calcMYearnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
+        uint128 currentIndex = _currentMIndex();
+
+        uint256 balanceWithYield = IndexingMath.getPresentAmountRoundedUp(principal, currentIndex);
+
+        // Yield is the difference between present value and current balance
+        return balanceWithYield > balance ? balanceWithYield - balance : 0;
     }
 
     function test_feeCollection_multipleExtensions() public {
