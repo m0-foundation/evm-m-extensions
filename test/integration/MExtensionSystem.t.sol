@@ -324,9 +324,8 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     /// forge-config: default.fuzz.depth = 20
     /// forge-config: ci.fuzz.runs = 10
     /// forge-config: ci.fuzz.depth = 2
-    function test_yieldClaim_afterMultipleSwaps() public {
+    function testFuzz_yieldClaim_afterMultipleSwaps(uint256 seed) public {
         uint256 swaps = 10;
-        uint256 seed = type(uint256).max;
 
         vm.startPrank(alice);
         mToken.approve(address(swapFacility), type(uint256).max);
@@ -351,93 +350,34 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         extensions[2] = address(mEarnerManager);
 
         uint256 amount;
+
         uint256[] memory yields = new uint256[](3);
 
         (amount, yields[0]) = yieldAssertions[0](address(mToken), 0, 10e6);
-        console.log("yield, amount", yields[0], amount);
 
-        (amount, yields[1]) = yieldAssertions[1](extensions[0], yields[1], amount);
-        console.log("yield, amount", yields[1], amount);
+        uint256 extensionIndex;
 
-        (amount, yields[0]) = yieldAssertions[0](extensions[1], yields[0], amount);
-        console.log("yield, amount", yields[0], amount);
+        for (uint256 i = 0; i < swaps; i++) {
+            uint256 nextExtensionIndex = uint256(keccak256(abi.encode(seed, i))) % 3;
 
-        (amount, yields[1]) = yieldAssertions[1](extensions[0], yields[1], amount);
-        console.log("yield, amount", yields[1], amount);
+            if (nextExtensionIndex == extensionIndex) nextExtensionIndex = (nextExtensionIndex + 1) % 3;
 
-        (amount, yields[0]) = yieldAssertions[0](extensions[1], yields[0], amount);
-        console.log("yield, amount", yields[0], amount);
+            console.log("nextExtensionIndex", nextExtensionIndex);
 
-        (amount, yields[1]) = yieldAssertions[1](extensions[0], yields[1], amount);
-        console.log("yield, amount", yields[1], amount);
+            // console.log("exten index", extensionIndex, nextExtensionIndex);
 
-        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
-        console.log("yield, amount", yields[2], amount);
+            (amount, yields[nextExtensionIndex]) = yieldAssertions[nextExtensionIndex](
+                extensions[extensionIndex],
+                yields[nextExtensionIndex],
+                amount
+            );
 
-        (amount, yields[1]) = yieldAssertions[1](extensions[2], yields[1], amount);
-        console.log("yield, amount", yields[1], amount);
+            // yields[nextExtensionIndex] += yield;
 
-        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
-        console.log("yield, amount", yields[2], amount);
+            extensionIndex = nextExtensionIndex;
 
-        (amount, yields[1]) = yieldAssertions[1](extensions[2], yields[1], amount);
-        console.log("yield, amount", yields[1], amount);
-
-        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
-        console.log("yield, amount", yields[2], amount);
-
-        (amount, yields[1]) = yieldAssertions[1](extensions[2], yields[1], amount);
-        console.log("yield, amount", yields[1], amount);
-
-        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
-        console.log("yield, amount", yields[2], amount);
-
-        (amount, yields[0]) = yieldAssertions[0](extensions[2], yields[0], amount);
-        console.log("yield, amount", yields[0], amount);
-
-        (amount, yields[2]) = yieldAssertions[2](extensions[0], yields[2], amount);
-        console.log("yield, amount", yields[2], amount);
-
-        (amount, yields[0]) = yieldAssertions[0](extensions[2], yields[0], amount);
-        console.log("yield, amount", yields[0], amount);
-
-        (amount, yields[2]) = yieldAssertions[2](extensions[0], yields[2], amount);
-        console.log("yield, amount", yields[2], amount);
-
-        (amount, yields[0]) = yieldAssertions[0](extensions[2], yields[0], amount);
-        console.log("yield, amount", yields[0], amount);
-
-        // ( amount, yields[2] ) = yieldAssertions[2](extensions[0], yields[2], amount);
-        // console.log("yield, amount", yields[2], amount);
-
-        // ( amount, yields[0] ) = yieldAssertions[0](extensions[2], yields[0], amount);
-        // console.log("yield, amount", yields[0], amount);
-
-        // ( amount, yields[2] ) = yieldAssertions[2](extensions[0], yields[2], amount);
-        // console.log("yield, amount", yields[2], amount);
-
-        // uint256 extensionIndex;
-        // uint256 fromIndex;
-
-        // for (uint256 i = 0; i < swaps; i++) {
-
-        //     uint256 nextExtensionIndex = uint256(keccak256(abi.encode(seed, i))) % 3;
-
-        //     console.log("exten index", extensionIndex, nextExtensionIndex);
-
-        //     if (nextExtensionIndex == extensionIndex)
-        //         nextExtensionIndex = (nextExtensionIndex + 1) % 3;
-
-        //     ( amount, yield ) = yieldAssertions[nextExtensionIndex]
-        //         (extensions[fromIndex], yields[fromIndex], amount);
-
-        //     yields[nextExtensionIndex] += yield;
-
-        //     fromIndex = extensionIndex = nextExtensionIndex;
-
-        //     // console.log("\n ~!@#$%^&*( principal in loop", extensions[fromIndex], mYieldFee.principalOf(alice));
-
-        // }
+            // console.log("\n ~!@#$%^&*( principal in loop", extensions[fromIndex], mYieldFee.principalOf(alice));
+        }
     }
 
     function _testYieldCapture_mYieldFee(
