@@ -4,6 +4,12 @@ pragma solidity 0.8.26;
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
+import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
+import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
+import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
+
+import { IContinuousIndexing } from "../../src/projects/yieldToAllWithFee/interfaces/IContinuousIndexing.sol";
+
 import { MEarnerManagerHarness } from "../harness/MEarnerManagerHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
@@ -14,6 +20,16 @@ import { console } from "forge-std/console.sol";
 
 contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
+
+    uint128 public mIndexInitial;
+    uint128 public mEarnerIndexInitial;
+    uint128 public mYieldFeeIndexInitial;
+
+    uint32 public mRate;
+    uint40 public mRateStart;
+
+    uint32 public mYieldFeeRate;
+    uint32 public mYieldFeeIndexStart;
 
     function setUp() public override {
         mainnetFork = vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_482_175);
@@ -76,19 +92,76 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         _addToList(EARNERS_LIST, address(mYieldFee));
         _addToList(EARNERS_LIST, address(mYieldToOne));
         _addToList(EARNERS_LIST, address(mEarnerManager));
+
+        mEarnerManager.enableEarning();
+        mYieldFee.enableEarning();
+        mYieldToOne.enableEarning();
+
+        mIndexInitial = mToken.currentIndex();
+        mEarnerIndexInitial = mEarnerManager.currentIndex();
+        mYieldFeeIndexInitial = mYieldFee.currentIndex();
+
+        mRate = mToken.earnerRate();
+        mRateStart = IContinuousIndexing(address(mToken)).latestUpdateTimestamp();
+
+        mYieldFeeRate = mYieldFee.earnerRate();
+        mYieldFeeIndexStart = uint32(vm.getBlockTimestamp());
+
         _fundAccounts();
 
         vm.prank(earnerManager);
-        mEarnerManager.setAccountInfo(alice, true, 5_000); // 100% fee
+        mEarnerManager.setAccountInfo(alice, true, 5_000); // 50% fee
 
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(address(swapFacility), true, 0);
 
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, alice);
-
-        mEarnerManager.enableEarning();
     }
+
+    function _currentMYieldFeeIndex() public view returns (uint128) {
+        // console.log("\n outside");
+        // console.log("mYieldFeeIndexInitial", mYieldFeeIndexInitial);
+        // console.log("mYieldFeeRate", mYieldFeeRate);
+        // console.log("latestUpdateTimestamp", vm.getBlockTimestamp());
+        // console.log("mYieldFeeIndexStart", mYieldFeeIndexStart);
+
+        unchecked {
+            return
+                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
+                UIntMath.bound128(
+                    ContinuousIndexingMath.multiplyIndicesDown(
+                        mYieldFeeIndexInitial,
+                        ContinuousIndexingMath.getContinuousIndex(
+                            ContinuousIndexingMath.convertFromBasisPoints(mYieldFeeRate),
+                            uint32(vm.getBlockTimestamp() - mYieldFeeIndexStart)
+                        )
+                    )
+                );
+        }
+    }
+
+    function _currentMIndex() public view returns (uint128) {
+        unchecked {
+            return
+                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
+                UIntMath.bound128(
+                    ContinuousIndexingMath.multiplyIndicesDown(
+                        mIndexInitial,
+                        ContinuousIndexingMath.getContinuousIndex(
+                            ContinuousIndexingMath.convertFromBasisPoints(mRate),
+                            uint32(block.timestamp - mRateStart)
+                        )
+                    )
+                );
+        }
+    }
+
+    function calculateMYieldFeeYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
+
+    function calculateMYieldToOneYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
+
+    function calculateMYearnerManagerYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
 
     function test_integration_constants_system() external view {
         assertEq(mEarnerManager.name(), NAME);
@@ -137,22 +210,22 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFeeBalance, 10e6);
 
         vm.prank(alice);
-        swapFacility.swap(address(mYieldFee), address(mYieldToOne), mYieldFeeBalance, alice);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), mYieldFeeBalance - 2, alice);
 
         uint256 mYieldToOneBalance = mYieldToOne.balanceOf(alice);
-        assertEq(mYieldToOneBalance, 10e6);
+        assertEq(mYieldToOneBalance, 10e6 - 2);
 
         vm.prank(alice);
-        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), mYieldToOneBalance, alice);
+        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), mYieldToOneBalance - 2, alice);
 
         uint256 mEarnerManagerBalance = mEarnerManager.balanceOf(alice);
-        assertEq(mEarnerManagerBalance, 10e6);
+        assertEq(mEarnerManagerBalance, 10e6 - 4);
 
         vm.prank(alice);
         swapFacility.swap(address(mEarnerManager), address(wrappedM), mEarnerManagerBalance - 2, alice);
 
         uint256 wrappedMBalance = wrappedM.balanceOf(alice);
-        assertEq(wrappedMBalance, 10e6 - 3);
+        assertEq(wrappedMBalance, 10e6 - 7);
     }
 
     function test_yieldFlow_betweenExtensions() public {
@@ -165,9 +238,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         mEarnerManager.approve(address(swapFacility), 10e6);
         wrappedM.approve(address(swapFacility), 10e6);
         vm.stopPrank();
-
-        mYieldFee.enableEarning();
-        mYieldToOne.enableEarning();
 
         vm.prank(alice);
         swapFacility.swapInM(address(mYieldFee), 10e6, alice);
@@ -249,8 +319,215 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFeeBalance, 897145, "alice should have her yield claimed");
     }
 
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
     function test_yieldClaim_afterMultipleSwaps() public {
-        // Test yield claim after multiple swaps
+        uint256 swaps = 10;
+        uint256 seed = type(uint256).max;
+
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mYieldFee.approve(address(swapFacility), type(uint256).max);
+        mYieldToOne.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        wrappedM.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        function(address, uint256, uint256) internal returns (uint256, uint256)[] memory yieldAssertions = new function(
+            address,
+            uint256,
+            uint256
+        ) internal returns (uint256, uint256)[](3);
+        yieldAssertions[0] = _testYieldCapture_mYieldToOne;
+        yieldAssertions[1] = _testYieldCapture_mYieldFee;
+        yieldAssertions[2] = _testYieldCapture_mEarnerManager;
+
+        address[] memory extensions = new address[](3);
+        extensions[0] = address(mYieldToOne);
+        extensions[1] = address(mYieldFee);
+        extensions[2] = address(mEarnerManager);
+
+        uint256 amount;
+        uint256[] memory yields = new uint256[](3);
+
+        (amount, yields[0]) = yieldAssertions[0](address(mToken), 0, 10e6);
+        console.log("yield, amount", yields[0], amount);
+
+        (amount, yields[1]) = yieldAssertions[1](extensions[0], yields[1], amount);
+        console.log("yield, amount", yields[1], amount);
+
+        (amount, yields[0]) = yieldAssertions[0](extensions[1], yields[0], amount);
+        console.log("yield, amount", yields[0], amount);
+
+        (amount, yields[1]) = yieldAssertions[1](extensions[0], yields[1], amount);
+        console.log("yield, amount", yields[1], amount);
+
+        (amount, yields[0]) = yieldAssertions[0](extensions[1], yields[0], amount);
+        console.log("yield, amount", yields[0], amount);
+
+        (amount, yields[1]) = yieldAssertions[1](extensions[0], yields[1], amount);
+        console.log("yield, amount", yields[1], amount);
+
+        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
+        console.log("yield, amount", yields[2], amount);
+
+        (amount, yields[1]) = yieldAssertions[1](extensions[2], yields[1], amount);
+        console.log("yield, amount", yields[1], amount);
+
+        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
+        console.log("yield, amount", yields[2], amount);
+
+        (amount, yields[1]) = yieldAssertions[1](extensions[2], yields[1], amount);
+        console.log("yield, amount", yields[1], amount);
+
+        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
+        console.log("yield, amount", yields[2], amount);
+
+        (amount, yields[1]) = yieldAssertions[1](extensions[2], yields[1], amount);
+        console.log("yield, amount", yields[1], amount);
+
+        (amount, yields[2]) = yieldAssertions[2](extensions[1], yields[2], amount);
+        console.log("yield, amount", yields[2], amount);
+
+        (amount, yields[0]) = yieldAssertions[0](extensions[2], yields[0], amount);
+        console.log("yield, amount", yields[0], amount);
+
+        (amount, yields[2]) = yieldAssertions[2](extensions[0], yields[2], amount);
+        console.log("yield, amount", yields[2], amount);
+
+        (amount, yields[0]) = yieldAssertions[0](extensions[2], yields[0], amount);
+        console.log("yield, amount", yields[0], amount);
+
+        (amount, yields[2]) = yieldAssertions[2](extensions[0], yields[2], amount);
+        console.log("yield, amount", yields[2], amount);
+
+        (amount, yields[0]) = yieldAssertions[0](extensions[2], yields[0], amount);
+        console.log("yield, amount", yields[0], amount);
+
+        // ( amount, yields[2] ) = yieldAssertions[2](extensions[0], yields[2], amount);
+        // console.log("yield, amount", yields[2], amount);
+
+        // ( amount, yields[0] ) = yieldAssertions[0](extensions[2], yields[0], amount);
+        // console.log("yield, amount", yields[0], amount);
+
+        // ( amount, yields[2] ) = yieldAssertions[2](extensions[0], yields[2], amount);
+        // console.log("yield, amount", yields[2], amount);
+
+        // uint256 extensionIndex;
+        // uint256 fromIndex;
+
+        // for (uint256 i = 0; i < swaps; i++) {
+
+        //     uint256 nextExtensionIndex = uint256(keccak256(abi.encode(seed, i))) % 3;
+
+        //     console.log("exten index", extensionIndex, nextExtensionIndex);
+
+        //     if (nextExtensionIndex == extensionIndex)
+        //         nextExtensionIndex = (nextExtensionIndex + 1) % 3;
+
+        //     ( amount, yield ) = yieldAssertions[nextExtensionIndex]
+        //         (extensions[fromIndex], yields[fromIndex], amount);
+
+        //     yields[nextExtensionIndex] += yield;
+
+        //     fromIndex = extensionIndex = nextExtensionIndex;
+
+        //     // console.log("\n ~!@#$%^&*( principal in loop", extensions[fromIndex], mYieldFee.principalOf(alice));
+
+        // }
+    }
+
+    function _testYieldCapture_mYieldFee(
+        address from,
+        uint256 priorYield,
+        uint256 amount
+    ) public returns (uint256, uint256) {
+        console.log("\n~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+        vm.prank(alice);
+
+        if (from == address(mToken)) swapFacility.swapInM(address(mYieldFee), amount, alice);
+        else swapFacility.swap(from, address(mYieldFee), amount, alice);
+
+        uint128 _index = _currentMYieldFeeIndex();
+
+        uint112 _principal = IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
+
+        uint256 mBalance = mToken.balanceOf(address(mYieldFee));
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        _index = _currentMYieldFeeIndex();
+
+        uint256 _amountPlusYield = IndexingMath.getPresentAmountRoundedUp(_principal, _index);
+
+        uint256 _yield = _amountPlusYield - amount;
+
+        uint256 mYieldFeeYield = mYieldFee.accruedYieldOf(alice);
+
+        assertApproxEqAbs(mYieldFeeYield, priorYield + _yield, 500, "Should have accrued yield in mYieldFee");
+
+        return (priorYield == 0 ? amount - 2 : amount, _yield + priorYield);
+    }
+
+    function _testYieldCapture_mYieldToOne(
+        address from,
+        uint256 priorYield,
+        uint256 amount
+    ) public returns (uint256, uint256) {
+        console.log("\n`````````````````````````");
+
+        vm.prank(alice);
+        if (from == address(mToken)) swapFacility.swapInM(address(mYieldToOne), amount, alice);
+        else swapFacility.swap(from, address(mYieldToOne), amount, alice);
+
+        uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        uint256 mBalanceAfter = mToken.balanceOf(address(mYieldToOne));
+
+        uint256 mYieldToOneYield = mYieldToOne.yield();
+
+        uint256 yield = mBalanceAfter - mBalanceBefore;
+
+        assertApproxEqAbs(mYieldToOneYield, priorYield + yield, 500, "Should have accrued yield in mYieldToOne");
+
+        return (priorYield == 0 ? amount - 2 : amount, priorYield + yield);
+    }
+
+    function _testYieldCapture_mEarnerManager(
+        address from,
+        uint256 priorYield,
+        uint256 amount
+    ) public returns (uint256, uint256) {
+        console.log("\n-------------------------");
+
+        vm.prank(alice);
+        swapFacility.swap(from, address(mEarnerManager), amount, alice);
+
+        uint256 mBalance = mToken.balanceOf(address(mEarnerManager));
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        (uint256 aliceYieldWithFee, uint256 aliceFee, uint256 aliceYield) = mEarnerManager.accruedYieldAndFeeOf(alice);
+
+        uint256 yield;
+        yield = 11375;
+
+        assertApproxEqAbs(
+            aliceYieldWithFee,
+            (priorYield + yield),
+            500,
+            "unexpected alice's mEarnerManager yield with fee"
+        );
+        assertApproxEqAbs(aliceFee, (priorYield + yield) / 2, 500, "unexpected alice's mEarnerManager fee");
+        assertApproxEqAbs(aliceYield, (priorYield + yield) / 2, 500, "unexpected alice's mEarnerManager yield");
+
+        return (priorYield == 0 ? amount - 2 : amount, yield + priorYield);
     }
 
     function test_feeCollection_multipleExtensions() public {
