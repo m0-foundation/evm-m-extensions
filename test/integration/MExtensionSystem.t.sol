@@ -16,6 +16,8 @@ import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
+import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
+
 import { console } from "forge-std/console.sol";
 
 contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
@@ -396,10 +398,104 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     }
 
     function test_permissionedExtension_fullLifecycle() public {
-        // Set extension as permissioned
-        // Add/remove swappers
-        // Test swapping with different users
-        // Change permissions mid-lifecycle
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mYieldFee.approve(address(swapFacility), type(uint256).max);
+        mYieldToOne.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        wrappedM.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mYieldToOne), true);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mYieldFee), true);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mEarnerManager), true);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedMSwapper(address(mYieldToOne), alice, true);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedMSwapper(address(mYieldFee), alice, true);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedMSwapper(address(mEarnerManager), alice, true);
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldToOne), 10e6, alice);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.PermissionedExtension.selector, address(mYieldToOne)));
+
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldToOne), address(mYieldFee), 10e6, alice);
+
+        vm.prank(alice);
+        swapFacility.swapOutM(address(mYieldToOne), 10e6 - 2, alice);
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldFee), 10e6, alice);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.PermissionedExtension.selector, address(mYieldFee)));
+
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), 10e6 - 2, alice);
+
+        vm.prank(alice);
+        swapFacility.swapOutM(address(mYieldFee), 10e6 - 2, alice);
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mEarnerManager), 10e6, alice);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.PermissionedExtension.selector, address(mEarnerManager)));
+
+        vm.prank(alice);
+        swapFacility.swap(address(mEarnerManager), address(mYieldFee), 10e6 - 2, alice);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedMSwapper(address(mEarnerManager), alice, false);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ISwapFacility.NotApprovedPermissionedSwapper.selector,
+                address(mEarnerManager),
+                alice
+            )
+        );
+
+        vm.prank(alice);
+        swapFacility.swapOutM(address(mEarnerManager), 10e6 - 2, alice);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mEarnerManager), false);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.PermissionedExtension.selector, address(mYieldToOne)));
+
+        vm.prank(alice);
+        swapFacility.swap(address(mEarnerManager), address(mYieldToOne), 10e6 - 2, alice);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mYieldToOne), false);
+
+        vm.prank(alice);
+        swapFacility.swap(address(mEarnerManager), address(mYieldToOne), 10e6 - 2, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), 10e6, "mYieldToOne balance should be 10e6");
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.PermissionedExtension.selector, address(mYieldFee)));
+
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldToOne), address(mYieldFee), 10e6, alice);
+
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mYieldFee), false);
+
+        vm.prank(alice);
+        swapFacility.swap(address(mYieldToOne), address(mYieldFee), 10e6 - 4, alice);
+
+        assertEq(mYieldFee.balanceOf(alice), 10e6 - 2, "mYieldFee balance should be 10e6 - 4");
     }
 
     function test_mixedPermissions_swapScenarios() public {
