@@ -346,6 +346,235 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertApproxEqAbs(mEarnerManager.balanceOf(feeRecipient), yields[M_EARNER_MANAGER] / 2, 50);
     }
 
+    function test_mYieldFee_feeRecipientChange_duringActiveYield() public {
+        vm.prank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+
+        address feeRecipient2 = makeAddr("feeRecipient2");
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldFee), 10e6, alice);
+
+        mRateStart = uint40(vm.getBlockTimestamp());
+
+        uint112 _initialMPrincipalInMYieldFee = _calcMPrincipalAmountRoundedUp(10e6 - 2);
+
+        uint112 _initialMYieldFeePrincipal = _calcMYieldFeePrincipal(10e6 - 2);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        uint256 _postWarpMAmountInMYieldFee = _calcMPresentAmountRoundedDown(_initialMPrincipalInMYieldFee);
+
+        uint256 _postWarpMYieldFeeBalance = _calcMYieldFeePresentAmountRoundedDown(_initialMYieldFeePrincipal);
+
+        uint256 _expectedFee = _postWarpMAmountInMYieldFee - _postWarpMYieldFeeBalance;
+
+        vm.prank(feeManager);
+        mYieldFee.setFeeRecipient(feeRecipient2);
+
+        assertApproxEqAbs(mYieldFee.balanceOf(feeRecipient), _expectedFee, 3);
+
+        _initialMYieldFeePrincipal += _calcMYieldFeePrincipal(_expectedFee);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        _postWarpMAmountInMYieldFee = _calcMPresentAmountRoundedDown(_initialMPrincipalInMYieldFee);
+
+        _postWarpMYieldFeeBalance = _calcMYieldFeePresentAmountRoundedDown(_initialMYieldFeePrincipal);
+
+        uint256 _balanceWithYield = IndexingMath.getPresentAmountRoundedDown(
+            _initialMYieldFeePrincipal,
+            _currentMYieldFeeIndex()
+        );
+
+        _expectedFee = _postWarpMAmountInMYieldFee - _postWarpMYieldFeeBalance;
+
+        vm.prank(feeManager);
+        mYieldFee.setFeeRecipient(feeRecipient);
+
+        assertApproxEqAbs(mYieldFee.balanceOf(feeRecipient), _expectedFee, 3);
+    }
+
+    function test_permissionedExtension_fullLifecycle() public {
+        // Set extension as permissioned
+        // Add/remove swappers
+        // Test swapping with different users
+        // Change permissions mid-lifecycle
+    }
+
+    function test_mixedPermissions_swapScenarios() public {
+        // Mix of permissioned and non-permissioned extensions
+        // Test various swap paths
+    }
+
+    function test_multiHopUniswapPath() public {
+        // Test TOKEN -> USDC -> USDT -> WrappedM -> Extension
+    }
+
+    function test_swapAdapter_withMultipleExtensions() public {
+        // Swap from USDC to multiple different extensions
+        // Verify routing and balances
+    }
+
+    function test_freeze_duringActiveYield() public {
+        // Freeze account while yield is accruing
+        // Verify yield claim behavior
+    }
+
+    function test_freeze_multipleExtensions() public {
+        // Freeze user across multiple extensions
+        // Test swap attempts between frozen extensions
+    }
+
+    function test_whitelistManagement_withActivePositions() public {
+        // Whitelist/unwhitelist users with active positions
+        // Change fee rates for active users
+        // Test batch operations
+    }
+
+    function test_rewhitelisting_withAccruedYield() public {
+        // Remove from whitelist, let yield accrue, re-whitelist
+        // Verify yield distribution
+    }
+
+    function test_zeroYieldScenarios() public {
+        // Test behavior when yield rate is 0
+        // Test swapping with 0 yield accrued
+    }
+
+    function test_maxValueScenarios() public {
+        // Test with maximum possible balances
+        // Test principal/index calculations at extremes
+    }
+
+    function test_upgrade_withActiveYield() public {
+        // Setup extension with accrued yield
+        // Upgrade contract
+        // Verify yield is preserved
+    }
+
+    function test_upgrade_withFrozenAccounts() public {
+        // Freeze accounts, upgrade, verify freeze state
+    }
+
+    function test_rateOracle_changes() public {
+        // Test behavior when rate oracle updates rates
+        // Verify index calculations adjust properly
+    }
+
+    function test_roleInteractions_complex() public {
+        // Test scenarios where users have multiple roles
+        // Test role changes during active operations
+    }
+
+    function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), _index);
+    }
+
+    function _calcMYearnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
+        uint128 currentIndex = _currentMIndex();
+
+        uint256 balanceWithYield = IndexingMath.getPresentAmountRoundedUp(principal, currentIndex);
+
+        // Yield is the difference between present value and current balance
+        return balanceWithYield > balance ? balanceWithYield - balance : 0;
+    }
+
+    function _calcMYieldFeePrincipal(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMYieldFeeIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
+    }
+
+    function _calcMYieldFeeYield(uint256 priorAmount, uint112 _principal) public view returns (uint256) {
+        uint128 _index = _currentMYieldFeeIndex();
+
+        uint256 _amountPlusYield = IndexingMath.getPresentAmountRoundedUp(_principal, _index);
+
+        return _amountPlusYield - priorAmount;
+    }
+
+    function _currentMYieldFeeIndex() public view returns (uint128) {
+        unchecked {
+            return
+                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
+                UIntMath.bound128(
+                    ContinuousIndexingMath.multiplyIndicesDown(
+                        mYieldFeeIndexInitial,
+                        ContinuousIndexingMath.getContinuousIndex(
+                            ContinuousIndexingMath.convertFromBasisPoints(mYieldFeeRate),
+                            uint32(vm.getBlockTimestamp() - mYieldFeeIndexStart)
+                        )
+                    )
+                );
+        }
+    }
+
+    function divideUp(uint240 x, uint128 index) internal pure returns (uint112 z) {
+        unchecked {
+            // NOTE: While `uint256(x) * EXP_SCALED_ONE` can technically overflow, these divide/multiply functions are
+            //       only used for the purpose of principal/present amount calculations for continuous indexing, and
+            //       so for an `x` to be large enough to overflow this, it would have to be a possible result of
+            //       `multiplyDown` or `multiplyUp`, which would already satisfy
+            //       `uint256(x) * EXP_SCALED_ONE < type(uint240).max`.
+            return UIntMath.safe112(((uint256(x) * EXP_SCALED_ONE) + index - 1) / index);
+        }
+    }
+
+    function _calcMPrincipalAmountRoundedUp(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
+    }
+
+    function _calcMPrincipalAmountRoundedDown(uint256 amount) public view returns (uint112) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), _index);
+    }
+
+    function _calcMPresentAmountRoundedDown(uint112 amount) public view returns (uint240) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPresentAmountRoundedDown(amount, _index);
+    }
+
+    function _calcMPresentAmountRoundedUp(uint112 amount) public view returns (uint240) {
+        uint128 _index = _currentMIndex();
+
+        return IndexingMath.getPresentAmountRoundedUp(amount, _index);
+    }
+
+    function _calcMYieldFeePresentAmountRoundedUp(uint112 amount) public view returns (uint240) {
+        uint128 _index = _currentMYieldFeeIndex();
+
+        return IndexingMath.getPresentAmountRoundedUp(amount, _index);
+    }
+
+    function _calcMYieldFeePresentAmountRoundedDown(uint112 amount) public view returns (uint240) {
+        uint128 _index = _currentMYieldFeeIndex();
+
+        return IndexingMath.getPresentAmountRoundedDown(amount, _index);
+    }
+
+    function _currentMIndex() public view returns (uint128) {
+        unchecked {
+            return
+                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
+                UIntMath.bound128(
+                    ContinuousIndexingMath.multiplyIndicesDown(
+                        mIndexInitial,
+                        ContinuousIndexingMath.getContinuousIndex(
+                            ContinuousIndexingMath.convertFromBasisPoints(mRate),
+                            uint32(block.timestamp - mRateStart)
+                        )
+                    )
+                );
+        }
+    }
+
     function _testYieldCapture_mYieldFee(
         address from,
         uint256[] memory yields,
@@ -483,142 +712,5 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertApproxEqAbs(aliceYield, yields[M_EARNER_MANAGER] / 2, 50, "unexpected alice's mEarnerManager yield");
 
         return (priorYield == 0 ? amount - 2 : amount, yields);
-    }
-
-    function test_feeRecipientChange_duringActiveYield() public {
-        // Test changing fee recipient while yield is accruing
-    }
-
-    function test_permissionedExtension_fullLifecycle() public {
-        // Set extension as permissioned
-        // Add/remove swappers
-        // Test swapping with different users
-        // Change permissions mid-lifecycle
-    }
-
-    function test_mixedPermissions_swapScenarios() public {
-        // Mix of permissioned and non-permissioned extensions
-        // Test various swap paths
-    }
-
-    function test_multiHopUniswapPath() public {
-        // Test TOKEN -> USDC -> USDT -> WrappedM -> Extension
-    }
-
-    function test_swapAdapter_withMultipleExtensions() public {
-        // Swap from USDC to multiple different extensions
-        // Verify routing and balances
-    }
-
-    function test_freeze_duringActiveYield() public {
-        // Freeze account while yield is accruing
-        // Verify yield claim behavior
-    }
-
-    function test_freeze_multipleExtensions() public {
-        // Freeze user across multiple extensions
-        // Test swap attempts between frozen extensions
-    }
-
-    function test_whitelistManagement_withActivePositions() public {
-        // Whitelist/unwhitelist users with active positions
-        // Change fee rates for active users
-        // Test batch operations
-    }
-
-    function test_rewhitelisting_withAccruedYield() public {
-        // Remove from whitelist, let yield accrue, re-whitelist
-        // Verify yield distribution
-    }
-
-    function test_zeroYieldScenarios() public {
-        // Test behavior when yield rate is 0
-        // Test swapping with 0 yield accrued
-    }
-
-    function test_maxValueScenarios() public {
-        // Test with maximum possible balances
-        // Test principal/index calculations at extremes
-    }
-
-    function test_upgrade_withActiveYield() public {
-        // Setup extension with accrued yield
-        // Upgrade contract
-        // Verify yield is preserved
-    }
-
-    function test_upgrade_withFrozenAccounts() public {
-        // Freeze accounts, upgrade, verify freeze state
-    }
-
-    function test_rateOracle_changes() public {
-        // Test behavior when rate oracle updates rates
-        // Verify index calculations adjust properly
-    }
-
-    function test_roleInteractions_complex() public {
-        // Test scenarios where users have multiple roles
-        // Test role changes during active operations
-    }
-
-    function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
-        uint128 _index = _currentMIndex();
-
-        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
-    }
-
-    function _calcMYearnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
-        uint128 currentIndex = _currentMIndex();
-
-        uint256 balanceWithYield = IndexingMath.getPresentAmountRoundedUp(principal, currentIndex);
-
-        // Yield is the difference between present value and current balance
-        return balanceWithYield > balance ? balanceWithYield - balance : 0;
-    }
-
-    function _calcMYieldFeePrincipal(uint256 amount) public view returns (uint112) {
-        uint128 _index = _currentMYieldFeeIndex();
-
-        return IndexingMath.getPrincipalAmountRoundedUp(uint240(amount), _index);
-    }
-
-    function _calcMYieldFeeYield(uint256 priorAmount, uint112 _principal) public view returns (uint256) {
-        uint128 _index = _currentMYieldFeeIndex();
-
-        uint256 _amountPlusYield = IndexingMath.getPresentAmountRoundedUp(_principal, _index);
-
-        return _amountPlusYield - priorAmount;
-    }
-
-    function _currentMYieldFeeIndex() public view returns (uint128) {
-        unchecked {
-            return
-                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
-                UIntMath.bound128(
-                    ContinuousIndexingMath.multiplyIndicesDown(
-                        mYieldFeeIndexInitial,
-                        ContinuousIndexingMath.getContinuousIndex(
-                            ContinuousIndexingMath.convertFromBasisPoints(mYieldFeeRate),
-                            uint32(vm.getBlockTimestamp() - mYieldFeeIndexStart)
-                        )
-                    )
-                );
-        }
-    }
-
-    function _currentMIndex() public view returns (uint128) {
-        unchecked {
-            return
-                // NOTE: Cap the index to `type(uint128).max` to prevent overflow in present value math.
-                UIntMath.bound128(
-                    ContinuousIndexingMath.multiplyIndicesDown(
-                        mIndexInitial,
-                        ContinuousIndexingMath.getContinuousIndex(
-                            ContinuousIndexingMath.convertFromBasisPoints(mRate),
-                            uint32(block.timestamp - mRateStart)
-                        )
-                    )
-                );
-        }
     }
 }
