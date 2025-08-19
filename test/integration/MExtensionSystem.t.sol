@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
+import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
+
 import { UIntMath } from "../../lib/common/src/libs/UIntMath.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
@@ -505,6 +507,80 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
     function test_multiHopUniswapPath() public {
         // Test TOKEN -> USDC -> USDT -> WrappedM -> Extension
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(address(swapAdapter), true, 0);
+
+        vm.startPrank(alice);
+
+        // Approve swap adapter for all tokens
+        IERC20(USDC).approve(address(swapAdapter), type(uint256).max);
+        USDT.call(abi.encodeWithSelector(IERC20.approve.selector, address(swapAdapter), type(uint256).max));
+
+        // Approve swap facility for all extensions
+        mToken.approve(address(swapFacility), type(uint256).max);
+        wrappedM.approve(address(swapFacility), type(uint256).max);
+        mYieldToOne.approve(address(swapFacility), type(uint256).max);
+        mYieldFee.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+
+        // Approve swap adapter for all extensions
+        mYieldToOne.approve(address(swapAdapter), type(uint256).max);
+        mYieldFee.approve(address(swapAdapter), type(uint256).max);
+        mEarnerManager.approve(address(swapAdapter), type(uint256).max);
+        wrappedM.approve(address(swapAdapter), type(uint256).max);
+
+        vm.stopPrank();
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldToOne), 10e6, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), 10e6, "mYieldToOne balance should be 10e6");
+
+        vm.prank(alice);
+        swapAdapter.swapOut(address(mYieldToOne), 10e6 - 2, USDC, 0, alice, "");
+
+        uint256 usdcBalance = IERC20(USDC).balanceOf(alice);
+
+        assertEq(usdcBalance, 9999631, "USDC balance of alice should be 9999631");
+
+        vm.prank(alice);
+        swapAdapter.swapIn(USDC, usdcBalance, address(mYieldToOne), 0, alice, "");
+
+        uint256 yieldToOneBalance = mYieldToOne.balanceOf(alice);
+
+        assertEq(yieldToOneBalance, 9997997, "mYieldToOne balance of alice should be 10e6");
+
+        // Encode path for USDT -> USDC -> Wrapped M
+        bytes memory path = abi.encodePacked(
+            WRAPPED_M,
+            uint24(100), // 0.01% fee
+            USDC,
+            uint24(100), // 0.01% fee
+            USDT
+        );
+
+        vm.prank(alice);
+        swapAdapter.swapOut(address(mYieldToOne), yieldToOneBalance - 4, USDT, 0, alice, path);
+
+        uint256 usdtBalance = IERC20(USDT).balanceOf(alice);
+
+        assertEq(usdtBalance, 9995377, "usdt balance should be 9995377");
+
+        path = abi.encodePacked(
+            USDT,
+            uint24(100), // 0.01% fee
+            USDC,
+            uint24(100), // 0.01% fee
+            WRAPPED_M
+        );
+
+        vm.prank(alice);
+        swapAdapter.swapIn(USDT, usdtBalance, address(mYieldFee), 0, alice, path);
+
+        uint256 mYieldFeeBalance = mYieldFee.balanceOf(alice);
+
+        assertEq(mYieldFeeBalance, 9993988, "mYieldFeeBalance should be 9993988");
     }
 
     function test_swapAdapter_withMultipleExtensions() public {
