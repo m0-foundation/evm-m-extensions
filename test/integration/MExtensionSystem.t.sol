@@ -18,6 +18,8 @@ import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
+import { IFreezable } from "../../src/components/IFreezable.sol";
+
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 import { console } from "forge-std/console.sol";
@@ -583,9 +585,109 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFeeBalance, 9993988, "mYieldFeeBalance should be 9993988");
     }
 
-    function test_freeze_duringActiveYield() public {
-        // Freeze account while yield is accruing
-        // Verify yield claim behavior
+    function test_yieldToOne_freeze_duringYield() public {
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mYieldToOne.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        mYieldToOne.approve(bob, 10e6);
+
+        vm.prank(bob);
+        mToken.approve(address(swapFacility), 10e6);
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mYieldToOne), 10e6, alice);
+
+        uint256 mYieldToOneBalance = mYieldToOne.balanceOf(alice);
+
+        assertEq(mYieldToOneBalance, 10e6, "mYieldToOneBalance should be 10e6");
+
+        uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        uint256 mBalanceAfter = mToken.balanceOf(address(mYieldToOne));
+
+        uint256 mYieldToOneYield = mYieldToOne.yield();
+
+        console.log(mBalanceBefore, mBalanceAfter, mYieldToOneYield);
+
+        assertEq(mYieldToOneYield, mBalanceAfter - mBalanceBefore - 2, "yield should match increase in m balance");
+
+        vm.expectEmit(true, true, true, true);
+        emit IFreezable.Frozen(alice, vm.getBlockTimestamp());
+
+        vm.prank(freezeManager);
+        mYieldToOne.freeze(alice);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        mBalanceAfter = mToken.balanceOf(address(mYieldToOne));
+
+        mYieldToOneYield = mYieldToOne.yield();
+
+        assertEq(mYieldToOneYield, mBalanceAfter - mBalanceBefore - 2, "yield should match increase in m balance");
+
+        mYieldToOne.claimYield();
+
+        assertEq(
+            mYieldToOne.balanceOf(yieldRecipient),
+            mBalanceAfter - mBalanceBefore - 2,
+            "yield should be claimed to yield recipient"
+        );
+
+        // Test all freeze revertions except for transfer to alice (will test at end)
+        vm.startPrank(alice);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        swapFacility.swap(address(mYieldToOne), address(mYieldFee), 10e6 - 2, alice);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        mYieldToOne.transfer(bob, 10e6);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        mYieldToOne.approve(bob, 10e6);
+
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        mYieldToOne.transferFrom(alice, bob, 10e6);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        swapFacility.swapInM(address(mYieldToOne), 10e6, alice);
+
+        vm.stopPrank();
+
+        vm.prank(freezeManager);
+        mYieldToOne.unfreeze(alice);
+
+        mBalanceBefore = mBalanceAfter;
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        mBalanceAfter = mToken.balanceOf(address(mYieldToOne));
+
+        mYieldToOneYield = mYieldToOne.yield();
+
+        assertEq(
+            mYieldToOneYield,
+            mBalanceAfter - mBalanceBefore,
+            "yield should match increase in m balance after unfreeze"
+        );
+
+        // Re-freeze again to test transfer from bob to frozen alice
+        vm.prank(freezeManager);
+        mYieldToOne.freeze(alice);
+
+        vm.startPrank(bob);
+        swapFacility.swapInM(address(mYieldToOne), 10e6, bob);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        mYieldToOne.transfer(alice, 10e6);
     }
 
     function test_freeze_multipleExtensions() public {
