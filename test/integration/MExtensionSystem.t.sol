@@ -505,7 +505,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Test various swap paths
     }
 
-    function test_multiHopUniswapPath() public {
+    function test_swapAdapter_withMultipleExtensions() public {
         // Test TOKEN -> USDC -> USDT -> WrappedM -> Extension
 
         vm.prank(earnerManager);
@@ -581,11 +581,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint256 mYieldFeeBalance = mYieldFee.balanceOf(alice);
 
         assertEq(mYieldFeeBalance, 9993988, "mYieldFeeBalance should be 9993988");
-    }
-
-    function test_swapAdapter_withMultipleExtensions() public {
-        // Swap from USDC to multiple different extensions
-        // Verify routing and balances
     }
 
     function test_freeze_duringActiveYield() public {
