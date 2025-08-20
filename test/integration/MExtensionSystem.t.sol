@@ -931,9 +931,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
             assertApproxEqAbs(carolYieldNetOfFee, 0, 2, "carol's yield net of fee should be 0");
         }
 
-        mEarnerManager.claimFor(alice);
-        mEarnerManager.claimFor(bob);
-        mEarnerManager.claimFor(carol);
+        vm.startPrank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 10_000);
+        mEarnerManager.setAccountInfo(bob, true, 10_000);
+        mEarnerManager.setAccountInfo(carol, true, 10_000);
+        vm.stopPrank();
 
         assertApproxEqAbs(
             mEarnerManager.balanceOf(feeRecipient),
@@ -941,11 +943,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
             56,
             "earnerManager's balance should be 11375 * 6"
         );
-    }
-
-    function test_rewhitelisting_withAccruedYield() public {
-        // Remove from whitelist, let yield accrue, re-whitelist
-        // Verify yield distribution
     }
 
     function test_zeroYieldScenarios() public {
