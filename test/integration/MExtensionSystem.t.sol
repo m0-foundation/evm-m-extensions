@@ -22,7 +22,7 @@ import { IFreezable } from "../../src/components/IFreezable.sol";
 
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
-import { console } from "forge-std/console.sol";
+import { IRegistrarLike } from "../../src/swap/interfaces/IRegistrarLike.sol";
 
 contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     uint256 public mainnetFork;
@@ -950,24 +950,106 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Test swapping with 0 yield accrued
     }
 
-    function test_maxValueScenarios() public {
-        // Test with maximum possible balances
-        // Test principal/index calculations at extremes
-    }
+    function test_upgrade_withState() public {
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 0);
 
-    function test_upgrade_withActiveYield() public {
-        // Setup extension with accrued yield
-        // Upgrade contract
-        // Verify yield is preserved
-    }
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
 
-    function test_upgrade_withFrozenAccounts() public {
-        // Freeze accounts, upgrade, verify freeze state
+        swapFacility.swapInM(address(mYieldFee), 5e6, alice);
+        swapFacility.swapInM(address(mYieldToOne), 5e6, alice);
+        swapFacility.swapInM(address(mEarnerManager), 5e6, alice);
+        vm.stopPrank();
+
+        vm.prank(earnerManager);
     }
 
     function test_rateOracle_changes() public {
-        // Test behavior when rate oracle updates rates
-        // Verify index calculations adjust properly
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 0);
+
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mYieldFee.approve(address(swapFacility), type(uint256).max);
+        mYieldToOne.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        wrappedM.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        swapFacility.swapInM(address(mYieldToOne), 5e6, alice);
+        swapFacility.swapInM(address(mYieldFee), 5e6, alice);
+        swapFacility.swapInM(address(mEarnerManager), 5e6, alice);
+        vm.stopPrank();
+
+        uint256 mYieldToOneBalance = 5e6;
+        uint256 mYieldFeeBalance = 5e6;
+        uint256 mEarnerManagerBalance = 5e6;
+
+        uint112 mYieldFeePrincipal = _calcMYieldFeePrincipal(mYieldFeeBalance);
+        uint112 mYieldToOnePrincipal = _calcMPrincipalAmountRoundedDown(mEarnerManagerBalance);
+        uint112 mEarnerManagerPrincipal = _calcMEarnerManagerPrincipal(mYieldToOneBalance);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        uint256 mYieldFeeAccruedPreRateChange = _calcMYieldFeeYield(mYieldFeeBalance, mYieldFeePrincipal);
+        uint256 mYieldToOneAccruedPreRateChange = _calcMPresentAmountRoundedDown(mYieldToOnePrincipal) -
+            mYieldFeeBalance;
+        uint256 mEarnerManagerAccruedPreRateChange = _calcMEarnerManagerYield(5e6, mEarnerManagerPrincipal);
+
+        assertApproxEqAbs(
+            mYieldFee.totalAccruedYield(),
+            mYieldFeeAccruedPreRateChange,
+            1,
+            "mYieldFee yield not expected"
+        );
+        assertApproxEqAbs(mYieldToOne.yield(), mYieldToOneAccruedPreRateChange, 0, "mYieldToOne yield not expected");
+        assertApproxEqAbs(
+            mEarnerManager.accruedYieldOf(alice),
+            mEarnerManagerAccruedPreRateChange,
+            1,
+            "mEarnerManager yield not expected"
+        );
+
+        _set("base_minter_rate", bytes32(uint256(830))); // double rate
+        _set("max_earner_rate", bytes32(uint256(830))); // double rate
+
+        minterGateway.updateIndex();
+        mIndexInitial = mToken.updateIndex();
+        mYieldFeeIndexInitial = mYieldFee.updateIndex();
+
+        mRate = 830;
+        mRateStart = uint40(vm.getBlockTimestamp());
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        uint256 mYieldFeeAccruedPostRateChange = _calcMYieldFeeYield(
+            mYieldFeeBalance + mYieldFeeAccruedPreRateChange,
+            mYieldFeePrincipal
+        );
+        uint256 mYieldToOneAccruedPostRateChange = _calcMPresentAmountRoundedDown(mYieldToOnePrincipal) -
+            mYieldFeeBalance;
+        uint256 mEarnerManagerAccruedPostRateChange = _calcMEarnerManagerYield(5e6, mEarnerManagerPrincipal);
+
+        assertApproxEqAbs(
+            mYieldFee.totalAccruedYield(),
+            mYieldFeeAccruedPostRateChange + mYieldFeeAccruedPreRateChange,
+            13,
+            "mYieldFee !!yield not expected"
+        );
+        assertApproxEqAbs(
+            mYieldToOne.yield(),
+            mYieldToOneAccruedPreRateChange * 3,
+            22,
+            "mYieldToOne yield not expected"
+        );
+        assertApproxEqAbs(
+            mEarnerManager.accruedYieldOf(alice),
+            mEarnerManagerAccruedPreRateChange * 3,
+            19,
+            "mEarnerManager yield not expected"
+        );
     }
 
     function test_roleInteractions_complex() public {

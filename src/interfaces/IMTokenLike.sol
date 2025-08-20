@@ -117,4 +117,7 @@ interface IMTokenLike {
 
     /// @notice Returns the EIP712 typehash used in the encoding of the digest for the permit function.
     function PERMIT_TYPEHASH() external view returns (bytes32);
+
+    /// @notice Updates the index and returns it.
+    function updateIndex() external returns (uint128);
 }
