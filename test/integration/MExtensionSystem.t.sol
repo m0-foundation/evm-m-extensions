@@ -123,8 +123,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(address(swapFacility), true, 0);
 
-        vm.prank(admin);
+        vm.startPrank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+        swapFacility.grantRole(M_SWAPPER_ROLE, bob);
+        swapFacility.grantRole(M_SWAPPER_ROLE, carol);
+        vm.stopPrank();
     }
 
     function calculateMYieldFeeYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
@@ -612,8 +615,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
         uint256 mYieldToOneYield = mYieldToOne.yield();
 
-        console.log(mBalanceBefore, mBalanceAfter, mYieldToOneYield);
-
         assertEq(mYieldToOneYield, mBalanceAfter - mBalanceBefore - 2, "yield should match increase in m balance");
 
         vm.expectEmit(true, true, true, true);
@@ -690,15 +691,256 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         mYieldToOne.transfer(alice, 10e6);
     }
 
-    function test_freeze_multipleExtensions() public {
-        // Freeze user across multiple extensions
-        // Test swap attempts between frozen extensions
-    }
+    function test_mEarnerManager_whitelistManagement_withActivePositions() public {
+        vm.startPrank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 10_000);
+        mEarnerManager.setAccountInfo(bob, true, 5_000);
+        mEarnerManager.setAccountInfo(carol, true, 0);
+        vm.stopPrank();
 
-    function test_whitelistManagement_withActivePositions() public {
-        // Whitelist/unwhitelist users with active positions
-        // Change fee rates for active users
-        // Test batch operations
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        vm.startPrank(carol);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        swapFacility.swapInM(address(mEarnerManager), 10e6, alice);
+
+        vm.prank(bob);
+        swapFacility.swapInM(address(mEarnerManager), 10e6, bob);
+
+        vm.prank(carol);
+        swapFacility.swapInM(address(mEarnerManager), 10e6, carol);
+
+        uint256 aliceBalance = mEarnerManager.balanceOf(alice);
+        uint256 bobBalance = mEarnerManager.balanceOf(bob);
+        uint256 carolBalance = mEarnerManager.balanceOf(carol);
+
+        uint112 alicePrincipal = _calcMEarnerManagerPrincipal(10e6);
+        uint112 bobPrincipal = _calcMEarnerManagerPrincipal(10e6);
+        uint112 carolPrincipal = _calcMEarnerManagerPrincipal(10e6);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        (uint256 bobYieldWithFeeActual, , ) = mEarnerManager.accruedYieldAndFeeOf(bob);
+
+        (uint256 carolYieldWithFeeActual, , ) = mEarnerManager.accruedYieldAndFeeOf(carol);
+
+        {
+            (uint256 aliceYieldWithFeeActual, uint256 aliceFee, uint256 aliceYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(alice);
+            uint256 aliceYieldWithFee = _calcMEarnerManagerYield(aliceBalance, alicePrincipal);
+
+            assertApproxEqAbs(aliceYieldWithFeeActual, aliceYieldWithFee, 2, "alice's yield with fee should be 11375");
+            assertApproxEqAbs(aliceFee, aliceYieldWithFee, 2, "alice's fee should be 11375");
+            assertApproxEqAbs(aliceYieldNetOfFee, 0, 2, "alice's yield net of fee should be 0");
+        }
+
+        {
+            (uint256 bobYieldWithFeeActual, uint256 bobFee, uint256 bobYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(bob);
+
+            uint256 bobYieldWithFee = _calcMEarnerManagerYield(bobBalance, bobPrincipal);
+
+            assertApproxEqAbs(bobYieldWithFeeActual, bobYieldWithFee, 2, "bob's yield with fee should be 11375");
+            assertApproxEqAbs(bobFee, bobYieldWithFee / 2, 2, "bob's fee should be 11375 / 2");
+            assertApproxEqAbs(bobYieldNetOfFee, bobYieldWithFee / 2, 2, "bob's yield net of fee should be 11375 / 2");
+        }
+
+        {
+            (uint256 carolYieldWithFeeActual, uint256 carolFee, uint256 carolYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(carol);
+
+            uint256 carolYieldWithFee = _calcMEarnerManagerYield(carolBalance, carolPrincipal);
+
+            assertApproxEqAbs(carolYieldWithFeeActual, carolYieldWithFee, 2, "carol's yield with fee should be 11375");
+            assertApproxEqAbs(carolFee, 0, 2, "carol's fee should be 0");
+            assertApproxEqAbs(carolYieldNetOfFee, carolYieldWithFee, 2, "carol's yield net of fee should be 11375");
+        }
+
+        vm.startPrank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 5_000);
+        mEarnerManager.setAccountInfo(bob, true, 0);
+        mEarnerManager.setAccountInfo(carol, true, 10_000);
+        vm.stopPrank();
+
+        aliceBalance = mEarnerManager.balanceOf(alice);
+        bobBalance = mEarnerManager.balanceOf(bob);
+        carolBalance = mEarnerManager.balanceOf(carol);
+
+        alicePrincipal = _calcMEarnerManagerPrincipal(aliceBalance);
+        bobPrincipal = _calcMEarnerManagerPrincipal(bobBalance);
+        carolPrincipal = _calcMEarnerManagerPrincipal(carolBalance);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        {
+            (uint256 aliceYieldWithFeeActual, uint256 aliceFee, uint256 aliceYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(alice);
+            uint256 aliceYieldWithFee = _calcMEarnerManagerYield(aliceBalance, alicePrincipal);
+
+            assertApproxEqAbs(aliceYieldWithFeeActual, aliceYieldWithFee, 2, "alice's yield with fee should be 11375");
+            assertApproxEqAbs(aliceFee, aliceYieldWithFee / 2, 2, "alice's fee should be 11375 / 2");
+            assertApproxEqAbs(
+                aliceYieldNetOfFee,
+                aliceYieldWithFee / 2,
+                2,
+                "alice's yield net of fee should be 11375 / 2"
+            );
+        }
+
+        {
+            (uint256 bobYieldWithFeeActual, uint256 bobFee, uint256 bobYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(bob);
+
+            uint256 bobYieldWithFee = _calcMEarnerManagerYield(bobBalance, bobPrincipal);
+
+            assertApproxEqAbs(bobYieldWithFeeActual, bobYieldWithFee, 2, "bob's yield with fee should be 11375");
+            assertApproxEqAbs(bobFee, 0, 2, "bob's fee should be 11375 / 2");
+            assertApproxEqAbs(bobYieldNetOfFee, bobYieldWithFee, 2, "bob's yield net of fee should be 11375 / 2");
+        }
+
+        {
+            (uint256 carolYieldWithFeeActual, uint256 carolFee, uint256 carolYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(carol);
+
+            uint256 carolYieldWithFee = _calcMEarnerManagerYield(carolBalance, carolPrincipal);
+
+            assertApproxEqAbs(carolYieldWithFeeActual, carolYieldWithFee, 2, "carol's yield with fee should be 11375");
+            assertApproxEqAbs(carolFee, carolYieldWithFee, 2, "carol's fee should be 11375");
+            assertApproxEqAbs(carolYieldNetOfFee, 0, 2, "carol's yield net of fee should be 0");
+        }
+
+        vm.startPrank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 0);
+        mEarnerManager.setAccountInfo(bob, true, 10_000);
+        mEarnerManager.setAccountInfo(carol, true, 5_000);
+        vm.stopPrank();
+
+        aliceBalance = mEarnerManager.balanceOf(alice);
+        bobBalance = mEarnerManager.balanceOf(bob);
+        carolBalance = mEarnerManager.balanceOf(carol);
+
+        alicePrincipal = _calcMEarnerManagerPrincipal(aliceBalance);
+        bobPrincipal = _calcMEarnerManagerPrincipal(bobBalance);
+        carolPrincipal = _calcMEarnerManagerPrincipal(carolBalance);
+
+        {
+            (uint256 aliceYieldWithFeeActual, uint256 aliceFee, uint256 aliceYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(alice);
+            uint256 aliceYieldWithFee = _calcMEarnerManagerYield(aliceBalance, alicePrincipal);
+
+            assertApproxEqAbs(aliceYieldWithFeeActual, aliceYieldWithFee, 2, "alice's yield with fee should be 11375");
+            assertApproxEqAbs(aliceFee, 0, 2, "alice's fee should be 0");
+            assertApproxEqAbs(aliceYieldNetOfFee, aliceYieldWithFee, 2, "alice's yield net of fee should be 11375");
+        }
+
+        {
+            (uint256 bobYieldWithFeeActual, uint256 bobFee, uint256 bobYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(bob);
+
+            uint256 bobYieldWithFee = _calcMEarnerManagerYield(bobBalance, bobPrincipal);
+
+            assertApproxEqAbs(bobYieldWithFeeActual, bobYieldWithFee, 2, "bob's yield with fee should be 11375");
+            assertApproxEqAbs(bobFee, bobYieldWithFee, 2, "bob's fee should be 11375");
+            assertApproxEqAbs(bobYieldNetOfFee, 0, 2, "bob's yield net of fee should be 0");
+        }
+
+        {
+            (uint256 carolYieldWithFeeActual, uint256 carolFee, uint256 carolYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(carol);
+
+            uint256 carolYieldWithFee = _calcMEarnerManagerYield(carolBalance, carolPrincipal);
+
+            assertApproxEqAbs(carolYieldWithFeeActual, carolYieldWithFee, 2, "carol's yield with fee should be 11375");
+            assertApproxEqAbs(carolFee, carolYieldWithFee / 2, 2, "carol's fee should be 11375 / 2");
+            assertApproxEqAbs(
+                carolYieldNetOfFee,
+                carolYieldWithFee / 2,
+                2,
+                "carol's yield net of fee should be 11375 / 2"
+            );
+        }
+
+        mEarnerManager.claimFor(alice);
+        mEarnerManager.claimFor(bob);
+        mEarnerManager.claimFor(carol);
+
+        assertApproxEqAbs(
+            mEarnerManager.balanceOf(feeRecipient),
+            11375 * 3,
+            14,
+            "earnerManager's balance should be 11375 * 3"
+        );
+
+        vm.startPrank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, false, 0);
+        mEarnerManager.setAccountInfo(bob, false, 0);
+        mEarnerManager.setAccountInfo(carol, false, 0);
+        vm.stopPrank();
+
+        aliceBalance = mEarnerManager.balanceOf(alice);
+        bobBalance = mEarnerManager.balanceOf(bob);
+        carolBalance = mEarnerManager.balanceOf(carol);
+
+        alicePrincipal = _calcMEarnerManagerPrincipal(aliceBalance);
+        bobPrincipal = _calcMEarnerManagerPrincipal(bobBalance);
+        carolPrincipal = _calcMEarnerManagerPrincipal(carolBalance);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        {
+            (uint256 aliceYieldWithFeeActual, uint256 aliceFee, uint256 aliceYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(alice);
+            uint256 aliceYieldWithFee = _calcMEarnerManagerYield(aliceBalance, alicePrincipal);
+
+            assertApproxEqAbs(aliceYieldWithFeeActual, aliceYieldWithFee, 2, "alice's yield with fee should be 11375");
+            assertApproxEqAbs(aliceFee, aliceYieldWithFee, 2, "alice's fee should be 11375");
+            assertApproxEqAbs(aliceYieldNetOfFee, 0, 2, "alice's yield net of fee should be 0");
+        }
+
+        {
+            (uint256 bobYieldWithFeeActual, uint256 bobFee, uint256 bobYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(bob);
+
+            uint256 bobYieldWithFee = _calcMEarnerManagerYield(bobBalance, bobPrincipal);
+
+            assertApproxEqAbs(bobYieldWithFeeActual, bobYieldWithFee, 2, "bob's yield with fee should be 11375");
+            assertApproxEqAbs(bobFee, bobYieldWithFee, 2, "bob's fee should be 11375");
+            assertApproxEqAbs(bobYieldNetOfFee, 0, 2, "bob's yield net of fee should be 0");
+        }
+
+        {
+            (uint256 carolYieldWithFeeActual, uint256 carolFee, uint256 carolYieldNetOfFee) = mEarnerManager
+                .accruedYieldAndFeeOf(carol);
+
+            uint256 carolYieldWithFee = _calcMEarnerManagerYield(carolBalance, carolPrincipal);
+
+            assertApproxEqAbs(carolYieldWithFeeActual, carolYieldWithFee, 2, "carol's yield with fee should be 11375");
+            assertApproxEqAbs(carolFee, carolYieldWithFee, 2, "carol's fee should be 11375");
+            assertApproxEqAbs(carolYieldNetOfFee, 0, 2, "carol's yield net of fee should be 0");
+        }
+
+        mEarnerManager.claimFor(alice);
+        mEarnerManager.claimFor(bob);
+        mEarnerManager.claimFor(carol);
+
+        assertApproxEqAbs(
+            mEarnerManager.balanceOf(feeRecipient),
+            11375 * 6,
+            56,
+            "earnerManager's balance should be 11375 * 6"
+        );
     }
 
     function test_rewhitelisting_withAccruedYield() public {
@@ -742,7 +984,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         return IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), _index);
     }
 
-    function _calcMYearnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
+    function _calcMEarnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
         uint128 currentIndex = _currentMIndex();
 
         uint256 balanceWithYield = IndexingMath.getPresentAmountRoundedUp(principal, currentIndex);
@@ -870,7 +1112,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Collect MEarnerManager yield
         yields[M_EARNER_MANAGER] += mEarnerManagerPrincipal == 0
             ? 0
-            : _calcMYearnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
+            : _calcMEarnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
 
         // Collect MYieldToOne yield
         yields[M_YIELD_TO_ONE] += mBalanceBefore == 0 ? 0 : mToken.balanceOf(address(mYieldToOne)) - mBalanceBefore;
@@ -912,7 +1154,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Collect MEarnerManager yield
         yields[M_EARNER_MANAGER] += mEarnerManagerPrincipal == 0
             ? 0
-            : _calcMYearnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
+            : _calcMEarnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
 
         // Collect MYieldFee yield
         yields[M_YIELD_FEE] += mYieldFeePrincipal == 0
@@ -963,7 +1205,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         yields[M_YIELD_TO_ONE] += mBalanceBefore == 0 ? 0 : mToken.balanceOf(address(mYieldToOne)) - mBalanceBefore;
 
         // Assert MEarnerManager yield
-        uint256 yield = _calcMYearnerManagerYield(amount + yields[M_EARNER_MANAGER], principal);
+        uint256 yield = _calcMEarnerManagerYield(amount + yields[M_EARNER_MANAGER], principal);
 
         (uint256 aliceYieldWithFee, uint256 aliceFee, uint256 aliceYield) = mEarnerManager.accruedYieldAndFeeOf(alice);
 
