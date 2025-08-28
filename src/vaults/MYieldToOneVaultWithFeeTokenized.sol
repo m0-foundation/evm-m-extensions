@@ -10,7 +10,7 @@ interface IAsset is IMYieldToOne, IERC20 {
     function decimals() external view returns (uint8);
 }
 
-contract MYieldToOneVaultWithFee is ERC20 {
+contract MYieldToOneVaultWithFeeTokenized is ERC20 {
     using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
