@@ -8,6 +8,8 @@ import { FixedPointMathLib } from "../../lib/solmate/src/utils/FixedPointMathLib
 import { MYieldToOneVaultWithFeeBase, IAsset } from "./MYieldToOneVaultWithFeeBase.sol";
 
 contract MYieldToOneVaultWithFeeNoToken is MYieldToOneVaultWithFeeBase {
+    error OnlyHolder();
+
     uint256 public balancesTotal;
 
     mapping(address => uint256) public balances;
@@ -23,6 +25,8 @@ contract MYieldToOneVaultWithFeeNoToken is MYieldToOneVaultWithFeeBase {
     }
 
     function _claim(address from, uint256 amount) internal override {
+        if (from != msg.sender) revert OnlyHolder();
+
         balances[from] -= amount;
     }
 
