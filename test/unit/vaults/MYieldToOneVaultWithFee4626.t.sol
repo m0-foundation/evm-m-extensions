@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { MYieldToOneVaultWithFeeTokenized, IAsset } from "../../../src/vaults/MYieldToOneVaultWithFeeTokenized.sol";
+import "forge-std/console.sol";
+
+import { MYieldToOneVaultWithFee4626, IAsset } from "../../../src/vaults/MYieldToOneVaultWithFee4626.sol";
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 import { MYieldToOneHarness } from "../../harness/MYieldToOneHarness.sol";
 import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
 import { Upgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-contract MYieldToOneVaultWithFeeTokenizedTest is BaseUnitTest {
-    MYieldToOneVaultWithFeeTokenized public vault;
+contract MYieldToOneVaultWithFee4626Test is BaseUnitTest {
+    MYieldToOneVaultWithFee4626 public vault;
     MYieldToOneHarness public mYieldToOne;
 
     string public constant ASSET_NAME = "VAULT USD";
@@ -37,7 +39,7 @@ contract MYieldToOneVaultWithFeeTokenizedTest is BaseUnitTest {
             )
         );
 
-        vault = new MYieldToOneVaultWithFeeTokenized(
+        vault = new MYieldToOneVaultWithFee4626(
             VAULT_NAME,
             VAULT_SYMBOL,
             IAsset(address(mYieldToOne)),

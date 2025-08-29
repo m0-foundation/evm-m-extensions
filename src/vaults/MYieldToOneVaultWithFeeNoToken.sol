@@ -7,30 +7,60 @@ import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/I
 import { FixedPointMathLib } from "../../lib/solmate/src/utils/FixedPointMathLib.sol";
 import { MYieldToOneVaultWithFeeBase, IAsset } from "./MYieldToOneVaultWithFeeBase.sol";
 
-contract MYieldToOneVaultWithFeeNoToken is MYieldToOneVaultWithFeeBase {
+abstract contract MYieldToOneVaultWithFeeNoTokenStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.MYieldToOneVaultWithFeeNoToken
+    struct MYieldToOneVaultWithFeeNoTokenStorageStruct {
+        uint256 balancesTotal;
+        mapping(address => uint256) balances;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOneVaultWithNoToken")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _M_YIELD_TO_ONE_VAULT_WITH_FEE_NO_TOKEN_STORAGE_LOCATION =
+        0x9299d05662b275eb767cd9b38992e5264409040eb94aaa4fac7689d7ae429000;
+
+    function _getMYieldToOneVaultWithFeeNoTokenStorageLocation()
+        internal
+        pure
+        returns (MYieldToOneVaultWithFeeNoTokenStorageStruct storage $)
+    {
+        assembly {
+            $.slot := _M_YIELD_TO_ONE_VAULT_WITH_FEE_NO_TOKEN_STORAGE_LOCATION
+        }
+    }
+}
+
+contract MYieldToOneVaultWithFeeNoToken is MYieldToOneVaultWithFeeNoTokenStorageLayout, MYieldToOneVaultWithFeeBase {
     error OnlyHolder();
 
-    uint256 public balancesTotal;
+    constructor(IAsset _asset) MYieldToOneVaultWithFeeBase(_asset) {
+        _disableInitializers();
+    }
 
-    mapping(address => uint256) public balances;
-
-    constructor(IAsset _asset, address _admin, uint256 _fee) MYieldToOneVaultWithFeeBase(_asset, _admin, _fee) {}
+    function initialize(address _admin, uint256 _fee) public initializer {
+        __MYieldToOneVaultWithFeeBase_init(_admin, _fee);
+    }
 
     function _totalIssued() internal view override returns (uint256) {
-        return balancesTotal;
+        MYieldToOneVaultWithFeeNoTokenStorageStruct storage $ = _getMYieldToOneVaultWithFeeNoTokenStorageLocation();
+
+        return $.balancesTotal;
     }
 
     function _issue(address to, uint256 amount) internal override {
-        balances[to] += amount;
+        MYieldToOneVaultWithFeeNoTokenStorageStruct storage $ = _getMYieldToOneVaultWithFeeNoTokenStorageLocation();
+
+        $.balances[to] += amount;
     }
 
     function _claim(address from, uint256 amount) internal override {
-        if (from != msg.sender) revert OnlyHolder();
+        MYieldToOneVaultWithFeeNoTokenStorageStruct storage $ = _getMYieldToOneVaultWithFeeNoTokenStorageLocation();
 
-        balances[from] -= amount;
+        $.balances[from] -= amount;
     }
 
     function _balanceOf(address owner) internal view override returns (uint256) {
-        return balances[owner];
+        MYieldToOneVaultWithFeeNoTokenStorageStruct storage $ = _getMYieldToOneVaultWithFeeNoTokenStorageLocation();
+
+        return $.balances[owner];
     }
 }

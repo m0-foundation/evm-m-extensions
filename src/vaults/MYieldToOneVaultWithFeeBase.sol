@@ -4,12 +4,36 @@ pragma solidity ^0.8.13;
 import { IMYieldToOne } from "../projects/yieldToOne/IMYieldToOne.sol";
 import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { FixedPointMathLib } from "../../lib/solmate/src/utils/FixedPointMathLib.sol";
+import {
+    OwnableUpgradeable
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
 
 interface IAsset is IMYieldToOne, IERC20 {
     function decimals() external view returns (uint8);
 }
 
-contract MYieldToOneVaultWithFeeBase {
+abstract contract MYieldToOneVaultWithFeeStorageLayout {
+    /// @custom:storage-location erc7201:M0.storage.MYieldToOneVaultWithFeeBase
+    struct MYieldToOneVaultWithFeeBaseStorageStruct {
+        uint256 fee;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOneVaultWithFeeBase")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant _M_YIELD_TO_ONE_VAULT_WITH_FEE_BASE_STORAGE_LOCATION =
+        0x5775d07830fa9f2870e727515b41f8e8b722204a8608d1e999e5e1b0726a3c00;
+
+    function _getMYieldToOneVaultWithFeeBaseStorageLocation()
+        internal
+        pure
+        returns (MYieldToOneVaultWithFeeBaseStorageStruct storage $)
+    {
+        assembly {
+            $.slot := _M_YIELD_TO_ONE_VAULT_WITH_FEE_BASE_STORAGE_LOCATION
+        }
+    }
+}
+
+contract MYieldToOneVaultWithFeeBase is MYieldToOneVaultWithFeeStorageLayout, OwnableUpgradeable {
     using FixedPointMathLib for uint256;
 
     /*//////////////////////////////////////////////////////////////
@@ -38,12 +62,16 @@ contract MYieldToOneVaultWithFeeBase {
 
     IAsset public immutable ASSET;
     address public admin;
-    uint256 public fee;
 
-    constructor(IAsset _asset, address _admin, uint256 _fee) {
+    constructor(IAsset _asset) {
         ASSET = _asset;
-        admin = _admin;
-        fee = _fee;
+        _disableInitializers();
+    }
+
+    function __MYieldToOneVaultWithFeeBase_init(address _admin, uint256 _fee) public initializer {
+        __Ownable_init(_admin);
+        MYieldToOneVaultWithFeeBaseStorageStruct storage $ = _getMYieldToOneVaultWithFeeBaseStorageLocation();
+        $.fee = _fee;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -113,7 +141,9 @@ contract MYieldToOneVaultWithFeeBase {
     }
 
     function _adminYieldShares(uint256 yield, uint256 totalAssets) internal view returns (uint256) {
-        uint256 yieldToAdmin = (yield * fee) / MAX_FEE;
+        MYieldToOneVaultWithFeeBaseStorageStruct storage $ = _getMYieldToOneVaultWithFeeBaseStorageLocation();
+
+        uint256 yieldToAdmin = (yield * $.fee) / MAX_FEE;
 
         return yieldToAdmin.mulDivDown(_totalIssued(), totalAssets - yieldToAdmin);
     }
