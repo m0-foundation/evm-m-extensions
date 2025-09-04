@@ -946,8 +946,87 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     }
 
     function test_zeroYieldScenarios() public {
-        // Test behavior when yield rate is 0
-        // Test swapping with 0 yield accrued
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), 10e6);
+        mYieldFee.approve(address(swapFacility), 10e6);
+        mYieldToOne.approve(address(swapFacility), 10e6);
+        mEarnerManager.approve(address(swapFacility), 10e6);
+        wrappedM.approve(address(swapFacility), 10e6);
+        vm.stopPrank();
+
+        // set rate to zero and ensure no yield
+        // accumulates during swaps with time in between
+
+        _set("base_minter_rate", bytes32(uint256(0))); // zero rate
+        _set("max_earner_rate", bytes32(uint256(0))); // zero rate
+
+        minterGateway.updateIndex();
+        mIndexInitial = mToken.updateIndex();
+        mYieldFeeIndexInitial = mYieldFee.updateIndex();
+
+        vm.startPrank(alice);
+
+        mToken.approve(address(swapFacility), 5e6);
+        swapFacility.swapInM(address(mYieldFee), 5e6, alice);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        mYieldFee.approve(address(swapFacility), 5e6);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), 5e6 - 2, alice);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        mYieldToOne.approve(address(swapFacility), 5e6);
+        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), 5e6 - 4, alice);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        mEarnerManager.approve(address(swapFacility), 5e6);
+        swapFacility.swapOutM(address(mEarnerManager), 5e6 - 6, alice);
+
+        vm.stopPrank();
+
+        uint256 mYieldToOneYield = mYieldToOne.yield();
+        uint256 mYieldFeeYield = mYieldFee.totalAccruedYield();
+        uint256 mEarnerManagerYield = mEarnerManager.accruedYieldOf(alice);
+
+        assertEq(mYieldToOneYield, 0, "mYieldToOne yield should be 0");
+        assertEq(mYieldFeeYield, 0, "mYieldFee yield should be 0");
+        assertEq(mEarnerManagerYield, 0, "mEarnerManager yield should be 0");
+
+        // Set rate to non-zero and ensure no yield accumulates
+        // during atomic swaps without any time passage
+
+        _set("base_minter_rate", bytes32(uint256(1000))); // 10% rate
+        _set("max_earner_rate", bytes32(uint256(1000))); // 10% rate
+
+        minterGateway.updateIndex();
+        mIndexInitial = mToken.updateIndex();
+        mYieldFeeIndexInitial = mYieldFee.updateIndex();
+
+        vm.startPrank(alice);
+
+        mToken.approve(address(swapFacility), 5e6);
+        swapFacility.swapInM(address(mYieldFee), 5e6, alice);
+
+        mYieldFee.approve(address(swapFacility), 5e6);
+        swapFacility.swap(address(mYieldFee), address(mYieldToOne), 5e6 - 2, alice);
+
+        mYieldToOne.approve(address(swapFacility), 5e6);
+        swapFacility.swap(address(mYieldToOne), address(mEarnerManager), 5e6 - 4, alice);
+
+        mEarnerManager.approve(address(swapFacility), 5e6);
+        swapFacility.swapOutM(address(mEarnerManager), 5e6 - 6, alice);
+
+        vm.stopPrank();
+
+        mYieldToOneYield = mYieldToOne.yield();
+        mYieldFeeYield = mYieldFee.totalAccruedYield();
+        mEarnerManagerYield = mEarnerManager.accruedYieldOf(alice);
+
+        assertEq(mYieldToOneYield, 0, "mYieldToOne yield should be 0");
+        assertEq(mYieldFeeYield, 0, "mYieldFee yield should be 0");
+        assertEq(mEarnerManagerYield, 0, "mEarnerManager yield should be 0");
     }
 
     function test_rateOracle_changes() public {
