@@ -950,21 +950,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Test swapping with 0 yield accrued
     }
 
-    function test_upgrade_withState() public {
-        vm.prank(earnerManager);
-        mEarnerManager.setAccountInfo(alice, true, 0);
-
-        vm.startPrank(alice);
-        mToken.approve(address(swapFacility), type(uint256).max);
-
-        swapFacility.swapInM(address(mYieldFee), 5e6, alice);
-        swapFacility.swapInM(address(mYieldToOne), 5e6, alice);
-        swapFacility.swapInM(address(mEarnerManager), 5e6, alice);
-        vm.stopPrank();
-
-        vm.prank(earnerManager);
-    }
-
     function test_rateOracle_changes() public {
         vm.prank(earnerManager);
         mEarnerManager.setAccountInfo(alice, true, 0);
