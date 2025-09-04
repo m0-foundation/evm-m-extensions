@@ -3,6 +3,7 @@
 pragma solidity 0.8.26;
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 
@@ -1117,8 +1118,185 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
     }
 
     function test_roleInteractions_complex() public {
+        vm.startPrank(alice);
+        mToken.approve(address(swapFacility), type(uint256).max);
+        mYieldFee.approve(address(swapFacility), type(uint256).max);
+        mYieldToOne.approve(address(swapFacility), type(uint256).max);
+        mEarnerManager.approve(address(swapFacility), type(uint256).max);
+        wrappedM.approve(address(swapFacility), type(uint256).max);
+        vm.stopPrank();
+
         // Test scenarios where users have multiple roles
         // Test role changes during active operations
+        address multiRoleUser = makeAddr("multiRoleUser");
+
+        vm.startPrank(admin);
+
+        mYieldToOne.grantRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+        mYieldToOne.grantRole(YIELD_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        mYieldFee.grantRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+        mYieldFee.grantRole(FEE_MANAGER_ROLE, multiRoleUser);
+        mYieldFee.grantRole(CLAIM_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        mEarnerManager.grantRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+        mEarnerManager.grantRole(EARNER_MANAGER_ROLE, multiRoleUser);
+
+        swapFacility.grantRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+
+        vm.stopPrank();
+
+        vm.startPrank(multiRoleUser);
+
+        // As YIELD_RECIPIENT_MANAGER
+        mYieldToOne.setYieldRecipient(alice);
+        assertEq(mYieldToOne.yieldRecipient(), alice);
+
+        // As FEE_MANAGER
+        mYieldFee.setFeeRate(1500); // 15% fee
+        assertEq(mYieldFee.feeRate(), 1500);
+
+        // As CLAIM_RECIPIENT_MANAGER
+        mYieldFee.setClaimRecipient(alice, bob);
+        assertEq(mYieldFee.claimRecipientFor(alice), bob);
+
+        // As EARNER_MANAGER
+        mEarnerManager.setAccountInfo(alice, true, 2000); // 20% fee
+        assertTrue(mEarnerManager.isWhitelisted(alice));
+
+        mEarnerManager.setFeeRecipient(alice);
+        assertTrue(mEarnerManager.feeRecipient() == alice);
+
+        // As DEFAULT_ADMIN on SwapFacility
+        swapFacility.setPermissionedExtension(address(mYieldFee), true);
+        assertTrue(swapFacility.isPermissionedExtension(address(mYieldFee)));
+
+        swapFacility.setPermissionedMSwapper(address(mYieldFee), alice, true);
+
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        swapFacility.swapInM(address(mYieldFee), 5e6, alice);
+        swapFacility.swapInM(address(mYieldToOne), 5e6, alice);
+        swapFacility.swapInM(address(mEarnerManager), 5e6, alice);
+        vm.stopPrank();
+
+        // Warp time to accrue yield
+        vm.warp(block.timestamp + 10 days);
+
+        vm.prank(admin);
+        mYieldToOne.revokeRole(YIELD_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        uint256 yieldAfter = mYieldToOne.yield();
+        assertTrue(yieldAfter > 0, "Should have accrued yield despite role change");
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                YIELD_RECIPIENT_MANAGER_ROLE
+            )
+        );
+        mYieldToOne.setYieldRecipient(bob);
+
+        vm.prank(admin);
+        mYieldToOne.revokeRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                DEFAULT_ADMIN_ROLE
+            )
+        );
+        mYieldToOne.grantRole(YIELD_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        // Remove FEE_MANAGER role from multiRoleUser while yield is accruing
+        vm.prank(admin);
+        mYieldFee.revokeRole(FEE_MANAGER_ROLE, multiRoleUser);
+
+        // Verify multiRoleUser can no longer change fee rate
+        vm.prank(multiRoleUser);
+        vm.expectRevert();
+        mYieldFee.setFeeRate(2000);
+
+        // But can still perform other role functions
+        vm.prank(multiRoleUser);
+        mYieldFee.setClaimRecipient(carol, david);
+        assertEq(mYieldFee.claimRecipientFor(carol), david);
+
+        vm.prank(admin);
+        mYieldFee.revokeRole(CLAIM_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                CLAIM_RECIPIENT_MANAGER_ROLE
+            )
+        );
+        mYieldFee.setClaimRecipient(carol, bob);
+
+        vm.prank(admin);
+        mYieldFee.revokeRole(CLAIM_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                CLAIM_RECIPIENT_MANAGER_ROLE
+            )
+        );
+        mYieldFee.setClaimRecipient(carol, bob);
+
+        vm.prank(admin);
+        mYieldFee.revokeRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                DEFAULT_ADMIN_ROLE
+            )
+        );
+        mYieldFee.grantRole(CLAIM_RECIPIENT_MANAGER_ROLE, multiRoleUser);
+
+        yieldAfter = mYieldFee.accruedYieldOf(alice);
+        assertTrue(yieldAfter > 0, "Should have accrued yield");
+
+        vm.prank(admin);
+        mEarnerManager.revokeRole(EARNER_MANAGER_ROLE, multiRoleUser);
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                EARNER_MANAGER_ROLE
+            )
+        );
+        mEarnerManager.setAccountInfo(bob, true, 1000);
+
+        vm.prank(admin);
+        mEarnerManager.revokeRole(DEFAULT_ADMIN_ROLE, multiRoleUser);
+
+        vm.prank(multiRoleUser);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                multiRoleUser,
+                DEFAULT_ADMIN_ROLE
+            )
+        );
+        mEarnerManager.grantRole(EARNER_MANAGER_ROLE, multiRoleUser);
+
+        yieldAfter = mEarnerManager.accruedYieldOf(alice);
+        assertTrue(yieldAfter > 0, "Should have accrued yield");
     }
 
     function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
