@@ -12,9 +12,15 @@ import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 
 import { ReentrancyLock } from "./ReentrancyLock.sol";
 
+interface IMDualBackedExtensionLike {
+    function secondaryBacker() external view returns (IERC20);
+    function wrapSecondary(address account, uint256 amount) external;
+}
+
 abstract contract SwapFacilityUpgradeableStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.SwapFacility
     struct SwapFacilityStorageStruct {
+        mapping(address extension => bool dualBacked) dualBackedExtensions;
         mapping(address extension => bool permissioned) permissionedExtensions;
         mapping(address extension => mapping(address mSwapper => bool allowed)) permissionedMSwappers;
     }
@@ -180,6 +186,10 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         _swapOutM(extensionIn, amount, recipient);
     }
 
+    function swapInSecondary(address extensionOut, uint256 amount, address recipient) external isNotLocked {
+        _swapInSecondary(extensionOut, amount, recipient);
+    }
+
     /// @inheritdoc ISwapFacility
     function setPermissionedExtension(address extension, bool permissioned) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (extension == address(0)) revert ZeroExtension();
@@ -189,6 +199,16 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         _getSwapFacilityStorageLocation().permissionedExtensions[extension] = permissioned;
 
         emit PermissionedExtensionSet(extension, permissioned);
+    }
+
+    function setDualBackedExtension(address extension, bool dualBacked) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (extension == address(0)) revert ZeroExtension();
+
+        if (isDualBackedExtension(extension) == dualBacked) return;
+
+        _getSwapFacilityStorageLocation().dualBackedExtensions[extension] = dualBacked;
+
+        emit DualBackedExtensionSet(extension, dualBacked);
     }
 
     /// @inheritdoc ISwapFacility
@@ -227,6 +247,10 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     /// @inheritdoc ISwapFacility
     function msgSender() public view returns (address) {
         return _getLocker();
+    }
+
+    function isDualBackedExtension(address extension) public view returns (bool) {
+        return _getSwapFacilityStorageLocation().dualBackedExtensions[extension];
     }
 
     /* ============ Private Interactive Functions ============ */
@@ -278,6 +302,18 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit SwappedInM(extensionOut, amount, recipient);
+    }
+
+    function _swapInSecondary(address extensionOut, uint256 amount, address receiver) private {
+        _revertIfNotApprovedExtension(extensionOut);
+
+        IERC20 secondaryBacker = IMDualBackedExtensionLike(extensionOut).secondaryBacker();
+
+        secondaryBacker.transferFrom(msg.sender, address(this), amount);
+        secondaryBacker.approve(extensionOut, amount);
+        IMDualBackedExtensionLike(extensionOut).wrapSecondary(receiver, amount);
+
+        emit SwappedInSecondaryBacking(extensionOut, address(secondaryBacker), amount, receiver);
     }
 
     /**

@@ -49,6 +49,27 @@ interface ISwapFacility {
      */
     event PermissionedMSwapperSet(address indexed extension, address indexed swapper, bool allowed);
 
+    /**
+     * @notice Emitted when an $M Extension is set as a dual backed extension or not.
+     * @param  extension  The address of an $M extension.
+     * @param  dualBacked True if the extension is dually backed.
+     */
+    event DualBackedExtensionSet(address indexed extension, bool dualBacked);
+
+    /**
+     * @notice Emitted when $M token is swapped for $M Extension.
+     * @param extensionOut      The address of the output $M Extension.
+     * @param secondaryBacking  The address of the output $M Extension.
+     * @param amount            The amount swapped.
+     * @param recipient         The address to receive the output $M Extension token.
+     */
+    event SwappedInSecondaryBacking(
+        address indexed extensionOut,
+        address indexed secondaryBacking,
+        uint256 amount,
+        address indexed recipient
+    );
+
     /* ============ Custom Errors ============ */
 
     /// @notice Thrown in the constructor if $M Token is 0x0.

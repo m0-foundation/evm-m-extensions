@@ -10,6 +10,10 @@ import { IMTokenLike } from "./interfaces/IMTokenLike.sol";
 import { IMExtension } from "./interfaces/IMExtension.sol";
 import { ISwapFacility } from "./swap/interfaces/ISwapFacility.sol";
 
+interface IMDualBackedLike {
+    function secondaryBacker() external view returns (IERC20);
+}
+
 /**
  * @title  MExtension
  * @notice Upgradeable ERC20 Token contract for wrapping M into a non-rebasing token.
