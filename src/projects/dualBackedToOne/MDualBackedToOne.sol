@@ -186,7 +186,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         _revertIfInvalidRecipient(recipient);
         _revertIfInsufficientAmount(amount);
 
-        // NOTE: Add extension-specific checks before wrapping.
+        // NOTE: Invoke the _beforeUnwrap() hook from yield to one
         _beforeWrap(account, recipient, amount);
 
         // NOTE: `msg.sender` is always SwapFacility contract.
