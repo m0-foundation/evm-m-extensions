@@ -162,6 +162,10 @@ contract MDualBackedFee is
             $.totalSupply += yield_;
         }
 
+        $.secondaryIndex = uint112(
+            (($.totalSupply - $.secondaryBacking) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
+        );
+
         address claimRecipient_ = claimRecipientFor(account);
 
         // Emit the appropriate `YieldClaimed` and `Transfer` events, depending on the claim override recipient
@@ -287,6 +291,10 @@ contract MDualBackedFee is
         MDualBackedFeeStorageStruct storage $ = _getMDualBackedFeeStorageLocation();
 
         uint256 mBalance = ($.balanceOf[account] * $.secondaryIndex) / ContinuousIndexingMath.EXP_SCALED_ONE;
+
+        console.log("balanceOf", $.balanceOf[account]);
+
+        console.log("mBalance", mBalance);
 
         return _getAccruedYield(mBalance, $.principalOf[account], currentIndex());
     }
@@ -445,7 +453,9 @@ contract MDualBackedFee is
         // call mint() with zero principal
         _mint(recipient, amount, 0);
 
-        $.secondaryIndex = uint112(($.secondaryBacking * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply());
+        $.secondaryIndex = uint112(
+            ((totalSupply() - $.secondaryBacking) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
+        );
     }
 
     /**

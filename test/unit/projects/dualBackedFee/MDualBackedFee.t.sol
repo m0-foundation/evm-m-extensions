@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { console } from "forge-std/console.sol";
+
 import {
     IAccessControl
 } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
@@ -1376,6 +1378,23 @@ contract MDualBackedFeeUnitTests is BaseUnitTest {
         assertEq(MDualBackedFee.totalPrincipal(), 1_000);
         assertEq(MDualBackedFee.totalSupply(), 2_000);
         assertEq(MDualBackedFee.totalAccruedYield(), 79);
+        assertEq(MDualBackedFee.projectedTotalSupply(), 2_080);
+        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100);
+        assertEq(MDualBackedFee.totalAccruedFee(), 20);
+
+        // Check that claiming yield adjusts secondary
+        // to indicate more backing from M
+        MDualBackedFee.claimYieldFor(alice);
+
+        assertEq(MDualBackedFee.secondaryIndex(), 518999518999);
+
+        assertEq(MDualBackedFee.principalOf(alice), 1_000);
+        assertEq(MDualBackedFee.balanceOf(alice), 2_079);
+        assertEq(MDualBackedFee.accruedYieldOf(alice), 1);
+        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_080);
+        assertEq(MDualBackedFee.totalPrincipal(), 1_000);
+        assertEq(MDualBackedFee.totalSupply(), 2_079);
+        assertEq(MDualBackedFee.totalAccruedYield(), 0);
         assertEq(MDualBackedFee.projectedTotalSupply(), 2_080);
         assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100);
         assertEq(MDualBackedFee.totalAccruedFee(), 20);
