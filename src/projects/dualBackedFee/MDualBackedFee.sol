@@ -40,7 +40,7 @@ abstract contract MDualBackedFeeStorageLayout {
         bool isEarningEnabled;
         // NOTE: Slot 4
         uint112 secondaryIndex;
-        uint96 secondaryBacking;
+        uint96 secondarySupply;
         // NOTE: Slot 5
         IERC20 secondaryBacker;
         // NOTE: Slot 6
@@ -122,7 +122,7 @@ contract MDualBackedFee is
         address feeManager,
         address claimRecipientManager,
         address collateralManager,
-        IERC20 secondaryBacking
+        IERC20 secondarySupply
     ) public virtual initializer {
         if (admin == address(0)) revert ZeroAdmin();
         if (feeManager == address(0)) revert ZeroFeeManager();
@@ -141,7 +141,7 @@ contract MDualBackedFee is
         _getMDualBackedFeeStorageLocation().latestIndex = ContinuousIndexingMath.EXP_SCALED_ONE;
         _getMDualBackedFeeStorageLocation().secondaryIndex = ContinuousIndexingMath.EXP_SCALED_ONE;
 
-        _getMDualBackedFeeStorageLocation().secondaryBacker = secondaryBacking;
+        _getMDualBackedFeeStorageLocation().secondaryBacker = secondarySupply;
     }
 
     /* ============ Interactive Functions ============ */
@@ -163,7 +163,7 @@ contract MDualBackedFee is
         }
 
         $.secondaryIndex = uint112(
-            (($.totalSupply - $.secondaryBacking) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
+            (($.totalSupply - $.secondarySupply) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
         );
 
         address claimRecipient_ = claimRecipientFor(account);
@@ -184,14 +184,25 @@ contract MDualBackedFee is
     function claimFee() public returns (uint256) {
         uint256 yieldFee_ = totalAccruedFee();
 
+        console.log("yieldFee_", yieldFee_);
+
         if (yieldFee_ == 0) return 0;
 
-        address recipient_ = _getMDualBackedFeeStorageLocation().feeRecipient;
+        MDualBackedFeeStorageStruct storage $ = _getMDualBackedFeeStorageLocation();
+
+        address recipient_ = $.feeRecipient;
 
         emit FeeClaimed(msg.sender, recipient_, yieldFee_);
 
+        uint256 mFee_ = (yieldFee_ * $.secondaryIndex) / ContinuousIndexingMath.EXP_SCALED_ONE;
+
         // NOTE: Round up to allow claiming the whole amount of yield fee.
-        _mint(recipient_, yieldFee_, IndexingMath.getPrincipalAmountRoundedUp(yieldFee_, currentIndex()));
+        _mint(recipient_, mFee_, IndexingMath.getPrincipalAmountRoundedUp(mFee_, currentIndex()));
+        _mint(recipient_, yieldFee_ - mFee_, 0);
+
+        $.secondaryIndex = uint112(
+            ((totalSupply() - secondarySupply()) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
+        );
 
         return yieldFee_;
     }
@@ -292,9 +303,7 @@ contract MDualBackedFee is
 
         uint256 mBalance = ($.balanceOf[account] * $.secondaryIndex) / ContinuousIndexingMath.EXP_SCALED_ONE;
 
-        console.log("balanceOf", $.balanceOf[account]);
-
-        console.log("mBalance", mBalance);
+        console.log("_ _ _mBalance", mBalance);
 
         return _getAccruedYield(mBalance, $.principalOf[account], currentIndex());
     }
@@ -372,10 +381,24 @@ contract MDualBackedFee is
         return _getMDualBackedFeeStorageLocation().secondaryIndex;
     }
 
+    function secondarySupply() public view returns (uint112) {
+        return _getMDualBackedFeeStorageLocation().secondarySupply;
+    }
+
+    function mBacking(address account) public view returns (uint256) {
+        MDualBackedFeeStorageStruct storage $ = _getMDualBackedFeeStorageLocation();
+        return ($.balanceOf[account] * $.secondaryIndex) / ContinuousIndexingMath.EXP_SCALED_ONE;
+    }
+
+    function secondaryBacking(address account) public view returns (uint256) {
+        MDualBackedFeeStorageStruct storage $ = _getMDualBackedFeeStorageLocation();
+        return $.balanceOf[account] - mBacking(account);
+    }
+
     /// @inheritdoc IMDualBackedFee
 
     function projectedTotalSupply() public view returns (uint256) {
-        return projectedMBacking() + _getMDualBackedFeeStorageLocation().secondaryBacking;
+        return projectedMBacking() + _getMDualBackedFeeStorageLocation().secondarySupply;
     }
 
     function projectedMBacking() public view returns (uint256) {
@@ -386,7 +409,7 @@ contract MDualBackedFee is
     /// @inheritdoc IMDualBackedFee
     function totalAccruedYield() public view returns (uint256) {
         MDualBackedFeeStorageStruct storage $ = _getMDualBackedFeeStorageLocation();
-        uint256 _mBacking = $.totalSupply - $.secondaryBacking;
+        uint256 _mBacking = $.totalSupply - $.secondarySupply;
         return _getAccruedYield(_mBacking, $.totalPrincipal, currentIndex());
     }
 
@@ -394,6 +417,11 @@ contract MDualBackedFee is
     function totalAccruedFee() public view returns (uint256) {
         uint256 mBalance_ = _mBalanceOf(address(this));
         uint256 projectedMBacking_ = projectedMBacking();
+
+        MDualBackedFeeStorageStruct storage $ = _getMDualBackedFeeStorageLocation();
+        console.log("mBalance", mBalance_);
+        console.log("mBacking", $.totalSupply - $.secondarySupply);
+        console.log("projectedMBacking", projectedMBacking_);
 
         unchecked {
             return mBalance_ > projectedMBacking_ ? mBalance_ - projectedMBacking_ : 0;
@@ -447,14 +475,14 @@ contract MDualBackedFee is
         $.secondaryBacker.transferFrom(msg.sender, address(this), amount);
 
         unchecked {
-            $.secondaryBacking += uint96(amount);
+            $.secondarySupply += uint96(amount);
         }
 
         // call mint() with zero principal
         _mint(recipient, amount, 0);
 
         $.secondaryIndex = uint112(
-            ((totalSupply() - $.secondaryBacking) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
+            ((totalSupply() - $.secondarySupply) * ContinuousIndexingMath.EXP_SCALED_ONE) / totalSupply()
         );
     }
 
@@ -503,7 +531,7 @@ contract MDualBackedFee is
 
         uint112 principal_ = IndexingMath.getSafePrincipalAmountRoundedUp(amount, currentIndex(), fromPrincipal_);
 
-        if (amount > $.totalSupply - $.secondaryBacking) revert InsufficientMBacking();
+        if (amount > $.totalSupply - $.secondarySupply) revert InsufficientMBacking();
 
         // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used.
         //       Can be `unchecked` because safety adjustment to `principal_` is applied above, and
@@ -615,6 +643,10 @@ contract MDualBackedFee is
      */
     function _getAccruedYield(uint256 balance, uint112 principal, uint128 index) internal pure returns (uint256) {
         uint256 balanceWithYield_ = IndexingMath.getPresentAmountRoundedDown(principal, index);
+
+        console.log("balance with yield", balanceWithYield_);
+        console.log("balance", balance);
+
         unchecked {
             return balanceWithYield_ > balance ? balanceWithYield_ - balance : 0;
         }

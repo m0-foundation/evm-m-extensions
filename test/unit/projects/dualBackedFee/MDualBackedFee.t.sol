@@ -1340,64 +1340,154 @@ contract MDualBackedFeeUnitTests is BaseUnitTest {
         vm.warp(startTimestamp + 30_057_038);
         assertEq(MDualBackedFee.currentIndex(), 1_079230399224);
 
-        mToken.setBalanceOf(address(swapFacility), 1_002);
-        mToken.setBalanceOf(address(MDualBackedFee), 1_100);
-        SECONDARY.mint(address(swapFacility), 1_000);
+        mToken.setBalanceOf(address(swapFacility), 1_000_002);
+        mToken.setBalanceOf(address(MDualBackedFee), 1_100_000);
+        SECONDARY.mint(address(swapFacility), 1_000_000);
 
-        MDualBackedFee.setTotalPrincipal(1_000);
-        MDualBackedFee.setTotalSupply(1_000);
+        MDualBackedFee.setTotalPrincipal(1_000_000);
+        MDualBackedFee.setTotalSupply(1_000_000);
 
         // Total supply + yield: 1_100
         // Alice balance with yield: 1_079
         // Fee: 20
-        MDualBackedFee.setAccountOf(alice, 1_000, 1_000);
+        MDualBackedFee.setAccountOf(alice, 1_000_000, 1_000_000);
 
-        assertEq(MDualBackedFee.principalOf(alice), 1_000);
-        assertEq(MDualBackedFee.balanceOf(alice), 1_000);
-        assertEq(MDualBackedFee.accruedYieldOf(alice), 79);
-        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 1_000 + 79);
-        assertEq(MDualBackedFee.totalPrincipal(), 1_000);
-        assertEq(MDualBackedFee.totalSupply(), 1_000);
-        assertEq(MDualBackedFee.totalAccruedYield(), 79);
-        assertEq(MDualBackedFee.projectedTotalSupply(), 1_080);
-        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100);
-        assertEq(MDualBackedFee.totalAccruedFee(), 20);
+        assertEq(MDualBackedFee.principalOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.balanceOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.accruedYieldOf(alice), 79_230);
+        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 1_000_000 + 79_230);
+        assertEq(MDualBackedFee.totalPrincipal(), 1_000_000);
+        assertEq(MDualBackedFee.totalSupply(), 1_000_000);
+        assertEq(MDualBackedFee.totalAccruedYield(), 79_230);
+        assertEq(MDualBackedFee.projectedTotalSupply(), 1_079_231);
+        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100_000);
+        assertEq(MDualBackedFee.totalAccruedFee(), 20_769);
 
         vm.prank(address(swapFacility));
         SECONDARY.approve(address(MDualBackedFee), type(uint256).max);
 
         vm.prank(address(swapFacility));
-        MDualBackedFee.wrapSecondary(alice, 1_000);
+        MDualBackedFee.wrapSecondary(alice, 1_000_000);
 
         assertEq(MDualBackedFee.secondaryIndex(), 5e11);
 
-        assertEq(MDualBackedFee.principalOf(alice), 1_000);
-        assertEq(MDualBackedFee.balanceOf(alice), 2_000);
-        assertEq(MDualBackedFee.accruedYieldOf(alice), 79);
-        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_000 + 79);
-        assertEq(MDualBackedFee.totalPrincipal(), 1_000);
-        assertEq(MDualBackedFee.totalSupply(), 2_000);
-        assertEq(MDualBackedFee.totalAccruedYield(), 79);
-        assertEq(MDualBackedFee.projectedTotalSupply(), 2_080);
-        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100);
-        assertEq(MDualBackedFee.totalAccruedFee(), 20);
+        assertEq(MDualBackedFee.principalOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.balanceOf(alice), 2_000_000);
+        assertEq(MDualBackedFee.accruedYieldOf(alice), 79_230);
+        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_000_000 + 79_230);
+        assertEq(MDualBackedFee.totalPrincipal(), 1_000_000);
+        assertEq(MDualBackedFee.totalSupply(), 2_000_000);
+        assertEq(MDualBackedFee.totalAccruedYield(), 79_230);
+        assertEq(MDualBackedFee.projectedTotalSupply(), 2_079_231);
+        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100_000);
+        assertEq(MDualBackedFee.totalAccruedFee(), 20_769);
 
         // Check that claiming yield adjusts secondary
-        // to indicate more backing from M
+        // index to indicate more backing from M
         MDualBackedFee.claimYieldFor(alice);
 
-        assertEq(MDualBackedFee.secondaryIndex(), 518999518999);
+        assertEq(MDualBackedFee.secondaryIndex(), 519052726249);
 
-        assertEq(MDualBackedFee.principalOf(alice), 1_000);
-        assertEq(MDualBackedFee.balanceOf(alice), 2_079);
+        assertEq(MDualBackedFee.principalOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.balanceOf(alice), 2_079_230);
         assertEq(MDualBackedFee.accruedYieldOf(alice), 1);
-        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_080);
-        assertEq(MDualBackedFee.totalPrincipal(), 1_000);
-        assertEq(MDualBackedFee.totalSupply(), 2_079);
+        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_079_231);
+        assertEq(MDualBackedFee.totalPrincipal(), 1_000_000);
+        assertEq(MDualBackedFee.totalSupply(), 2_079_230);
         assertEq(MDualBackedFee.totalAccruedYield(), 0);
-        assertEq(MDualBackedFee.projectedTotalSupply(), 2_080);
-        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100);
-        assertEq(MDualBackedFee.totalAccruedFee(), 20);
+        assertEq(MDualBackedFee.projectedTotalSupply(), 2_079_231);
+        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100_000);
+        assertEq(MDualBackedFee.totalAccruedFee(), 20_769);
+
+        // Check that claming fee adjusts secondary
+        // index to indicate more backing from M
+        uint256 yieldFee_ = MDualBackedFee.claimFee();
+
+        assertEq(MDualBackedFee.principalOf(feeRecipient), 9989);
+        assertEq(MDualBackedFee.balanceOf(feeRecipient), 20_769);
+        assertEq(MDualBackedFee.accruedYieldOf(feeRecipient), 0);
+        assertEq(MDualBackedFee.balanceWithYieldOf(feeRecipient), 20_769);
+
+        // assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_079_231);
+        // assertEq(MDualBackedFee.balanceOf(alice), 2_079_230);
+
+        // assertEq(MDualBackedFee.totalPrincipal(), 1_009_989);
+        // assertEq(MDualBackedFee.totalSupply(), 2_079_230 + 20_769);
+
+        // console.log("current index", MDualBackedFee.currentIndex());
+        // assertEq(MDualBackedFee.totalAccruedFee(), 0);
+    }
+
+    function test_secondary_claim_fee() external {
+        MDualBackedFee.setIsEarningEnabled(true);
+        MDualBackedFee.setLatestRate(mYiedFeeEarnerRate);
+
+        vm.prank(feeManager);
+        MDualBackedFee.setFeeRate(5_000);
+
+        // 10% M token index growth, 5% M Yield Fee index growth because of the 50% fee.
+        vm.warp(startTimestamp + 30_772_933);
+        assertEq(MDualBackedFee.currentIndex(), 1050000001090);
+
+        mToken.setBalanceOf(address(swapFacility), 1_000_002);
+        mToken.setBalanceOf(address(MDualBackedFee), 1_100_000);
+        SECONDARY.mint(address(swapFacility), 1_000_000);
+
+        MDualBackedFee.setTotalPrincipal(1_000_000);
+        MDualBackedFee.setTotalSupply(1_000_000);
+
+        // Total supply + yield: 1_100
+        // Alice balance with yield: 1_050
+        // Fee: 50
+        MDualBackedFee.setAccountOf(alice, 1_000_000, 1_000_000);
+
+        assertEq(MDualBackedFee.principalOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.balanceOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.accruedYieldOf(alice), 50_000);
+        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 1_000_000 + 50_000);
+        assertEq(MDualBackedFee.totalPrincipal(), 1_000_000);
+        assertEq(MDualBackedFee.totalSupply(), 1_000_000);
+        assertEq(MDualBackedFee.totalAccruedYield(), 50_000);
+        assertEq(MDualBackedFee.projectedTotalSupply(), 1_050_001);
+        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100_000);
+        assertEq(MDualBackedFee.totalAccruedFee(), 49_999);
+
+        vm.prank(address(swapFacility));
+        SECONDARY.approve(address(MDualBackedFee), type(uint256).max);
+
+        vm.prank(address(swapFacility));
+        MDualBackedFee.wrapSecondary(alice, 1_000_000);
+
+        assertEq(MDualBackedFee.secondaryIndex(), 5e11);
+
+        assertEq(MDualBackedFee.principalOf(alice), 1_000_000);
+        assertEq(MDualBackedFee.balanceOf(alice), 2_000_000);
+        assertEq(MDualBackedFee.accruedYieldOf(alice), 50_000);
+        assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_000_000 + 50_000);
+        assertEq(MDualBackedFee.totalPrincipal(), 1_000_000);
+        assertEq(MDualBackedFee.totalSupply(), 2_000_000);
+        assertEq(MDualBackedFee.totalAccruedYield(), 50_000);
+        assertEq(MDualBackedFee.projectedTotalSupply(), 2_050_001);
+        assertEq(mToken.balanceOf(address(MDualBackedFee)), 1_100_000);
+        assertEq(MDualBackedFee.totalAccruedFee(), 49_999);
+
+        // Check that claming fee adjusts secondary
+        // index to indicate more backing from M
+        uint256 yieldFee_ = MDualBackedFee.claimFee();
+
+        assertEq(MDualBackedFee.principalOf(feeRecipient), 47_619, "principal of fr");
+        assertEq(MDualBackedFee.balanceOf(feeRecipient), 49_999, "balance of fr");
+        assertEq(MDualBackedFee.accruedYieldOf(feeRecipient), 0, "accrued yield of fr");
+        assertEq(MDualBackedFee.balanceWithYieldOf(feeRecipient), 49_999, "balance with yield of fr");
+
+        // assertEq(MDualBackedFee.balanceWithYieldOf(alice), 2_050_001, "balance with yield of a");
+        // assertEq(MDualBackedFee.balanceOf(alice), 2_000_000, "balance of a");
+
+        // assertEq(MDualBackedFee.totalPrincipal(), 1_023_809, "total p");
+        // assertEq(MDualBackedFee.totalSupply(), 2_000_000 + 49_999, "total s");
+
+        // console.log("current index", MDualBackedFee.currentIndex());
+        // assertEq(MDualBackedFee.totalAccruedFee(), 0);
     }
 
     /* ============ unwrap ============ */
