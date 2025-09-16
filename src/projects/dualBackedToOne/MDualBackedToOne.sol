@@ -14,6 +14,8 @@ import { ISwapFacility } from "../../swap/interfaces/ISwapFacility.sol";
 
 import { MExtension } from "../../MExtension.sol";
 
+import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
+
 abstract contract MDualBackedToOneStorageLayout {
     struct MDualBackedToOneStorageStruct {
         address yieldRecipient;
@@ -180,6 +182,18 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         // NOTE: `msg.sender` is always SwapFacility contract.
         //       `ISwapFacility.msgSender()` is used to ensure that the original caller is passed to `_beforeWrap`.
         _wrapSecondary(ISwapFacility(msg.sender).msgSender(), recipient, amount);
+    }
+
+    function replaceSecondary(uint256 amount) external onlyRole(COLLATERAL_MANAGER_ROLE) {
+        IMTokenLike(mToken).transferFrom(msg.sender, address(this), amount);
+
+        MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
+
+        $.secondaryBacker.transfer(msg.sender, amount);
+
+        $.secondaryBacking -= amount;
+
+        emit SecondaryBackingReplaced(amount);
     }
 
     function _wrapSecondary(address account, address recipient, uint256 amount) internal {

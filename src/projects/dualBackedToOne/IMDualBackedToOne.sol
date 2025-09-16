@@ -18,6 +18,12 @@ interface IMDualBackedToOne {
      */
     event YieldRecipientSet(address indexed yieldRecipient);
 
+    /**
+     * @notice Emitted when the secondary backing is replaced with M.
+     * @param  amount The amount of secondary token replaced.
+     */
+    event SecondaryBackingReplaced(uint256 amount);
+
     /* ============ Custom Errors ============ */
 
     /// @notice Emitted in constructor if Yield Recipient is 0x0.
