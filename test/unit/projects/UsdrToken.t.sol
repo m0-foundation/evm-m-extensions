@@ -3,7 +3,6 @@
 pragma solidity 0.8.26;
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
-import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import {
     IAccessControl
@@ -11,13 +10,10 @@ import {
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MockM } from "../../utils/Mocks.sol";
-
 import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
 import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
 
 import { IFreezable } from "../../../src/components/IFreezable.sol";
-import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
@@ -28,8 +24,8 @@ import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 contract MYieldToOneUnitTests is BaseUnitTest {
     UsdrTokenHarness public mYieldToOne;
 
-    string public constant NAME = "HALO USD";
-    string public constant SYMBOL = "HALO USD";
+    string public constant NAME = "USDR testnet";
+    string public constant SYMBOL = "USDR";
 
     function setUp() public override {
         super.setUp();
