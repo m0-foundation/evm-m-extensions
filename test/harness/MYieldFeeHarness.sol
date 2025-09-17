@@ -35,9 +35,6 @@ contract MYieldFeeHarness is MYieldFee {
 
         $.balanceOf[account] = balance;
         $.principalOf[account] = principal;
-
-        console.log("balanceOf", $.balanceOf[account]);
-        console.log("principalOf", $.principalOf[account]);
     }
 
     function setIsEarningEnabled(bool isEarningEnabled_) external {
