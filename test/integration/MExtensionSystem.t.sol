@@ -500,11 +500,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.balanceOf(alice), 10e6 - 2, "mYieldFee balance should be 10e6 - 4");
     }
 
-    function test_mixedPermissions_swapScenarios() public {
-        // Mix of permissioned and non-permissioned extensions
-        // Test various swap paths
-    }
-
     function test_swapAdapter_withMultipleExtensions() public {
         // Test TOKEN -> USDC -> USDT -> WrappedM -> Extension
 
@@ -1338,17 +1333,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         }
     }
 
-    function divideUp(uint240 x, uint128 index) internal pure returns (uint112 z) {
-        unchecked {
-            // NOTE: While `uint256(x) * EXP_SCALED_ONE` can technically overflow, these divide/multiply functions are
-            //       only used for the purpose of principal/present amount calculations for continuous indexing, and
-            //       so for an `x` to be large enough to overflow this, it would have to be a possible result of
-            //       `multiplyDown` or `multiplyUp`, which would already satisfy
-            //       `uint256(x) * EXP_SCALED_ONE < type(uint240).max`.
-            return UIntMath.safe112(((uint256(x) * EXP_SCALED_ONE) + index - 1) / index);
-        }
-    }
-
     function _calcMPrincipalAmountRoundedUp(uint256 amount) public view returns (uint112) {
         uint128 _index = _currentMIndex();
 
@@ -1365,18 +1349,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint128 _index = _currentMIndex();
 
         return IndexingMath.getPresentAmountRoundedDown(amount, _index);
-    }
-
-    function _calcMPresentAmountRoundedUp(uint112 amount) public view returns (uint240) {
-        uint128 _index = _currentMIndex();
-
-        return IndexingMath.getPresentAmountRoundedUp(amount, _index);
-    }
-
-    function _calcMYieldFeePresentAmountRoundedUp(uint112 amount) public view returns (uint240) {
-        uint128 _index = _currentMYieldFeeIndex();
-
-        return IndexingMath.getPresentAmountRoundedUp(amount, _index);
     }
 
     function _calcMYieldFeePresentAmountRoundedDown(uint112 amount) public view returns (uint240) {
@@ -1506,7 +1478,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Prep MYieldToOne
         uint256 mBalanceBefore = yields[M_YIELD_TO_ONE] == 0 ? 0 : mToken.balanceOf(address(mYieldToOne));
 
-        // Prep MYearnerManager
+        // Prep MEarnerManager
         uint112 principal = _calcMEarnerManagerPrincipal(amount + yields[M_EARNER_MANAGER]);
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
