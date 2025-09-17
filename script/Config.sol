@@ -105,7 +105,7 @@ contract Config {
             config.wrappedMToken = WRAPPED_M_TOKEN;
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_SEPOLIA;
-            config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            config.admin = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
             return config;
         }
 
@@ -151,6 +151,15 @@ contract Config {
                 config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.freezeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            }
+
+            if (keccak256(bytes(name)) == keccak256(bytes("USDRtestnet"))) {
+                config.name = name;
+                config.symbol = "USDR";
+                config.admin = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
+                config.yieldRecipient = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
+                config.freezeManager = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
+                config.yieldRecipientManager = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
             }
         }
     }
