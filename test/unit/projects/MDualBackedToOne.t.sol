@@ -405,6 +405,30 @@ contract MYDualBackedToOneUnitTests is BaseUnitTest {
         assertEq(mDualBackedToOne.balanceOf(yieldRecipient), yield);
     }
 
+    function test_claimYield_withSecondary() external {
+        uint256 yield = 500e6;
+
+        secondary.mint(address(mDualBackedToOne), 1_500e18);
+        mToken.setBalanceOf(address(mDualBackedToOne), 1_500e6);
+        mDualBackedToOne.setTotalSupply(2_500e6);
+        mDualBackedToOne.setSecondarySupply(1_500e6);
+
+        assertEq(mDualBackedToOne.yield(), yield);
+
+        vm.expectEmit();
+        emit IMDualBackedToOne.YieldClaimed(yield);
+
+        assertEq(mDualBackedToOne.claimYield(), yield);
+
+        assertEq(mDualBackedToOne.yield(), 0);
+
+        assertEq(mToken.balanceOf(address(mDualBackedToOne)), 1_500e6);
+        assertEq(mDualBackedToOne.totalSupply(), 3_000e6);
+
+        assertEq(mToken.balanceOf(yieldRecipient), 0);
+        assertEq(mDualBackedToOne.balanceOf(yieldRecipient), yield);
+    }
+
     /* ============ setYieldRecipient ============ */
 
     function test_setYieldRecipient_onlyYieldRecipientManager() public {
