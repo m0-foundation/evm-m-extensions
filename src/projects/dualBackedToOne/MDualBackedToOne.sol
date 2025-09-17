@@ -20,7 +20,7 @@ abstract contract MDualBackedToOneStorageLayout {
     struct MDualBackedToOneStorageStruct {
         address yieldRecipient;
         IERC20 secondaryBacker;
-        uint256 secondaryBacking;
+        uint256 secondarySupply;
         uint256 totalSupply;
         mapping(address account => uint256 balance) balanceOf;
     }
@@ -76,7 +76,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
     function initialize(
         string memory name,
         string memory symbol,
-        IERC20 secondaryBacker,
+        address secondaryBacker,
         address admin,
         address collateralManager,
         address yieldRecipientManager,
@@ -106,7 +106,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
     function __MDualBacked_init(
         string memory name,
         string memory symbol,
-        IERC20 secondaryBacker,
+        address secondaryBacker,
         address admin,
         address collateralManager,
         address yieldRecipientManager,
@@ -121,7 +121,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
 
         $.yieldRecipient = yieldRecipient;
-        $.secondaryBacker = secondaryBacker;
+        $.secondaryBacker = IERC20(secondaryBacker);
     }
 
     /// @inheritdoc IERC20
@@ -140,15 +140,15 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
     }
 
     /// @inheritdoc IMDualBackedToOne
-    function secondaryBacking() public view returns (uint256) {
-        return _getMDualBackedToOneStorageLocation().secondaryBacking;
+    function secondarySupply() public view returns (uint256) {
+        return _getMDualBackedToOneStorageLocation().secondarySupply;
     }
 
     /// @inheritdoc IMDualBackedToOne
     function yield() public view returns (uint256) {
         unchecked {
             uint256 balance_ = _mBalanceOf(address(this));
-            uint256 mBacking_ = totalSupply() - secondaryBacking();
+            uint256 mBacking_ = totalSupply() - secondarySupply();
 
             return balance_ > mBacking_ ? balance_ - mBacking_ : 0;
         }
@@ -191,7 +191,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
 
         $.secondaryBacker.transfer(msg.sender, amount);
 
-        $.secondaryBacking -= amount;
+        $.secondarySupply -= amount;
 
         emit SecondaryBackingReplaced(amount);
     }
@@ -209,7 +209,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         $.secondaryBacker.transferFrom(msg.sender, address(this), amount);
 
         unchecked {
-            $.secondaryBacking += amount;
+            $.secondarySupply += amount;
         }
 
         _mint(recipient, amount);
@@ -220,8 +220,8 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
     function _beforeWrap(address account, address recipient, uint256 amount) internal virtual override {}
 
     function _beforeUnwrap(address account, uint256 amount) internal view virtual override {
-        uint256 secondaryBacking = secondaryBacking();
-        uint256 mBacking = totalSupply() - secondaryBacking;
+        uint256 secondarySupply = secondarySupply();
+        uint256 mBacking = totalSupply() - secondarySupply;
 
         if (amount > mBacking) revert InsufficientMBacking();
     }

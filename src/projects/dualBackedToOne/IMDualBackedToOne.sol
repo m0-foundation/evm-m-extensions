@@ -67,7 +67,7 @@ interface IMDualBackedToOne {
     function yieldRecipient() external view returns (address);
 
     /// @notice The total amount of secondary backing in the extension.
-    function secondaryBacking() external view returns (uint256);
+    function secondarySupply() external view returns (uint256);
 
     /// @notice The IERC20 wrapped address of the secondary backing token.
     function secondaryBacker() external view returns (IERC20);
