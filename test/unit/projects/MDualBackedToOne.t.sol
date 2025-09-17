@@ -276,6 +276,51 @@ contract MYDualBackedToOneUnitTests is BaseUnitTest {
         mDualBackedToOne.unwrap(alice, 1e6);
     }
 
+    function test_unwrap_with_secondary_backing() public {
+        uint256 amount = 1_000e6;
+        uint256 secondaryAmount = amount * 1e12;
+
+        mDualBackedToOne.setBalanceOf(address(swapFacility), 2 * amount);
+        mDualBackedToOne.setTotalSupply(2 * amount);
+        mDualBackedToOne.setSecondarySupply(amount);
+
+        mToken.setBalanceOf(address(mDualBackedToOne), amount);
+        secondary.mint(address(mDualBackedToOne), secondaryAmount);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(address(swapFacility), address(0), 1e6);
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne.unwrap(alice, 1e6);
+
+        assertEq(mDualBackedToOne.totalSupply(), 999e6 + amount);
+        assertEq(mDualBackedToOne.balanceOf(address(swapFacility)), 999e6 + amount);
+        assertEq(mToken.balanceOf(address(swapFacility)), 1e6);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(address(swapFacility), address(0), 499e6);
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne.unwrap(alice, 499e6);
+
+        assertEq(mDualBackedToOne.totalSupply(), 500e6 + amount);
+        assertEq(mDualBackedToOne.balanceOf(address(swapFacility)), 500e6 + amount);
+        assertEq(mToken.balanceOf(address(swapFacility)), 500e6);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(address(swapFacility), address(0), 500e6);
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne.unwrap(alice, 500e6);
+
+        assertEq(mDualBackedToOne.totalSupply(), 0 + amount);
+        assertEq(mDualBackedToOne.balanceOf(address(swapFacility)), 0 + amount);
+
+        // M tokens are sent to SwapFacility and then forwarded to Alice
+        assertEq(mToken.balanceOf(address(swapFacility)), amount);
+        assertEq(mToken.balanceOf(address(mDualBackedToOne)), 0);
+    }
+
     /* ============ _transfer ============ */
 
     function test_transfer() external {

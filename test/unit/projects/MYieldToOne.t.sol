@@ -226,7 +226,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
 
         mYieldToOne.setBalanceOf(address(swapFacility), amount);
-        mYieldToOne.setBalanceOf(alice, amount);
         mYieldToOne.setTotalSupply(amount);
 
         mToken.setBalanceOf(address(mYieldToOne), amount);
