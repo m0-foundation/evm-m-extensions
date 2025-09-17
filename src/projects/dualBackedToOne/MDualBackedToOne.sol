@@ -21,6 +21,7 @@ abstract contract MDualBackedToOneStorageLayout {
         address yieldRecipient;
         IERC20 secondaryBacker;
         uint256 secondarySupply;
+        uint256 secondaryDecimals;
         uint256 totalSupply;
         mapping(address account => uint256 balance) balanceOf;
     }
@@ -125,6 +126,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
 
         MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
         $.secondaryBacker = IERC20(secondaryBacker);
+        $.secondaryDecimals = IERC20(secondaryBacker).decimals();
     }
 
     /// @inheritdoc IERC20
@@ -210,6 +212,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         // NOTE: `msg.sender` is always SwapFacility contract.
         // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
         MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
+
         $.secondaryBacker.transferFrom(msg.sender, address(this), _scaleDecimals(amount));
 
         unchecked {
@@ -219,9 +222,12 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         _mint(recipient, amount);
     }
 
-    function _scaleDecimals(uint256 amount) internal view {
+    function _scaleDecimals(uint256 amount) internal view returns (uint256) {
         MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
-        return amount * (10 ** $.secondaryBacker.decimals());
+        return
+            $.secondaryDecimals <= 6
+                ? amount * (10 ** (6 - $.secondaryDecimals))
+                : amount * (10 ** ($.secondaryDecimals - 6));
     }
 
     function _beforeApprove(address account, address spender, uint256 amount) internal virtual override {}

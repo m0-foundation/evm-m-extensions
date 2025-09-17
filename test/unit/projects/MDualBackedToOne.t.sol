@@ -67,6 +67,9 @@ contract MYDualBackedToOneUnitTests is BaseUnitTest {
         );
 
         registrar.setEarner(address(mDualBackedToOne), true);
+
+        vm.prank(address(swapFacility));
+        secondary.approve(address(mDualBackedToOne), type(uint256).max);
     }
 
     /* ============ initialize ============ */
@@ -179,6 +182,36 @@ contract MYDualBackedToOneUnitTests is BaseUnitTest {
 
         assertEq(mToken.balanceOf(alice), 0);
         assertEq(mToken.balanceOf(address(mDualBackedToOne)), amount);
+    }
+
+    /* ============ _wrapSecondary ============ */
+
+    function test_wrap_secondary() public {
+        uint256 amount = 1_000e6;
+        uint256 secondaryAmount = amount * 1e12;
+        secondary.mint(address(swapFacility), secondaryAmount);
+
+        vm.expectCall(
+            address(secondary),
+            abi.encodeWithSelector(
+                secondary.transferFrom.selector,
+                address(swapFacility),
+                address(mDualBackedToOne),
+                secondaryAmount
+            )
+        );
+
+        vm.expectEmit();
+        emit IERC20.Transfer(address(0), alice, amount);
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne.wrapSecondary(alice, amount);
+
+        assertEq(mDualBackedToOne.balanceOf(alice), amount);
+        assertEq(mDualBackedToOne.totalSupply(), amount);
+
+        assertEq(mToken.balanceOf(alice), 0);
+        assertEq(secondary.balanceOf(address(mDualBackedToOne)), secondaryAmount);
     }
 
     /* ============ _unwrap ============ */
