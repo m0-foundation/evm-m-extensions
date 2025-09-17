@@ -193,7 +193,7 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
 
         MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
 
-        $.secondaryBacker.transfer(msg.sender, amount);
+        $.secondaryBacker.transfer(msg.sender, _scaleDecimals(amount));
 
         $.secondarySupply -= amount;
 
@@ -210,13 +210,18 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         // NOTE: `msg.sender` is always SwapFacility contract.
         // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
         MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
-        $.secondaryBacker.transferFrom(msg.sender, address(this), amount);
+        $.secondaryBacker.transferFrom(msg.sender, address(this), _scaleDecimals(amount));
 
         unchecked {
             $.secondarySupply += amount;
         }
 
         _mint(recipient, amount);
+    }
+
+    function _scaleDecimals(uint256 amount) internal view {
+        MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
+        return amount * (10 ** $.secondaryBacker.decimals());
     }
 
     function _beforeApprove(address account, address spender, uint256 amount) internal virtual override {}
