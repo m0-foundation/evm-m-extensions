@@ -5,7 +5,9 @@ pragma solidity 0.8.26;
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import { ERC20 } from "../../../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {
+    ERC20
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
 import {
     IAccessControl
