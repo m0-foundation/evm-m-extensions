@@ -216,7 +216,7 @@ contract MYDualBackedToOneUnitTests is BaseUnitTest {
 
     /* ============ _unwrap ============ */
 
-    function test_unwrap_dual() external {
+    function test_unwrap() external {
         uint256 amount = 1_000e6;
 
         mDualBackedToOne.setBalanceOf(address(swapFacility), amount);
@@ -257,6 +257,23 @@ contract MYDualBackedToOneUnitTests is BaseUnitTest {
         // M tokens are sent to SwapFacility and then forwarded to Alice
         assertEq(mToken.balanceOf(address(swapFacility)), amount);
         assertEq(mToken.balanceOf(address(mDualBackedToOne)), 0);
+    }
+
+    function test_unwrap_with_only_secondary_backing() public {
+        uint256 amount = 1_000e6;
+        uint256 secondaryAmount = amount * 1e12;
+
+        mDualBackedToOne.setBalanceOf(address(swapFacility), amount);
+        mDualBackedToOne.setBalanceOf(alice, amount);
+        mDualBackedToOne.setTotalSupply(amount);
+        mDualBackedToOne.setSecondarySupply(amount);
+
+        secondary.mint(address(mDualBackedToOne), secondaryAmount);
+
+        vm.expectRevert(abi.encodeWithSelector(IMDualBackedToOne.InsufficientMBacking.selector));
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne.unwrap(alice, 1e6);
     }
 
     /* ============ _transfer ============ */
