@@ -131,12 +131,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         vm.stopPrank();
     }
 
-    function calculateMYieldFeeYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
-
-    function calculateMYieldToOneYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
-
-    function calculateMYearnerManagerYield(uint256 amount, uint256 start, uint256 end) public view returns (uint256) {}
-
     function test_integration_constants_system() external view {
         assertEq(mEarnerManager.name(), NAME);
         assertEq(mEarnerManager.symbol(), SYMBOL);
