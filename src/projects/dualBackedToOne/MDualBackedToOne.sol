@@ -112,15 +112,18 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
         address yieldRecipientManager,
         address yieldRecipient
     ) internal onlyInitializing {
+        if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
+        if (admin == address(0)) revert ZeroAdmin();
+
         __MExtension_init(name, symbol);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(COLLATERAL_MANAGER_ROLE, collateralManager);
         _grantRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager);
 
-        MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
+        _setYieldRecipient(yieldRecipient);
 
-        $.yieldRecipient = yieldRecipient;
+        MDualBackedToOneStorageStruct storage $ = _getMDualBackedToOneStorageLocation();
         $.secondaryBacker = IERC20(secondaryBacker);
     }
 
@@ -171,7 +174,8 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
 
     function setYieldRecipient(address account) external onlyRole(YIELD_RECIPIENT_MANAGER_ROLE) {
         claimYield();
-        _getMDualBackedToOneStorageLocation().yieldRecipient = account;
+
+        _setYieldRecipient(account);
     }
 
     function yieldRecipient() public view returns (address) {
@@ -237,6 +241,8 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
             $.balanceOf[account] += amount;
             $.totalSupply += amount;
         }
+
+        emit Transfer(address(0), account, amount);
     }
 
     function _burn(address account, uint256 amount) internal override {
@@ -246,6 +252,8 @@ contract MDualBackedToOne is IMDualBackedToOne, MDualBackedToOneStorageLayout, A
             $.balanceOf[account] -= amount;
             $.totalSupply -= amount;
         }
+
+        emit Transfer(account, address(0), amount);
     }
 
     function _update(address sender, address recipient, uint256 amount) internal override {
