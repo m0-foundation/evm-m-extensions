@@ -31,8 +31,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         super.setUp();
 
         mYieldToOne = UsdrTokenHarness(
-            Upgrades.deployTransparentProxy(
-                "UsdrTokenHarness.sol:UsdrTokenHarness",
+            UnsafeUpgrades.deployTransparentProxy(
+                address(new UsdrTokenHarness(address(mToken), address(swapFacility))),
                 admin,
                 abi.encodeWithSelector(
                     MYieldToOne.initialize.selector,
@@ -42,8 +42,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     admin,
                     freezeManager,
                     yieldRecipientManager
-                ),
-                mExtensionDeployOptions
+                )
             )
         );
 
