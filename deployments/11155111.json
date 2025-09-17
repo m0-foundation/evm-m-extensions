@@ -2,12 +2,14 @@
   "extensionAddresses": [
     "0x2Aac5000956D2e2ff96fA17995E09138A47fCA1B",
     "0x7e80F053CABD1bf2Cb124eDCA8D8Ea5f26a396C0",
-    "0x06B0B905a9D42b8f356824bA2aFDaB58bc03992a"
+    "0x06B0B905a9D42b8f356824bA2aFDaB58bc03992a",
+    "0x7E426d026f604d1c47b50059752122d8ab1E2C28"
   ],
   "extensionNames": [
     "MEarnerManagerTestnet",
     "MYieldToOneTestnet",
-    "MYieldToAllTestnet"
+    "MYieldToAllTestnet",
+    "USDRtestnet"
   ],
   "swapAdapter": "0x6fC0AFAD62130d48C0c2F69183d161D991bb4B2F",
   "swapFacility": "0x34F141dACB2DeF72D2196a473C585830af8B4004"

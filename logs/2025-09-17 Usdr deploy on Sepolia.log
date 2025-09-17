@@ -1,0 +1,132 @@
+forge script script/deploy/DeployUsdrToken.s.sol --rpc-url=https://ethereum-sepolia-rpc.publicnode.com --verify --etherscan-api-key $ETHERSCAN_API_KEY --broadcast
+[⠆] Compiling...
+No files changed, compilation skipped
+Script ran successfully.
+
+== Logs ==
+  Using deployer: 0x77001610a4fD68548B80E49226c02a99c3b6Ae14
+  Using chainId: 11155111
+  Using DeployConfig: USDRtestnet
+  Extension name: USDRtestnet
+  Extension symbol: USDR
+  Extension admin: 0x77001610a4fD68548B80E49226c02a99c3b6Ae14
+  Extension yield recipient: 0x77001610a4fD68548B80E49226c02a99c3b6Ae14
+  UsdrToken deployed at: 0x7E426d026f604d1c47b50059752122d8ab1E2C28
+  UsdrImplementation: 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B
+  UsdrProxy: 0x7E426d026f604d1c47b50059752122d8ab1E2C28
+  UsdrProxyAdmin: 0x77001610a4fD68548B80E49226c02a99c3b6Ae14
+
+## Setting up 1 EVM.
+
+==========================
+
+Chain 11155111
+
+Estimated gas price: 0.002029554 gwei
+
+Estimated total gas used for script: 6547853
+
+Estimated amount required: 0.000013289221247562 ETH
+
+==========================
+
+##### sepolia
+✅  [Success] Hash: 0x2b7d97a1fa443576c6c3e552920defe505ba6c709665ee4bf33e4c5ac8cc28de
+Contract Address: 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B
+Block: 9222590
+Paid: 0.000005821603390208 ETH (3804512 gas * 0.001530184 gwei)
+
+
+##### sepolia
+✅  [Success] Hash: 0xc922b4ca6df240ec9afc58320af3a91ac3ca1e26e049a38ee67d03662107a4f2
+Block: 9222590
+Paid: 0.000001676128359368 ETH (1095377 gas * 0.001530184 gwei)
+
+✅ Sequence #1 on sepolia | Total Paid: 0.000007497731749576 ETH (4899889 gas * avg 0.001530184 gwei)
+
+
+==========================
+
+ONCHAIN EXECUTION COMPLETE & SUCCESSFUL.
+Warning: We haven't found any matching bytecode for the following contracts: [0xd0a31225958c1026ec105a446c76957f71c867a2].
+
+This may occur when resuming a verification, but the underlying source code or compiler version has changed.
+##
+Start verification for (3) contracts
+Start verifying contract `0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B` deployed on sepolia
+EVM version: cancun
+Compiler version: 0.8.26
+Optimizations:    999999
+Constructor args: 000000000000000000000000866a2bf4e572cbcf37d5071a7a58503bfb36be1b00000000000000000000000034f141dacb2def72d2196a473c585830af8b4004
+
+Submitting verification for [src/UsdrToken.sol:UsdrToken] 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B.
+Warning: Could not detect the deployment.; waiting 5 seconds before trying again (4 tries remaining)
+
+Submitting verification for [src/UsdrToken.sol:UsdrToken] 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B.
+Warning: Could not detect the deployment.; waiting 5 seconds before trying again (3 tries remaining)
+
+Submitting verification for [src/UsdrToken.sol:UsdrToken] 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B.
+Warning: Could not detect the deployment.; waiting 5 seconds before trying again (2 tries remaining)
+
+Submitting verification for [src/UsdrToken.sol:UsdrToken] 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B.
+Warning: Could not detect the deployment.; waiting 5 seconds before trying again (1 tries remaining)
+
+Submitting verification for [src/UsdrToken.sol:UsdrToken] 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B.
+Warning: Could not detect the deployment.; waiting 5 seconds before trying again (0 tries remaining)
+
+Submitting verification for [src/UsdrToken.sol:UsdrToken] 0xf378c411186aDd3ecB8c1982966184DF1a9EEE2B.
+Submitted contract for verification:
+	Response: `OK`
+	GUID: `ettibgzmkxiqdgd1u4pfiuwiz16na25cddcynk4hk66ivn5giq`
+	URL: https://sepolia.etherscan.io/address/0xf378c411186add3ecb8c1982966184df1a9eee2b
+Contract verification status:
+Response: `NOTOK`
+Details: `Pending in queue`
+Warning: Verification is still pending...; waiting 15 seconds before trying again (7 tries remaining)
+Contract verification status:
+Response: `OK`
+Details: `Pass - Verified`
+Contract successfully verified
+Start verifying contract `0x7E426d026f604d1c47b50059752122d8ab1E2C28` deployed on sepolia
+EVM version: cancun
+Compiler version: 0.8.26
+Optimizations:    999999
+Constructor args: 000000000000000000000000f378c411186add3ecb8c1982966184df1a9eee2b00000000000000000000000077001610a4fd68548b80e49226c02a99c3b6ae1400000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000144e56f2fe400000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000010000000000000000000000000077001610a4fd68548b80e49226c02a99c3b6ae1400000000000000000000000077001610a4fd68548b80e49226c02a99c3b6ae1400000000000000000000000077001610a4fd68548b80e49226c02a99c3b6ae1400000000000000000000000077001610a4fd68548b80e49226c02a99c3b6ae14000000000000000000000000000000000000000000000000000000000000000b55534452746573746e65740000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004555344520000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+Submitting verification for [lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol:TransparentUpgradeableProxy] 0x7E426d026f604d1c47b50059752122d8ab1E2C28.
+Submitted contract for verification:
+	Response: `OK`
+	GUID: `tsvzzbw9abakmis6ca46dzzxvcpepbwqva9chdesbfbu7ajnrp`
+	URL: https://sepolia.etherscan.io/address/0x7e426d026f604d1c47b50059752122d8ab1e2c28
+Contract verification status:
+Response: `NOTOK`
+Details: `Pending in queue`
+Warning: Verification is still pending...; waiting 15 seconds before trying again (7 tries remaining)
+Contract verification status:
+Response: `OK`
+Details: `Pass - Verified`
+Contract successfully verified
+Start verifying contract `0x14F92d9c86F1FB90ff457e7a5D9C78335eAC8D71` deployed on sepolia
+EVM version: cancun
+Compiler version: 0.8.26
+Optimizations:    999999
+Constructor args: 00000000000000000000000077001610a4fd68548b80e49226c02a99c3b6ae14
+
+Submitting verification for [lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol:ProxyAdmin] 0x14F92d9c86F1FB90ff457e7a5D9C78335eAC8D71.
+Submitted contract for verification:
+	Response: `OK`
+	GUID: `kgnkrnyaifwnzj5m4cadhwfjmffgybdbhd1cdu83t4bitwaqcs`
+	URL: https://sepolia.etherscan.io/address/0x14f92d9c86f1fb90ff457e7a5d9c78335eac8d71
+Contract verification status:
+Response: `NOTOK`
+Details: `Pending in queue`
+Warning: Verification is still pending...; waiting 15 seconds before trying again (7 tries remaining)
+Contract verification status:
+Response: `OK`
+Details: `Pass - Verified`
+Contract successfully verified
+All (3) contracts were verified!
+
+Transactions saved to: /Users/mario/op/evm-m-extensions/broadcast/DeployUsdrToken.s.sol/11155111/run-latest.json
+
+Sensitive values saved to: /Users/mario/op/evm-m-extensions/cache/DeployUsdrToken.s.sol/11155111/run-latest.json
