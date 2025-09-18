@@ -728,9 +728,9 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint256 bobBalance = mEarnerManager.balanceOf(bob);
         uint256 carolBalance = mEarnerManager.balanceOf(carol);
 
-        uint112 alicePrincipal = _calcMEarnerManagerPrincipal(10e6);
-        uint112 bobPrincipal = _calcMEarnerManagerPrincipal(10e6);
-        uint112 carolPrincipal = _calcMEarnerManagerPrincipal(10e6);
+        uint112 alicePrincipal = _calcMPrincipalAmountRoundedDown(10e6);
+        uint112 bobPrincipal = _calcMPrincipalAmountRoundedDown(10e6);
+        uint112 carolPrincipal = _calcMPrincipalAmountRoundedDown(10e6);
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
@@ -780,9 +780,9 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         bobBalance = mEarnerManager.balanceOf(bob);
         carolBalance = mEarnerManager.balanceOf(carol);
 
-        alicePrincipal = _calcMEarnerManagerPrincipal(aliceBalance);
-        bobPrincipal = _calcMEarnerManagerPrincipal(bobBalance);
-        carolPrincipal = _calcMEarnerManagerPrincipal(carolBalance);
+        alicePrincipal = _calcMPrincipalAmountRoundedDown(aliceBalance);
+        bobPrincipal = _calcMPrincipalAmountRoundedDown(bobBalance);
+        carolPrincipal = _calcMPrincipalAmountRoundedDown(carolBalance);
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
@@ -833,9 +833,9 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         bobBalance = mEarnerManager.balanceOf(bob);
         carolBalance = mEarnerManager.balanceOf(carol);
 
-        alicePrincipal = _calcMEarnerManagerPrincipal(aliceBalance);
-        bobPrincipal = _calcMEarnerManagerPrincipal(bobBalance);
-        carolPrincipal = _calcMEarnerManagerPrincipal(carolBalance);
+        alicePrincipal = _calcMPrincipalAmountRoundedDown(aliceBalance);
+        bobPrincipal = _calcMPrincipalAmountRoundedDown(bobBalance);
+        carolPrincipal = _calcMPrincipalAmountRoundedDown(carolBalance);
 
         {
             (uint256 aliceYieldWithFeeActual, uint256 aliceFee, uint256 aliceYieldNetOfFee) = mEarnerManager
@@ -895,9 +895,9 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         bobBalance = mEarnerManager.balanceOf(bob);
         carolBalance = mEarnerManager.balanceOf(carol);
 
-        alicePrincipal = _calcMEarnerManagerPrincipal(aliceBalance);
-        bobPrincipal = _calcMEarnerManagerPrincipal(bobBalance);
-        carolPrincipal = _calcMEarnerManagerPrincipal(carolBalance);
+        alicePrincipal = _calcMPrincipalAmountRoundedDown(aliceBalance);
+        bobPrincipal = _calcMPrincipalAmountRoundedDown(bobBalance);
+        carolPrincipal = _calcMPrincipalAmountRoundedDown(carolBalance);
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
@@ -1055,7 +1055,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
 
         uint112 mYieldFeePrincipal = _calcMYieldFeePrincipal(mYieldFeeBalance);
         uint112 mYieldToOnePrincipal = _calcMPrincipalAmountRoundedDown(mEarnerManagerBalance);
-        uint112 mEarnerManagerPrincipal = _calcMEarnerManagerPrincipal(mYieldToOneBalance);
+        uint112 mEarnerManagerPrincipal = _calcMPrincipalAmountRoundedDown(mYieldToOneBalance);
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
@@ -1300,12 +1300,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertTrue(yieldAfter > 0, "Should have accrued yield");
     }
 
-    function _calcMEarnerManagerPrincipal(uint256 amount) public view returns (uint112) {
-        uint128 _index = _currentMIndex();
-
-        return IndexingMath.getPrincipalAmountRoundedDown(uint240(amount), _index);
-    }
-
     function _calcMEarnerManagerYield(uint256 balance, uint112 principal) public view returns (uint256) {
         uint128 currentIndex = _currentMIndex();
 
@@ -1398,7 +1392,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Prep MEarnerManager
         uint112 mEarnerManagerPrincipal = yields[M_EARNER_MANAGER] == 0
             ? 0
-            : _calcMEarnerManagerPrincipal(yields[M_EARNER_MANAGER]);
+            : _calcMPrincipalAmountRoundedDown(yields[M_EARNER_MANAGER]);
 
         // Prep MYieldToOne
         uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
@@ -1440,7 +1434,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         // Prep MEarnerManager
         uint112 mEarnerManagerPrincipal = yields[M_EARNER_MANAGER] == 0
             ? 0
-            : _calcMEarnerManagerPrincipal(yields[M_EARNER_MANAGER]);
+            : _calcMPrincipalAmountRoundedDown(yields[M_EARNER_MANAGER]);
 
         // Prep MYieldFee
         uint112 mYieldFeePrincipal = yields[M_YIELD_FEE] == 0 ? 0 : _calcMYieldFeePrincipal(yields[M_YIELD_FEE]);
@@ -1491,7 +1485,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint256 mBalanceBefore = yields[M_YIELD_TO_ONE] == 0 ? 0 : mToken.balanceOf(address(mYieldToOne));
 
         // Prep MEarnerManager
-        uint112 principal = _calcMEarnerManagerPrincipal(amount + yields[M_EARNER_MANAGER]);
+        uint112 principal = _calcMPrincipalAmountRoundedDown(amount + yields[M_EARNER_MANAGER]);
 
         vm.warp(vm.getBlockTimestamp() + 10 days);
 
