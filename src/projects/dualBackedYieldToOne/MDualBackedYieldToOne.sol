@@ -119,7 +119,9 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
 
         MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
 
-        $.secondarySupply -= amount;
+        unchecked {
+            $.secondarySupply -= amount;
+        }
 
         IERC20($.secondaryBacker).transfer(msg.sender, amount);
 
