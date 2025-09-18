@@ -305,6 +305,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         wrappedM.approve(address(swapFacility), type(uint256).max);
         vm.stopPrank();
 
+        // The fuzz test works by placing function signatures of functions that
+        // will swap into an extension from a prior extension, make an assertion
+        // against the state that has been swapped into, and accumulate a value
+        // throughout the invocations which will be asserted against at the end
+        // of the test once the fuzzed permutation is finished.
         function(address, uint256[] memory, uint256) internal returns (uint256, uint256[] memory)[]
             memory yieldAssertions = new function(address, uint256[] memory, uint256)
                 internal
@@ -327,6 +332,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         uint256 extensionIndex;
 
         for (uint256 i = 0; i < 20; i++) {
+            // The test uses the iteration of the loop combined with the seed
+            // of the fuzz run to create random extension indexes which will
+            // be invoked one after the other, allowing for a random order
+            // of extensions being swapped into and out of
+
             uint256 nextExtensionIndex = uint256(keccak256(abi.encode(seed, i))) % 3;
 
             if (nextExtensionIndex == extensionIndex) nextExtensionIndex = (nextExtensionIndex + 1) % 3;
