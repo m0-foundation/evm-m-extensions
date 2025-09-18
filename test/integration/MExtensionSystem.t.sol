@@ -1379,49 +1379,6 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         }
     }
 
-    function _testYieldCapture_mYieldFee(
-        address from,
-        uint256[] memory yields,
-        uint256 amount
-    ) public returns (uint256, uint256[] memory) {
-        vm.prank(alice);
-
-        if (from == address(mToken)) swapFacility.swapInM(address(mYieldFee), amount, alice);
-        else swapFacility.swap(from, address(mYieldFee), amount, alice);
-
-        // Prep MEarnerManager
-        uint112 mEarnerManagerPrincipal = yields[M_EARNER_MANAGER] == 0
-            ? 0
-            : _calcMPrincipalAmountRoundedDown(yields[M_EARNER_MANAGER]);
-
-        // Prep MYieldToOne
-        uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
-
-        // Prep MYieldFee
-        uint112 _principal = _calcMYieldFeePrincipal(amount + yields[M_YIELD_FEE]);
-
-        vm.warp(vm.getBlockTimestamp() + 10 days);
-
-        // Collect MEarnerManager yield
-        yields[M_EARNER_MANAGER] += mEarnerManagerPrincipal == 0
-            ? 0
-            : _calcMEarnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
-
-        // Collect MYieldToOne yield
-        yields[M_YIELD_TO_ONE] += mBalanceBefore == 0 ? 0 : mToken.balanceOf(address(mYieldToOne)) - mBalanceBefore;
-
-        // Collect MYieldFee yield
-        uint256 priorYield = yields[M_YIELD_FEE];
-
-        yields[M_YIELD_FEE] += _calcMYieldFeeYield(amount + yields[M_YIELD_FEE], _principal);
-
-        uint256 mYieldFeeYield = mYieldFee.accruedYieldOf(alice);
-
-        assertApproxEqAbs(mYieldFeeYield, yields[M_YIELD_FEE], 50, "Should have accrued yield in mYieldFee");
-
-        return (priorYield == 0 ? amount - 2 : amount, yields);
-    }
-
     function _testYieldCapture_mYieldToOne(
         address from,
         uint256[] memory yields,
@@ -1466,6 +1423,48 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertApproxEqAbs(mYieldToOneYield, yield + priorYield, 50, "Should have accrued yield in mYieldToOne");
 
         yields[0] += yield;
+
+        return (priorYield == 0 ? amount - 2 : amount, yields);
+    }
+
+    function _testYieldCapture_mYieldFee(
+        address from,
+        uint256[] memory yields,
+        uint256 amount
+    ) public returns (uint256, uint256[] memory) {
+        vm.prank(alice);
+
+        swapFacility.swap(from, address(mYieldFee), amount, alice);
+
+        // Prep MEarnerManager
+        uint112 mEarnerManagerPrincipal = yields[M_EARNER_MANAGER] == 0
+            ? 0
+            : _calcMPrincipalAmountRoundedDown(yields[M_EARNER_MANAGER]);
+
+        // Prep MYieldToOne
+        uint256 mBalanceBefore = mToken.balanceOf(address(mYieldToOne));
+
+        // Prep MYieldFee
+        uint112 _principal = _calcMYieldFeePrincipal(amount + yields[M_YIELD_FEE]);
+
+        vm.warp(vm.getBlockTimestamp() + 10 days);
+
+        // Collect MEarnerManager yield
+        yields[M_EARNER_MANAGER] += mEarnerManagerPrincipal == 0
+            ? 0
+            : _calcMEarnerManagerYield(yields[M_EARNER_MANAGER], mEarnerManagerPrincipal);
+
+        // Collect MYieldToOne yield
+        yields[M_YIELD_TO_ONE] += mBalanceBefore == 0 ? 0 : mToken.balanceOf(address(mYieldToOne)) - mBalanceBefore;
+
+        // Collect MYieldFee yield
+        uint256 priorYield = yields[M_YIELD_FEE];
+
+        yields[M_YIELD_FEE] += _calcMYieldFeeYield(amount + yields[M_YIELD_FEE], _principal);
+
+        uint256 mYieldFeeYield = mYieldFee.accruedYieldOf(alice);
+
+        assertApproxEqAbs(mYieldFeeYield, yields[M_YIELD_FEE], 50, "Should have accrued yield in mYieldFee");
 
         return (priorYield == 0 ? amount - 2 : amount, yields);
     }
