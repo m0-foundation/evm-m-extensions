@@ -13,7 +13,7 @@ import { IRegistrarLike } from "./interfaces/IRegistrarLike.sol";
 import { ReentrancyLock } from "./ReentrancyLock.sol";
 
 interface IMDualBackedExtensionLike {
-    function secondaryBacker() external view returns (IERC20);
+    function secondaryBacker() external view returns (address);
     function wrapSecondary(address account, uint256 amount) external;
 }
 
@@ -307,7 +307,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     function _swapInSecondary(address extensionOut, uint256 amount, address receiver) private {
         _revertIfNotApprovedExtension(extensionOut);
 
-        IERC20 secondaryBacker = IMDualBackedExtensionLike(extensionOut).secondaryBacker();
+        IERC20 secondaryBacker = IERC20(IMDualBackedExtensionLike(extensionOut).secondaryBacker());
 
         secondaryBacker.transferFrom(msg.sender, address(this), amount);
         secondaryBacker.approve(extensionOut, amount);
