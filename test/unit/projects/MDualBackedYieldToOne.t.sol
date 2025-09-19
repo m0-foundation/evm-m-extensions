@@ -261,23 +261,18 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
 
     /* ============ yield ============ */
 
-    function test_yield() external {
-        assertEq(mDualBackedToOne.yield(), 0);
+    function testFuzz_yield_withSecondary(uint256 mBalance, uint256 secondarySupply, uint256 totalSupply) external {
+        mBalance = bound(mBalance, 0, type(uint128).max);
+        secondarySupply = bound(secondarySupply, 0, type(uint128).max);
+        totalSupply = bound(totalSupply, 0, mBalance + secondarySupply);
 
-        mToken.setBalanceOf(address(mDualBackedToOne), 1_500e6);
-        mDualBackedToOne.setTotalSupply(1_000e6);
-
-        assertEq(mDualBackedToOne.yield(), 500e6);
-    }
-
-    function testFuzz_yield(uint256 mBalance, uint256 totalSupply) external {
-        mBalance = bound(mBalance, 0, type(uint240).max);
-        totalSupply = bound(totalSupply, 0, mBalance);
+        if (totalSupply < secondarySupply) secondarySupply = totalSupply;
 
         mToken.setBalanceOf(address(mDualBackedToOne), mBalance);
+        mDualBackedToOne.setSecondarySupply(secondarySupply);
         mDualBackedToOne.setTotalSupply(totalSupply);
 
-        assertEq(mDualBackedToOne.yield(), mBalance - totalSupply);
+        assertEq(mDualBackedToOne.yield(), mBalance - (totalSupply - secondarySupply));
     }
 
     /* ============ claimYield ============ */
