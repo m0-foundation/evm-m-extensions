@@ -15,12 +15,12 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
 interface IMDualBackedExtensionLike {
     function secondaryBacker() external view returns (address);
     function wrapSecondary(address account, uint256 amount) external;
+    function replaceSecondary(uint256 amount) external;
 }
 
 abstract contract SwapFacilityUpgradeableStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.SwapFacility
     struct SwapFacilityStorageStruct {
-        mapping(address extension => bool dualBacked) dualBackedExtensions;
         mapping(address extension => bool permissioned) permissionedExtensions;
         mapping(address extension => mapping(address mSwapper => bool allowed)) permissionedMSwappers;
     }
@@ -186,8 +186,14 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         _swapOutM(extensionIn, amount, recipient);
     }
 
+    /// @inheritdoc ISwapFacility
     function swapInSecondary(address extensionOut, uint256 amount, address recipient) external isNotLocked {
         _swapInSecondary(extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function replaceSecondary(address extension, uint256 amount) external isNotLocked {
+        _replaceSecondary(extension, amount);
     }
 
     /// @inheritdoc ISwapFacility
@@ -199,16 +205,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         _getSwapFacilityStorageLocation().permissionedExtensions[extension] = permissioned;
 
         emit PermissionedExtensionSet(extension, permissioned);
-    }
-
-    function setDualBackedExtension(address extension, bool dualBacked) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (extension == address(0)) revert ZeroExtension();
-
-        if (isDualBackedExtension(extension) == dualBacked) return;
-
-        _getSwapFacilityStorageLocation().dualBackedExtensions[extension] = dualBacked;
-
-        emit DualBackedExtensionSet(extension, dualBacked);
     }
 
     /// @inheritdoc ISwapFacility
@@ -247,10 +243,6 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     /// @inheritdoc ISwapFacility
     function msgSender() public view returns (address) {
         return _getLocker();
-    }
-
-    function isDualBackedExtension(address extension) public view returns (bool) {
-        return _getSwapFacilityStorageLocation().dualBackedExtensions[extension];
     }
 
     /* ============ Private Interactive Functions ============ */
@@ -307,13 +299,36 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     function _swapInSecondary(address extensionOut, uint256 amount, address receiver) private {
         _revertIfNotApprovedExtension(extensionOut);
 
-        IERC20 secondaryBacker = IERC20(IMDualBackedExtensionLike(extensionOut).secondaryBacker());
+        address secondaryBacker;
 
-        secondaryBacker.transferFrom(msg.sender, address(this), amount);
-        secondaryBacker.approve(extensionOut, amount);
+        try IMDualBackedExtensionLike(extensionOut).secondaryBacker() returns (address secondary) {
+            secondaryBacker = secondary;
+        } catch {
+            revert NotDualBackedExtension(extensionOut);
+        }
+
+        IERC20(secondaryBacker).transferFrom(msg.sender, address(this), amount);
+        IERC20(secondaryBacker).approve(extensionOut, amount);
         IMDualBackedExtensionLike(extensionOut).wrapSecondary(receiver, amount);
 
-        emit SwappedInSecondaryBacking(extensionOut, address(secondaryBacker), amount, receiver);
+        emit SwappedInSecondaryBacker(extensionOut, secondaryBacker, amount, receiver);
+    }
+
+    function _replaceSecondary(address extension, uint256 amount) private {
+        address secondaryBacker;
+
+        try IMDualBackedExtensionLike(extension).secondaryBacker() returns (address secondary) {
+            secondaryBacker = secondary;
+        } catch {
+            revert NotDualBackedExtension(extension);
+        }
+
+        IERC20(secondaryBacker).transferFrom(msg.sender, address(this), amount);
+        IERC20(secondaryBacker).approve(extension, amount);
+        IMDualBackedExtensionLike(extension).replaceSecondary(amount);
+
+        // TODO: event here AND in the extension?
+        emit ReplacedSecondaryBacker(extension, secondaryBacker, amount);
     }
 
     /**
