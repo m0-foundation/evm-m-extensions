@@ -114,8 +114,8 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         }
     }
 
-    function replaceSecondary(uint256 amount) external onlySwapFacility {
-        _replaceSecondary(amount);
+    function replaceSecondary(address recipient, uint256 amount) external onlySwapFacility {
+        _replaceSecondary(recipient, amount);
     }
 
     function wrapSecondary(address recipient, uint256 amount) external onlySwapFacility {
@@ -144,7 +144,7 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         _mint(recipient, amount);
     }
 
-    function _replaceSecondary(uint256 amount) internal {
+    function _replaceSecondary(address recipient, uint256 amount) internal {
         IMTokenLike(mToken).transferFrom(msg.sender, address(this), amount);
 
         MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
@@ -153,7 +153,7 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
             $.secondarySupply -= amount;
         }
 
-        IERC20($.secondaryBacker).transfer(msg.sender, amount);
+        IERC20($.secondaryBacker).transfer(recipient, amount);
 
         emit SecondaryBackingReplaced(amount);
     }

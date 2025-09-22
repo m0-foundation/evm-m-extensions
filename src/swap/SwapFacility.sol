@@ -14,8 +14,8 @@ import { ReentrancyLock } from "./ReentrancyLock.sol";
 
 interface IMDualBackedExtensionLike {
     function secondaryBacker() external view returns (address);
-    function wrapSecondary(address account, uint256 amount) external;
-    function replaceSecondary(uint256 amount) external;
+    function wrapSecondary(address recipient, uint256 amount) external;
+    function replaceSecondary(address recipient, uint256 amount) external;
 }
 
 abstract contract SwapFacilityUpgradeableStorageLayout {
@@ -192,8 +192,8 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     }
 
     /// @inheritdoc ISwapFacility
-    function replaceSecondary(address extension, uint256 amount) external isNotLocked {
-        _replaceSecondary(extension, amount);
+    function replaceSecondary(address extension, uint256 amount, address recipient) external isNotLocked {
+        _replaceSecondary(extension, amount, recipient);
     }
 
     /// @inheritdoc ISwapFacility
@@ -314,7 +314,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         emit SwappedInSecondaryBacker(extensionOut, secondaryBacker, amount, receiver);
     }
 
-    function _replaceSecondary(address extension, uint256 amount) private {
+    function _replaceSecondary(address extension, uint256 amount, address recipient) private {
         address secondaryBacker;
 
         try IMDualBackedExtensionLike(extension).secondaryBacker() returns (address secondary) {
@@ -325,7 +325,7 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
 
         IERC20(secondaryBacker).transferFrom(msg.sender, address(this), amount);
         IERC20(secondaryBacker).approve(extension, amount);
-        IMDualBackedExtensionLike(extension).replaceSecondary(amount);
+        IMDualBackedExtensionLike(extension).replaceSecondary(recipient, amount);
 
         // TODO: event here AND in the extension?
         emit ReplacedSecondaryBacker(extension, secondaryBacker, amount);

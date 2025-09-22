@@ -33,14 +33,15 @@ interface IMDualBackedYieldToOne is IMYieldToOne {
 
     /* ============ Interactive Functions ============ */
 
-    /// @notice Allows the collateral manager to replace secondary backing with M.
-    /// @param amount the amount of secondary to take out and replace with same amount of M.
-    function replaceSecondary(uint256 amount) external;
-
     /// @notice Called from the SwapFacility in order to mint the extension with secondary tokens
     /// @param recipient To whom the tokens will be minted
     /// @param amount The amount of tokens to mint
     function wrapSecondary(address recipient, uint256 amount) external;
+
+    /// @notice Allows the collateral manager to replace secondary backing with M.
+    /// @param amount the amount of secondary to take out and replace with same amount of M.
+    /// @param recipient To whom the secondary backing will be transferred out.
+    function replaceSecondary(address recipient, uint256 amount) external;
 
     /* ============ View/Pure Functions ============ */
 

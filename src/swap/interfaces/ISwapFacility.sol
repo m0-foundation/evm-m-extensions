@@ -213,9 +213,10 @@ interface ISwapFacility {
     /**
      * @notice Replaces secondary backing with $M for a dual backed extension
      * @param extension The address of the dual backed $M Extension to replace secondary backing in.
-     * @param amount The amount of M to replace with
+     * @param amount    The amount of M to replace with
+     * @param recipient The address to receive the replaced secondary backing tokens.
      */
-    function replaceSecondary(address extension, uint256 amount) external;
+    function replaceSecondary(address extension, uint256 amount, address recipient) external;
 
     /**
      * @notice Swaps $M Extension to $M token.
