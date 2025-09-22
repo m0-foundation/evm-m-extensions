@@ -114,8 +114,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
         emit YieldClaimed(yield_);
 
-        console.log("yield recipient", yieldRecipient());
-
         _mint(yieldRecipient(), yield_);
 
         return yield_;

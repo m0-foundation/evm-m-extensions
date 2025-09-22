@@ -191,6 +191,14 @@ abstract contract MockERC20 {
     }
 }
 
+contract MockSecondaryBacker is MockERC20 {
+    constructor() MockERC20("MockSecondaryBacker", "MSB", 6) {}
+
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
+}
+
 contract MockMExtension is MockERC20 {
     MockM public mToken;
     address public swapFacility;

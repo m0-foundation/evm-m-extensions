@@ -8,10 +8,6 @@ import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import {
-    ERC20
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-
-import {
     IAccessControl
 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
@@ -30,15 +26,9 @@ import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { MDualBackedYieldToOneHarness } from "../../harness/MDualBackedYieldToOneHarness.sol";
 
+import { MockSecondaryBacker } from "../../utils/Mocks.sol";
+
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
-
-contract SecondaryERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
-
-    function mint(address account, uint256 amount) public {
-        _mint(account, amount);
-    }
-}
 
 contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
     MDualBackedYieldToOneHarness public mDualBackedToOne;
@@ -46,12 +36,12 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
     string public constant NAME = "HALO USD";
     string public constant SYMBOL = "HALO USD";
 
-    SecondaryERC20 public secondary;
+    MockSecondaryBacker public secondary;
 
     function setUp() public override {
         super.setUp();
 
-        secondary = new SecondaryERC20("TEST", "TEST");
+        secondary = new MockSecondaryBacker();
 
         mDualBackedToOne = MDualBackedYieldToOneHarness(
             Upgrades.deployTransparentProxy(

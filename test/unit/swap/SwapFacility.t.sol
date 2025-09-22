@@ -18,19 +18,17 @@ import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { SwapFacility } from "../../../src/swap/SwapFacility.sol";
 
-import { MockM, MockDualBackedMExtension, MockMExtension, MockRegistrar } from "../../utils/Mocks.sol";
+import {
+    MockM,
+    MockSecondaryBacker,
+    MockDualBackedMExtension,
+    MockMExtension,
+    MockRegistrar
+} from "../../utils/Mocks.sol";
 
 contract SwapFacilityV2 {
     function foo() external pure returns (uint256) {
         return 1;
-    }
-}
-
-contract SecondaryERC20 is ERC20 {
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
-
-    function mint(address account, uint256 amount) public {
-        _mint(account, amount);
     }
 }
 
@@ -45,7 +43,7 @@ contract SwapFacilityUnitTests is Test {
     MockMExtension public extensionB;
     MockDualBackedMExtension public extensionDualBacked;
 
-    SecondaryERC20 public secondary;
+    MockSecondaryBacker public secondary;
 
     address public owner = makeAddr("owner");
     address public alice = makeAddr("alice");
@@ -54,7 +52,7 @@ contract SwapFacilityUnitTests is Test {
         mToken = new MockM();
         registrar = new MockRegistrar();
 
-        secondary = new SecondaryERC20("TEST", "TEST");
+        secondary = new MockSecondaryBacker();
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(

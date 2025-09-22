@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { console } from "forge-std/console.sol";
+
 import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
@@ -13,7 +15,9 @@ import { IFreezable } from "../../src/components/IFreezable.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
+import { MDualBackedYieldToOneHarness } from "../harness/MDualBackedYieldToOneHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
@@ -63,6 +67,26 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
             )
         );
 
+        mDualBackedYieldToOne = MDualBackedYieldToOneHarness(
+            Upgrades.deployTransparentProxy(
+                "MDualBackedYieldToOneHarness.sol:MDualBackedYieldToOneHarness",
+                admin,
+                abi.encodeWithSelector(
+                    MDualBackedYieldToOneHarness.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    yieldRecipient,
+                    admin,
+                    freezeManager,
+                    yieldRecipientManager,
+                    collateralManager,
+                    USDC
+                ),
+                mExtensionDeployOptions
+            )
+        );
+
+        _addToList(EARNERS_LIST, address(mDualBackedYieldToOne));
         _addToList(EARNERS_LIST, address(mYieldToOne));
         _addToList(EARNERS_LIST, address(mYieldFee));
 
@@ -318,6 +342,44 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
+    }
+
+    function test_swapInSecondary() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(USER);
+        IERC20(USDC).transfer(alice, amount);
+
+        vm.prank(alice);
+        IERC20(USDC).approve(address(swapFacility), amount);
+
+        vm.expectEmit();
+        emit ISwapFacility.SwappedInSecondaryBacker(address(mDualBackedYieldToOne), USDC, amount, alice);
+
+        vm.prank(alice);
+        swapFacility.swapInSecondary(address(mDualBackedYieldToOne), amount, alice);
+
+        uint256 aliceBalance = mDualBackedYieldToOne.balanceOf(alice);
+
+        uint256 supply = mDualBackedYieldToOne.totalSupply();
+        uint256 secondarySupply = mDualBackedYieldToOne.secondarySupply();
+
+        assertEq(aliceBalance, amount, "Alice's balance should match the swapped amount");
+        assertEq(secondarySupply, amount, "Secondary supply should match the swapped amount");
+        assertEq(supply, amount, "Total supply should match the swapped amount");
+    }
+
+    function test_swapInSecondary_nonSecondary_x() public {
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, 1_000_000);
+
+        vm.prank(alice);
+        IERC20(USDC).approve(address(swapFacility), 1_000_000);
+
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotDualBackedExtension.selector, address(mYieldToOne)));
+
+        vm.prank(alice);
+        swapFacility.swapInSecondary(address(mYieldToOne), 1_000_000, alice);
     }
 
     function test_swapOutM() public {
