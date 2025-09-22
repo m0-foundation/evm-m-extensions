@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.26;
 
-import { console } from "forge-std/console.sol";
-
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
 import { IMYieldToOne } from "./IMYieldToOne.sol";
@@ -92,8 +90,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         address freezeManager,
         address yieldRecipientManager
     ) internal onlyInitializing {
-        console.log("myield init", yieldRecipient_, admin, freezeManager);
-
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (admin == address(0)) revert ZeroAdmin();
 
