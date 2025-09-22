@@ -6,6 +6,10 @@ import {
     Initializable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
+import {
+    IERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 contract MockM {
@@ -209,6 +213,45 @@ contract MockMExtension is MockERC20 {
     function unwrap(address recipient, uint256 amount) external {
         _burn(msg.sender, amount);
         mToken.transfer(msg.sender, amount);
+    }
+}
+
+contract MockDualBackedMExtension is MockMExtension {
+    address public _secondaryBacker;
+    uint256 public secondarySupply;
+
+    constructor(
+        address mToken_,
+        address swapFacility_,
+        address secondaryBacker_
+    ) MockMExtension(mToken_, swapFacility_) {
+        _secondaryBacker = secondaryBacker_;
+    }
+
+    function wrapSecondary(address recipient, uint256 amount) external {
+        IERC20(_secondaryBacker).transferFrom(msg.sender, address(this), amount);
+        secondarySupply += amount;
+        _mint(recipient, amount);
+    }
+
+    function replaceSecondary(address recipient, uint256 amount) external {
+        mToken.transferFrom(msg.sender, address(this), amount);
+
+        IERC20(_secondaryBacker).transfer(recipient, amount);
+
+        secondarySupply -= amount;
+    }
+
+    function secondaryBacker() public view returns (address) {
+        return _secondaryBacker;
+    }
+
+    function setSecondarySupply(uint256 supply) public {
+        secondarySupply = supply;
+    }
+
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
     }
 }
 

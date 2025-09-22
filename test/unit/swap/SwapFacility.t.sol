@@ -8,17 +8,29 @@ import {
     IAccessControl
 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
+import {
+    ERC20
+} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+
 import { UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { SwapFacility } from "../../../src/swap/SwapFacility.sol";
 
-import { MockM, MockMExtension, MockRegistrar } from "../../utils/Mocks.sol";
+import { MockM, MockDualBackedMExtension, MockMExtension, MockRegistrar } from "../../utils/Mocks.sol";
 
 contract SwapFacilityV2 {
     function foo() external pure returns (uint256) {
         return 1;
+    }
+}
+
+contract SecondaryERC20 is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
     }
 }
 
@@ -31,6 +43,9 @@ contract SwapFacilityUnitTests is Test {
     MockRegistrar public registrar;
     MockMExtension public extensionA;
     MockMExtension public extensionB;
+    MockDualBackedMExtension public extensionDualBacked;
+
+    SecondaryERC20 public secondary;
 
     address public owner = makeAddr("owner");
     address public alice = makeAddr("alice");
@@ -38,6 +53,8 @@ contract SwapFacilityUnitTests is Test {
     function setUp() public {
         mToken = new MockM();
         registrar = new MockRegistrar();
+
+        secondary = new SecondaryERC20("TEST", "TEST");
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
@@ -49,10 +66,12 @@ contract SwapFacilityUnitTests is Test {
 
         extensionA = new MockMExtension(address(mToken), address(swapFacility));
         extensionB = new MockMExtension(address(mToken), address(swapFacility));
+        extensionDualBacked = new MockDualBackedMExtension(address(mToken), address(swapFacility), address(secondary));
 
         // Add Extensions to Earners List
         registrar.setEarner(address(extensionA), true);
         registrar.setEarner(address(extensionB), true);
+        registrar.setEarner(address(extensionDualBacked), true);
     }
 
     /* ============ initialize ============ */
@@ -207,6 +226,68 @@ contract SwapFacilityUnitTests is Test {
 
         vm.prank(alice);
         swapFacility.swapOutM(address(extensionA), 1, alice);
+    }
+
+    /* ============ swapInSecondary ============ */
+
+    function test_swapInSecondary() external {
+        uint256 amount = 1_000;
+        secondary.mint(alice, amount);
+
+        vm.prank(owner);
+        swapFacility.grantRole(M_SWAPPER_ROLE, alice);
+
+        vm.prank(alice);
+        secondary.approve(address(swapFacility), amount);
+
+        vm.expectEmit();
+        emit ISwapFacility.SwappedInSecondaryBacker(address(extensionDualBacked), address(secondary), amount, alice);
+
+        vm.prank(alice);
+        swapFacility.swapInSecondary(address(extensionDualBacked), amount, alice);
+
+        assertEq(secondary.balanceOf(alice), 0);
+        assertEq(extensionDualBacked.balanceOf(alice), amount);
+    }
+
+    function test_swapInSecondary_nonSecondary() external {
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotDualBackedExtension.selector, address(extensionA)));
+
+        vm.prank(alice);
+        swapFacility.swapInSecondary(address(extensionA), 1_000, alice);
+    }
+
+    /* ============ replaceSecondary ============ */
+
+    function test_replaceSecondary() external {
+        uint256 amount = 1_000;
+        mToken.setBalanceOf(alice, amount);
+        extensionDualBacked.mint(alice, 1_000);
+        secondary.mint(address(extensionDualBacked), amount);
+        extensionDualBacked.setSecondarySupply(1_000);
+
+        vm.prank(alice);
+        mToken.approve(address(swapFacility), amount);
+
+        vm.prank(alice);
+        secondary.approve(address(swapFacility), amount);
+
+        vm.expectEmit();
+        emit ISwapFacility.ReplacedSecondaryBacker(address(extensionDualBacked), address(secondary), amount);
+
+        vm.prank(alice);
+        swapFacility.replaceSecondary(address(extensionDualBacked), amount, alice);
+
+        assertEq(secondary.balanceOf(alice), 1_000);
+        assertEq(mToken.balanceOf(address(extensionDualBacked)), 1_000);
+        assertEq(extensionDualBacked.balanceOf(alice), amount);
+    }
+
+    function test_replaceSecondary_nonSecondary() external {
+        vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotDualBackedExtension.selector, address(extensionA)));
+
+        vm.prank(alice);
+        swapFacility.replaceSecondary(address(extensionA), 1_000, alice);
     }
 
     /* ============ setPermissionedExtension ============ */

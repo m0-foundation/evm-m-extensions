@@ -323,8 +323,8 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
             revert NotDualBackedExtension(extension);
         }
 
-        IERC20(secondaryBacker).transferFrom(msg.sender, address(this), amount);
-        IERC20(secondaryBacker).approve(extension, amount);
+        IERC20(mToken).transferFrom(msg.sender, address(this), amount);
+        IERC20(mToken).approve(extension, amount);
         IMDualBackedExtensionLike(extension).replaceSecondary(recipient, amount);
 
         // TODO: event here AND in the extension?
