@@ -369,7 +369,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(supply, amount, "Total supply should match the swapped amount");
     }
 
-    function test_swapInSecondary_nonSecondary_x() public {
+    function test_swapInSecondary_nonSecondary() public {
         vm.prank(USER);
         IERC20(address(mToken)).transfer(alice, 1_000_000);
 
@@ -380,6 +380,31 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.prank(alice);
         swapFacility.swapInSecondary(address(mYieldToOne), 1_000_000, alice);
+    }
+
+    function test_replaceSecondary() public {
+        vm.prank(USER);
+        mToken.transfer(alice, 1_000_000);
+
+        vm.prank(USER);
+        IERC20(USDC).transfer(address(mDualBackedYieldToOne), 1_000_000);
+
+        vm.prank(alice);
+        mToken.approve(address(swapFacility), 1_000_000);
+
+        mDualBackedYieldToOne.setSecondarySupply(1_000_000);
+        mDualBackedYieldToOne.setTotalSupply(1_000_000);
+        mDualBackedYieldToOne.setBalanceOf(alice, 1_000_000);
+
+        vm.expectEmit();
+        emit ISwapFacility.ReplacedSecondaryBacker(address(mDualBackedYieldToOne), USDC, 1_000_000);
+
+        vm.prank(alice);
+        swapFacility.replaceSecondary(address(mDualBackedYieldToOne), 1_000_000, alice);
+
+        assertEq(IERC20(USDC).balanceOf(alice), 1_000_000);
+        assertEq(mToken.balanceOf(address(mDualBackedYieldToOne)), 1_000_000);
+        assertEq(mDualBackedYieldToOne.secondarySupply(), 0);
     }
 
     function test_swapOutM() public {
