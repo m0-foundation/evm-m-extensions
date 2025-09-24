@@ -87,15 +87,7 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         _setSecondaryBacker(secondaryBacker);
     }
 
-    /// @inheritdoc IMDualBackedYieldToOne
-    function secondaryBacker() public view returns (address) {
-        return _getMDualBackedYieldToOneStorageLocation().secondaryBacker;
-    }
-
-    /// @inheritdoc IMDualBackedYieldToOne
-    function secondarySupply() public view returns (uint256) {
-        return _getMDualBackedYieldToOneStorageLocation().secondarySupply;
-    }
+    /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IMYieldToOne
     function yield() public view override(IMYieldToOne, MYieldToOne) returns (uint256) {
@@ -118,6 +110,20 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         //       `ISwapFacility.msgSender()` is used to ensure that the original caller is passed to `_beforeWrap`.
         _wrapSecondary(ISwapFacility(msg.sender).msgSender(), recipient, amount);
     }
+
+    /* ============ View/Pure Functions ============ */
+
+    /// @inheritdoc IMDualBackedYieldToOne
+    function secondaryBacker() public view returns (address) {
+        return _getMDualBackedYieldToOneStorageLocation().secondaryBacker;
+    }
+
+    /// @inheritdoc IMDualBackedYieldToOne
+    function secondarySupply() public view returns (uint256) {
+        return _getMDualBackedYieldToOneStorageLocation().secondarySupply;
+    }
+
+    /* ============ Internal Interactive Functions ============ */
 
     function _wrapSecondary(address account, address recipient, uint256 amount) internal {
         _revertIfInvalidRecipient(recipient);
