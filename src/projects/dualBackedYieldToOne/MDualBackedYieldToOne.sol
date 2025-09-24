@@ -84,19 +84,20 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
 
         __MYieldToOne_init(name, symbol, yieldRecipient, admin, freezeManager, yieldRecipientManager);
 
-        MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
-
-        $.secondaryBacker = secondaryBacker;
+        _setSecondaryBacker(secondaryBacker);
     }
 
+    /// @inheritdoc IMDualBackedYieldToOne
     function secondaryBacker() public view returns (address) {
         return _getMDualBackedYieldToOneStorageLocation().secondaryBacker;
     }
 
+    /// @inheritdoc IMDualBackedYieldToOne
     function secondarySupply() public view returns (uint256) {
         return _getMDualBackedYieldToOneStorageLocation().secondarySupply;
     }
 
+    /// @inheritdoc IMYieldToOne
     function yield() public view override(IMYieldToOne, MYieldToOne) returns (uint256) {
         unchecked {
             uint256 mBalance_ = _mBalanceOf(address(this));
@@ -106,10 +107,12 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         }
     }
 
+    /// @inheritdoc IMDualBackedYieldToOne
     function replaceSecondary(address recipient, uint256 amount) external onlySwapFacility {
         _replaceSecondary(recipient, amount);
     }
 
+    /// @inheritdoc IMDualBackedYieldToOne
     function wrapSecondary(address recipient, uint256 amount) external onlySwapFacility {
         // NOTE: `msg.sender` is always SwapFacility contract.
         //       `ISwapFacility.msgSender()` is used to ensure that the original caller is passed to `_beforeWrap`.
@@ -154,5 +157,11 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         uint256 mBacking = totalSupply() - secondarySupply();
 
         if (amount > mBacking) revert InsufficientMBacking();
+    }
+
+    function _setSecondaryBacker(address secondaryBacker) internal {
+        MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
+
+        $.secondaryBacker = secondaryBacker;
     }
 }
