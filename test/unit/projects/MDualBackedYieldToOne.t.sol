@@ -55,7 +55,6 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
                     admin,
                     freezeManager,
                     yieldRecipientManager,
-                    collateralManager,
                     address(secondary)
                 ),
                 mExtensionDeployOptions
@@ -82,8 +81,6 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
         assertTrue(
             IAccessControl(address(mDualBackedToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager)
         );
-        console.log("collateral manager", collateralManager);
-        assertTrue(IAccessControl(address(mDualBackedToOne)).hasRole(COLLATERAL_MANAGER_ROLE, collateralManager));
     }
 
     function test_initialize_zeroYieldRecipient_dual() external {
@@ -102,7 +99,6 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
                     admin,
                     freezeManager,
                     yieldRecipientManager,
-                    collateralManager,
                     address(secondary)
                 )
             )
@@ -125,7 +121,6 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
                     address(0),
                     freezeManager,
                     yieldRecipientManager,
-                    collateralManager,
                     address(secondary)
                 )
             )
@@ -148,7 +143,6 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
                     admin,
                     freezeManager,
                     address(0),
-                    collateralManager,
                     address(secondary)
                 )
             )

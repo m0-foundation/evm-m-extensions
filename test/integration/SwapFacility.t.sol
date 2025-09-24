@@ -79,7 +79,6 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
                     admin,
                     freezeManager,
                     yieldRecipientManager,
-                    collateralManager,
                     USDC
                 ),
                 mExtensionDeployOptions

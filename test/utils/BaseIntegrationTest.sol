@@ -55,7 +55,6 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant FREEZE_MANAGER_ROLE = keccak256("FREEZE_MANAGER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
-    bytes32 public constant COLLATERAL_MANAGER_ROLE = keccak256("COLLATERAL_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
     bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
@@ -68,7 +67,6 @@ contract BaseIntegrationTest is Helpers, Test {
     address public admin = makeAddr("admin");
     address public freezeManager = makeAddr("freezeManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
-    address public collateralManager = makeAddr("collateralManager");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
     address public feeManager = makeAddr("feeManager");
     address public claimRecipientManager = makeAddr("claimRecipientManager");

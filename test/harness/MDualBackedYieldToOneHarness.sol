@@ -17,19 +17,9 @@ contract MDualBackedYieldToOneHarness is MDualBackedYieldToOne {
         address admin,
         address freezeManager,
         address yieldRecipientManager,
-        address collateralManager,
         address secondaryBacker
     ) public override initializer {
-        super.initialize(
-            name,
-            symbol,
-            yieldRecipient,
-            admin,
-            freezeManager,
-            yieldRecipientManager,
-            collateralManager,
-            secondaryBacker
-        );
+        super.initialize(name, symbol, yieldRecipient, admin, freezeManager, yieldRecipientManager, secondaryBacker);
     }
 
     function setBalanceOf(address account, uint256 amount) external {

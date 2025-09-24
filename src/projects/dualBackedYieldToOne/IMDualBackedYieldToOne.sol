@@ -45,9 +45,6 @@ interface IMDualBackedYieldToOne is IMYieldToOne {
 
     /* ============ View/Pure Functions ============ */
 
-    /// @notice The role that can manage the collateral.
-    function COLLATERAL_MANAGER_ROLE() external view returns (bytes32);
-
     /// @notice The total amount of secondary backing in the extension.
     function secondarySupply() external view returns (uint256);
 

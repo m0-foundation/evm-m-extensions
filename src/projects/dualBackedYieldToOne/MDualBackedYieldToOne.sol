@@ -42,8 +42,6 @@ abstract contract MDualBackedToYieldOneStorageLayout {
 /// @custom:oz-upgrades-unsafe-allow constructor
 
 contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneStorageLayout, MYieldToOne {
-    bytes32 public constant COLLATERAL_MANAGER_ROLE = keccak256("COLLATERAL_MANAGER_ROLE");
-
     /**
      * @custom:oz-upgrades-unsafe-allow constructor
      * @notice Constructs MYieldToOne Implementation contract
@@ -60,7 +58,6 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         address admin,
         address freezeManager,
         address yieldRecipientManager,
-        address collateralManager,
         address secondaryBacker
     ) public virtual initializer {
         __MDualBackedYieldToOne_init(
@@ -70,7 +67,6 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
             admin,
             freezeManager,
             yieldRecipientManager,
-            collateralManager,
             secondaryBacker
         );
     }
@@ -82,15 +78,11 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         address admin,
         address freezeManager,
         address yieldRecipientManager,
-        address collateralManager,
         address secondaryBacker
     ) internal onlyInitializing {
-        if (collateralManager == address(0)) revert ZeroCollateralManager();
         if (secondaryBacker == address(0)) revert ZeroSecondaryBacker();
 
         __MYieldToOne_init(name, symbol, yieldRecipient, admin, freezeManager, yieldRecipientManager);
-
-        _grantRole(COLLATERAL_MANAGER_ROLE, collateralManager);
 
         MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
 
