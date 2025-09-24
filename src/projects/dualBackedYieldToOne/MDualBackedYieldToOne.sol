@@ -93,7 +93,7 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
     function yield() public view override(IMYieldToOne, MYieldToOne) returns (uint256) {
         unchecked {
             uint256 mBalance_ = _mBalanceOf(address(this));
-            uint256 mBacking_ = totalSupply() - secondarySupply();
+            uint256 mBacking_ = _mBacking();
 
             return mBalance_ > mBacking_ ? mBalance_ - mBacking_ : 0;
         }
@@ -123,17 +123,23 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         return _getMDualBackedYieldToOneStorageLocation().secondarySupply;
     }
 
+    /* ============ Hooks For Internal Interactive Functions ============ */
+
+    function _beforeUnwrap(address account, uint256 amount) internal view virtual override {
+        super._beforeUnwrap(account, amount);
+
+        uint256 mBacking = _mBacking();
+        if (amount > mBacking) revert InsufficientMBacking();
+    }
+
     /* ============ Internal Interactive Functions ============ */
 
     function _wrapSecondary(address account, address recipient, uint256 amount) internal {
         _revertIfInvalidRecipient(recipient);
         _revertIfInsufficientAmount(amount);
 
-        // NOTE: Invoke the _beforeUnwrap() hook from yield to one
         _beforeWrap(account, recipient, amount);
 
-        // NOTE: `msg.sender` is always SwapFacility contract.
-        // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
         MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
 
         IERC20($.secondaryBacker).transferFrom(msg.sender, address(this), amount);
@@ -159,15 +165,17 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedToYieldOneS
         emit SecondaryBackingReplaced(amount);
     }
 
-    function _beforeUnwrap(address account, uint256 amount) internal view virtual override {
-        uint256 mBacking = totalSupply() - secondarySupply();
-
-        if (amount > mBacking) revert InsufficientMBacking();
-    }
-
     function _setSecondaryBacker(address secondaryBacker) internal {
         MDualBackedYieldToOneStorageStruct storage $ = _getMDualBackedYieldToOneStorageLocation();
 
         $.secondaryBacker = secondaryBacker;
+    }
+
+    /* ============ Internal View Functions ============ */
+
+    function _mBacking() internal view returns (uint256) {
+        unchecked {
+            return totalSupply() - secondarySupply();
+        }
     }
 }
