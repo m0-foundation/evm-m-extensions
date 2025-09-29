@@ -13,4 +13,20 @@ contract FreezableHarness is Freezable {
     function initialize(address freezeManager) public initializer {
         __Freezable_init(freezeManager);
     }
+
+    function revertIfFrozenInternal(address account) external view {
+        _revertIfFrozen(_getFreezableStorageLocation(), account);
+    }
+
+    function revertIfFrozen(address account) external view {
+        _revertIfFrozen(account);
+    }
+
+    function revertIfNotFrozenInternal(address account) external view {
+        _revertIfNotFrozen(_getFreezableStorageLocation(), account);
+    }
+
+    function revertIfNotFrozen(address account) external view {
+        _revertIfNotFrozen(account);
+    }
 }

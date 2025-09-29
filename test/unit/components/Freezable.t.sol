@@ -57,14 +57,19 @@ contract FreezableUnitTests is BaseUnitTest {
         freezable.freeze(bob);
     }
 
-    function test_freeze_revertIfFrozen() public {
-        vm.prank(freezeManager);
-        freezable.freeze(alice);
-
-        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+    function test_freeze_returnEarlyIfFrozen() public {
+        vm.expectEmit();
+        emit IFreezable.Frozen(alice, block.timestamp);
 
         vm.prank(freezeManager);
         freezable.freeze(alice);
+
+        assertTrue(freezable.isFrozen(alice));
+
+        vm.prank(freezeManager);
+        freezable.freeze(alice);
+
+        assertTrue(freezable.isFrozen(alice));
     }
 
     function test_freeze() public {
@@ -88,12 +93,13 @@ contract FreezableUnitTests is BaseUnitTest {
         freezable.freezeAccounts(accounts);
     }
 
-    function test_freezeAccounts_revertIfFrozen() public {
+    function test_freezeAccounts_returnEarlyIfFrozen() public {
         address[] memory accounts = new address[](2);
         accounts[0] = alice;
         accounts[1] = alice;
 
-        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        vm.expectEmit();
+        emit IFreezable.Frozen(alice, block.timestamp);
 
         vm.prank(freezeManager);
         freezable.freezeAccounts(accounts);
@@ -124,11 +130,13 @@ contract FreezableUnitTests is BaseUnitTest {
         freezable.unfreeze(bob);
     }
 
-    function test_freeze_revertIfNotFrozen() public {
-        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
+    function test_freeze_returnEarlyIfNotFrozen() public {
+        assertFalse(freezable.isFrozen(alice));
 
         vm.prank(freezeManager);
         freezable.unfreeze(alice);
+
+        assertFalse(freezable.isFrozen(alice));
     }
 
     function test_unfreeze() public {
@@ -157,15 +165,25 @@ contract FreezableUnitTests is BaseUnitTest {
         freezable.unfreezeAccounts(accounts);
     }
 
-    function test_unfreezeAccounts_revertIfNotFrozen() public {
+    function test_unfreezeAccounts_returnEarlyIfNotFrozen() public {
+        vm.prank(freezeManager);
+        freezable.freeze(alice);
+
+        assertTrue(freezable.isFrozen(alice));
+        assertFalse(freezable.isFrozen(bob));
+
         address[] memory accounts = new address[](2);
         accounts[0] = alice;
         accounts[1] = bob;
 
-        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
+        vm.expectEmit();
+        emit IFreezable.Unfrozen(alice, block.timestamp);
 
         vm.prank(freezeManager);
         freezable.unfreezeAccounts(accounts);
+
+        assertFalse(freezable.isFrozen(alice));
+        assertFalse(freezable.isFrozen(bob));
     }
 
     function test_unfreezeAccounts() public {
@@ -183,5 +201,36 @@ contract FreezableUnitTests is BaseUnitTest {
         for (uint256 i; i < accounts.length; ++i) {
             assertFalse(freezable.isFrozen(accounts[i]));
         }
+    }
+
+    /* ============ _revertIfFrozen ============ */
+
+    function test_revertIfFrozen() public {
+        vm.prank(freezeManager);
+        freezable.freeze(alice);
+
+        assertTrue(freezable.isFrozen(alice));
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+
+        freezable.revertIfFrozenInternal(alice);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+
+        freezable.revertIfFrozen(alice);
+    }
+
+    /* ============ _revertIfNotFrozen ============ */
+
+    function test_revertIfNotFrozen() public {
+        assertFalse(freezable.isFrozen(alice));
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
+
+        freezable.revertIfNotFrozenInternal(alice);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
+
+        freezable.revertIfNotFrozen(alice);
     }
 }
