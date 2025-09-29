@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
+import { console } from "forge-std/console.sol";
+
 contract MYieldFeeHarness is MYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address mToken, address swapFacility) MYieldFee(mToken, swapFacility) {}

@@ -25,9 +25,17 @@ import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { Helpers } from "./Helpers.sol";
 
+interface IMinterGateway {
+    function minterRate() external view returns (uint32);
+    function totalOwedM() external view returns (uint240);
+    function updateIndex() external returns (uint128);
+}
+
 contract BaseIntegrationTest is Helpers, Test {
     address public constant standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
     address public constant registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
+
+    IMinterGateway public constant minterGateway = IMinterGateway(0xf7f9638cb444D65e5A40bF5ff98ebE4ff319F04E);
 
     IMTokenLike public constant mToken = IMTokenLike(0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b);
     IERC20 public constant wrappedM = IERC20(0x437cc33344a0B27A429f795ff6B469C72698B291);
@@ -48,6 +56,7 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
+    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
 
     address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;

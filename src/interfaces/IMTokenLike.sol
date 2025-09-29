@@ -99,6 +99,13 @@ interface IMTokenLike {
      */
     function balanceOf(address account) external view returns (uint256);
 
+    /**
+     * @notice Returns the token balance of `account`.
+     * @param  account The address of some account.
+     * @return principal The principal token balance of `account`.
+     */
+    function principalBalanceOf(address account) external view returns (uint240);
+
     /// @notice The current index that would be written to storage if `updateIndex` is called.
     function currentIndex() external view returns (uint128);
 
@@ -110,4 +117,7 @@ interface IMTokenLike {
 
     /// @notice Returns the EIP712 typehash used in the encoding of the digest for the permit function.
     function PERMIT_TYPEHASH() external view returns (bytes32);
+
+    /// @notice Updates the index and returns it.
+    function updateIndex() external returns (uint128);
 }
