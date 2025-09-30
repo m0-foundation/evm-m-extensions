@@ -1,10 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: BUSL-1.1
+
+pragma solidity 0.8.26;
 
 import { IMYieldToOne } from "../projects/yieldToOne/IMYieldToOne.sol";
-import { ERC20 } from "../../lib/solmate/src/tokens/ERC20.sol";
-import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { FixedPointMathLib } from "../../lib/solmate/src/utils/FixedPointMathLib.sol";
+
 import { MYieldToOneVaultWithFeeBase, IAsset } from "./MYieldToOneVaultWithFeeBase.sol";
 
 abstract contract MYieldToOneVaultWithFeeNoTokenStorageLayout {

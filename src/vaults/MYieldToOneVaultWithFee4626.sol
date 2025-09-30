@@ -1,17 +1,27 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: BUSL-1.1
+
+pragma solidity 0.8.26;
 
 import { IMYieldToOne } from "../projects/yieldToOne/IMYieldToOne.sol";
-import { ERC20 } from "../../lib/solmate/src/tokens/ERC20.sol";
-import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { FixedPointMathLib } from "../../lib/solmate/src/utils/FixedPointMathLib.sol";
+
+import {
+    ERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+
+import {
+    IERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
+import {
+    Math
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 interface IAsset is IMYieldToOne, IERC20 {
     function decimals() external view returns (uint8);
 }
 
 contract MYieldToOneVaultWithFee4626 is ERC20 {
-    using FixedPointMathLib for uint256;
+    using Math for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -47,7 +57,7 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
         IAsset _asset,
         address _admin,
         uint256 _fee
-    ) ERC20(_name, _symbol, _asset.decimals()) {
+    ) ERC20(_name, _symbol) {
         ASSET = _asset;
         admin = _admin;
         fee = _fee;
@@ -88,9 +98,9 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msg.sender != owner) {
-            uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+            uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
 
-            if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+            if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
         }
 
         _burn(owner, shares);
@@ -104,9 +114,9 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
         _claimYield();
 
         if (msg.sender != owner) {
-            uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+            uint256 allowed = allowance(owner, msg.sender); // Saves gas for limited approvals.
 
-            if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+            if (allowed != type(uint256).max) _approve(owner, msg.sender, allowed - shares);
         }
 
         // Check for rounding error since we round down in previewRedeem.
@@ -134,7 +144,7 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
     function _adminYieldShares(uint256 yield, uint256 totalAssets) internal view returns (uint256) {
         uint256 yieldToAdmin = (yield * fee) / MAX_FEE;
 
-        return yieldToAdmin.mulDivDown(totalSupply, totalAssets - yieldToAdmin);
+        return yieldToAdmin.mulDiv(totalSupply(), totalAssets - yieldToAdmin, Math.Rounding.Floor);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -147,11 +157,12 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
 
         uint256 adminYieldShares = _adminYieldShares(yield, totalAssetsPlusYield);
 
-        uint256 shares = balanceOf[account];
+        uint256 shares = balanceOf(account);
 
-        uint256 supply = totalSupply;
+        uint256 supply = totalSupply();
 
-        return supply == 0 ? shares : shares.mulDivDown(totalAssetsPlusYield, supply + adminYieldShares);
+        return
+            supply == 0 ? shares : shares.mulDiv(totalAssetsPlusYield, supply + adminYieldShares, Math.Rounding.Floor);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -163,15 +174,15 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
     }
 
     function convertToShares(uint256 assets) public view virtual returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply() is non-zero.
 
-        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+        return supply == 0 ? assets : assets.mulDiv(supply, totalAssets(), Math.Rounding.Floor);
     }
 
     function convertToAssets(uint256 shares) public view virtual returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply() is non-zero.
 
-        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Floor);
     }
 
     function previewDeposit(uint256 assets) public view virtual returns (uint256) {
@@ -179,15 +190,15 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
     }
 
     function previewMint(uint256 shares) public view virtual returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply() is non-zero.
 
-        return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Ceil);
     }
 
     function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 supply = totalSupply(); // Saves an extra SLOAD if totalSupply() is non-zero.
 
-        return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+        return supply == 0 ? assets : assets.mulDiv(supply, totalAssets(), Math.Rounding.Ceil);
     }
 
     function previewRedeem(uint256 shares) public view virtual returns (uint256) {
@@ -207,10 +218,10 @@ contract MYieldToOneVaultWithFee4626 is ERC20 {
     }
 
     function maxWithdraw(address owner) public view virtual returns (uint256) {
-        return convertToAssets(balanceOf[owner]);
+        return convertToAssets(balanceOf(owner));
     }
 
     function maxRedeem(address owner) public view virtual returns (uint256) {
-        return balanceOf[owner];
+        return balanceOf(owner);
     }
 }

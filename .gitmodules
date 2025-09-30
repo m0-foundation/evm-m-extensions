@@ -16,6 +16,3 @@
 	path = lib/wrapped-m-token
 	url = https://github.com/m0-foundation/wrapped-m-token.git
 	branch = feat/swap-facility-support
-[submodule "lib/solmate"]
-	path = lib/solmate
-	url = https://github.com/transmissions11/solmate

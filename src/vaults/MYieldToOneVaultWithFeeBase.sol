@@ -1,12 +1,20 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: BUSL-1.1
 
-import { IMYieldToOne } from "../projects/yieldToOne/IMYieldToOne.sol";
-import { IERC20 } from "../../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { FixedPointMathLib } from "../../lib/solmate/src/utils/FixedPointMathLib.sol";
+pragma solidity 0.8.26;
+
+import {
+    IERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
+import {
+    Math
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/utils/math/Math.sol";
+
 import {
     OwnableUpgradeable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+
+import { IMYieldToOne } from "../projects/yieldToOne/IMYieldToOne.sol";
 
 interface IAsset is IMYieldToOne, IERC20 {
     function decimals() external view returns (uint8);
@@ -34,7 +42,7 @@ abstract contract MYieldToOneVaultWithFeeStorageLayout {
 }
 
 contract MYieldToOneVaultWithFeeBase is MYieldToOneVaultWithFeeStorageLayout, OwnableUpgradeable {
-    using FixedPointMathLib for uint256;
+    using Math for uint256;
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -145,7 +153,7 @@ contract MYieldToOneVaultWithFeeBase is MYieldToOneVaultWithFeeStorageLayout, Ow
 
         uint256 yieldToAdmin = (yield * $.fee) / MAX_FEE;
 
-        return yieldToAdmin.mulDivDown(_totalIssued(), totalAssets - yieldToAdmin);
+        return yieldToAdmin.mulDiv(_totalIssued(), totalAssets - yieldToAdmin, Math.Rounding.Floor);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -162,7 +170,8 @@ contract MYieldToOneVaultWithFeeBase is MYieldToOneVaultWithFeeStorageLayout, Ow
 
         uint256 supply = _totalIssued();
 
-        return supply == 0 ? shares : shares.mulDivDown(totalAssetsPlusYield, supply + adminYieldShares);
+        return
+            supply == 0 ? shares : shares.mulDiv(totalAssetsPlusYield, supply + adminYieldShares, Math.Rounding.Floor);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -176,13 +185,13 @@ contract MYieldToOneVaultWithFeeBase is MYieldToOneVaultWithFeeStorageLayout, Ow
     function convertToShares(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = _totalIssued(); // Saves an extra SLOAD if totalSupply is non-zero.
 
-        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+        return supply == 0 ? assets : assets.mulDiv(supply, totalAssets(), Math.Rounding.Floor);
     }
 
     function convertToAssets(uint256 shares) public view virtual returns (uint256) {
         uint256 supply = _totalIssued(); // Saves an extra SLOAD if totalSupply is non-zero.
 
-        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Floor);
     }
 
     function previewDeposit(uint256 assets) public view virtual returns (uint256) {
@@ -192,13 +201,13 @@ contract MYieldToOneVaultWithFeeBase is MYieldToOneVaultWithFeeStorageLayout, Ow
     function previewMint(uint256 shares) public view virtual returns (uint256) {
         uint256 supply = _totalIssued(); // Saves an extra SLOAD if totalSupply is non-zero.
 
-        return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+        return supply == 0 ? shares : shares.mulDiv(totalAssets(), supply, Math.Rounding.Ceil);
     }
 
     function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = _totalIssued(); // Saves an extra SLOAD if totalSupply is non-zero.
 
-        return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+        return supply == 0 ? assets : assets.mulDiv(supply, totalAssets(), Math.Rounding.Ceil);
     }
 
     function previewRedeem(uint256 shares) public view virtual returns (uint256) {
