@@ -93,7 +93,8 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
      * @param account The account to freeze.
      */
     function _freeze(FreezableStorageStruct storage $, address account) internal {
-        _revertIfFrozen($, account);
+        // Return early if the account is already frozen
+        if ($.isFrozen[account]) return;
 
         $.isFrozen[account] = true;
 
@@ -106,7 +107,8 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
      * @param account The account to unfreeze.
      */
     function _unfreeze(FreezableStorageStruct storage $, address account) internal {
-        _revertIfNotFrozen($, account);
+        // Return early if the account is not frozen
+        if (!$.isFrozen[account]) return;
 
         $.isFrozen[account] = false;
 
@@ -117,6 +119,7 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
 
     /**
      * @notice Internal function that reverts if an account is frozen.
+     * @dev Called by inheriting contracts to check if an account is frozen.
      * @param $ The storage location of the freezable contract.
      * @param account The account to check.
      */
@@ -126,6 +129,7 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
 
     /**
      * @notice Internal function that reverts if an account is frozen.
+     * @dev Called by inheriting contracts to check if an account is frozen.
      * @param account The account to check.
      */
     function _revertIfFrozen(address account) internal view {
@@ -134,6 +138,7 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
 
     /**
      * @notice Internal function that reverts if an account is not frozen.
+     * @dev Called by inheriting contracts to check if an account is not frozen.
      * @param $ The storage location of the freezable contract.
      * @param account The account to check.
      */
@@ -143,6 +148,7 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
 
     /**
      * @notice Internal function that reverts if an account is not frozen.
+     * @dev Called by inheriting contracts to check if an account is not frozen.
      * @param account The account to check.
      */
     function _revertIfNotFrozen(address account) internal view {

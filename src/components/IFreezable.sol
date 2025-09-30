@@ -26,13 +26,13 @@ interface IFreezable {
     /* ============ Errors ============ */
 
     /**
-     * @notice Emitted when a frozen account attempts to interact with the contract.
+     * @notice Emitted when an account is already frozen.
      * @param account The address of the frozen account.
      */
     error AccountFrozen(address account);
 
     /**
-     * @notice Emitted when trying to unfreeze a non-frozen account.
+     * @notice Emitted when an account is not frozen.
      * @param account The address of the account that is not frozen.
      */
     error AccountNotFrozen(address account);
@@ -45,7 +45,6 @@ interface IFreezable {
     /**
      * @notice Freezes an account.
      * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
-     * @dev SHOULD revert if the account is already frozen.
      * @param account The address of the account to freeze.
      */
     function freeze(address account) external;
@@ -53,7 +52,6 @@ interface IFreezable {
     /**
      * @notice Freezes multiple accounts.
      * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
-     * @dev SHOULD revert if any of the accounts are already frozen.
      * @param accounts The list of addresses to freeze.
      */
     function freezeAccounts(address[] calldata accounts) external;
@@ -61,7 +59,6 @@ interface IFreezable {
     /**
      * @notice Unfreezes an account.
      * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
-     * @dev SHOULD revert if the account is not frozen.
      * @param account The address of the account to unfreeze.
      */
     function unfreeze(address account) external;
@@ -69,7 +66,6 @@ interface IFreezable {
     /**
      * @notice Unfreezes multiple accounts.
      * @dev MUST only be callable by the FREEZE_MANAGER_ROLE.
-     * @dev SHOULD revert if any of the accounts are not frozen.
      * @param accounts The list of addresses to unfreeze.
      */
     function unfreezeAccounts(address[] calldata accounts) external;
