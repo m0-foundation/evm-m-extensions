@@ -35,6 +35,7 @@ contract Config {
     uint256 public constant ETHEREUM_CHAIN_ID = 1;
     uint256 public constant ARBITRUM_CHAIN_ID = 42161;
     uint256 public constant OPTIMISM_CHAIN_ID = 10;
+    uint256 public constant LINEA_CHAIN_ID = 59144;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -87,6 +88,15 @@ contract Config {
             config.registrar = REGISTRAR;
             config.uniswapV3Router = UNISWAP_ROUTER_OPTIMISM;
             config.admin = address(0);
+            return config;
+        }
+
+        if (chainId_ == LINEA_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = address(0);
+            config.registrar = REGISTRAR;
+            config.uniswapV3Router = address(0);
+            config.admin = address(0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB);
             return config;
         }
 

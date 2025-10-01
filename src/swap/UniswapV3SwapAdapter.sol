@@ -14,8 +14,7 @@ import {
     AccessControl
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 
-import { ReentrancyLock } from "../../lib/uniswap-v4-periphery/src/base/ReentrancyLock.sol";
-
+import { ReentrancyLock } from "./libs/ReentrancyLock.sol";
 import { IUniswapV3SwapAdapter } from "./interfaces/IUniswapV3SwapAdapter.sol";
 import { ISwapFacility } from "./interfaces/ISwapFacility.sol";
 import { IV3SwapRouter } from "./interfaces/uniswap/IV3SwapRouter.sol";
