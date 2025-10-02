@@ -1,7 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: BUSL-1.1
 
-import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
+pragma solidity 0.8.26;
 
 import { IMYieldToOne } from "../yieldToOne/IMYieldToOne.sol";
 
@@ -9,45 +8,72 @@ interface IMDualBackedYieldToOne is IMYieldToOne {
     /* ============ Events ============ */
 
     /**
-     * @notice Emitted when the secondary backing is replaced with M.
-     * @param  amount The amount of secondary token replaced.
+     * @notice Emitted when the secondary token is set.
+     * @param  token    Address of the secondary token.
+     * @param  decimals Number of decimals used by the secondary token.
      */
-    event SecondaryBackingReplaced(uint256 amount);
+    event SecondaryTokenSet(address token, uint8 decimals);
 
     /**
-     * @notice Emitted when a secondary token is wrapped for the extension.
-     * @param amount The amount of secondary token wrapped into the extension.
+     * @notice Emitted when the secondary token is swapped for M.
+     * @param  token  Address of the secondary token.
+     * @param  amount Amount of secondary token swapped.
      */
-    event SecondaryWrap(uint256 amount);
+    event SwappedSecondaryToken(address token, uint256 amount);
+
+    /**
+     * @notice Emitted when secondary token is wrapped for the extension.
+     * @param  token  Address of the secondary token.
+     * @param  amount Amount of secondary token wrapped into the extension.
+     */
+    event WrappedSecondaryToken(address token, uint256 amount);
 
     /* ============ Custom Errors ============ */
 
-    /// @notice Emitted if unwrap is called but there is not enough M to unwrap with.
-    error InsufficientMBacking();
+    /**
+     * @notice Emitted if `unwrap()` is called but there is not enough M to unwrap with.
+     * @param  amount     Amount of M to unwrap requested.
+     * @param  mAvailable Amount of M available.
+     */
+    error InsufficientMBacking(uint256 amount, uint256 mAvailable);
 
-    /// @notice Emitted zero address is passed for collateral manager on initialization
-    error ZeroCollateralManager();
+    /**
+     * @notice Emitted if the secondary backing token does not return a decimals value.
+     * @param asset Address of the secondary backing token.
+     */
+    error FailedToGetTokenDecimals(address asset);
 
-    /// @notice Emitted zero address is passed for secondary backer on initialization
-    error ZeroSecondaryBacker();
+    /// @notice Emitted when the secondary token is set to the zero address.
+    error ZeroSecondaryToken();
 
     /* ============ Interactive Functions ============ */
 
-    /// @notice Called from the SwapFacility in order to mint the extension with secondary tokens
-    /// @param recipient To whom the tokens will be minted
-    /// @param amount The amount of tokens to mint
-    function wrapSecondary(address recipient, uint256 amount) external;
+    /*
+     * @notice Allows a M holder to swap M for the secondary token.
+     * @dev    Only callable by the SwapFacility.
+     * @dev    `amount` must be formatted in the secondary token's decimals.
+     * @param  amount    Amount of secondary token to swap for M.
+     * @param  recipient Address that will receive the secondary token.
+     */
+    function swapSecondary(address recipient, uint256 amount) external;
 
-    /// @notice Allows the collateral manager to replace secondary backing with M.
-    /// @param amount the amount of secondary to take out and replace with same amount of M.
-    /// @param recipient To whom the secondary backing will be transferred out.
-    function replaceSecondary(address recipient, uint256 amount) external;
+    /*
+     * @notice Mint extension tokens by depositing secondary token.
+     * @dev    Only callable by the SwapFacility.
+     * @dev    `amount` must be formatted in the secondary token's decimals.
+     * @param  recipient Address that will receive the extension tokens.
+     * @param  amount    Amount of tokens to mint.
+     */
+    function wrapSecondary(address recipient, uint256 amount) external;
 
     /* ============ View/Pure Functions ============ */
 
-    /// @notice The total amount of secondary backing in the extension.
-    function secondarySupply() external view returns (uint256);
+    /// @notice Number of decimals used by the primary backing token (M).
+    function M_DECIMALS() external view returns (uint8);
 
-    /// @notice The IERC20 wrapped address of the secondary backing token.
-    function secondaryBacker() external view returns (address);
+    /// @notice Number of decimals used by the secondary backing token.
+    function secondaryDecimals() external view returns (uint8);
+
+    /// @notice Address of the secondary backing token.
+    function secondaryToken() external view returns (address);
 }

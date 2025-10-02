@@ -18,13 +18,7 @@ import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { SwapFacility } from "../../../src/swap/SwapFacility.sol";
 
-import {
-    MockM,
-    MockSecondaryBacker,
-    MockDualBackedMExtension,
-    MockMExtension,
-    MockRegistrar
-} from "../../utils/Mocks.sol";
+import { MockERC20, MockM, MockDualBackedMExtension, MockMExtension, MockRegistrar } from "../../utils/Mocks.sol";
 
 contract SwapFacilityV2 {
     function foo() external pure returns (uint256) {
@@ -43,7 +37,7 @@ contract SwapFacilityUnitTests is Test {
     MockMExtension public extensionB;
     MockDualBackedMExtension public extensionDualBacked;
 
-    MockSecondaryBacker public secondary;
+    MockERC20 public secondary;
 
     address public owner = makeAddr("owner");
     address public alice = makeAddr("alice");
@@ -52,7 +46,7 @@ contract SwapFacilityUnitTests is Test {
         mToken = new MockM();
         registrar = new MockRegistrar();
 
-        secondary = new MockSecondaryBacker();
+        secondary = new MockERC20("MockSecondaryToken", "MST", 6);
 
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployTransparentProxy(
@@ -255,14 +249,13 @@ contract SwapFacilityUnitTests is Test {
         swapFacility.swapInSecondary(address(extensionA), 1_000, alice);
     }
 
-    /* ============ replaceSecondary ============ */
+    /* ============ swapSecondary ============ */
 
-    function test_replaceSecondary() external {
+    function test_swapSecondary() external {
         uint256 amount = 1_000;
         mToken.setBalanceOf(alice, amount);
         extensionDualBacked.mint(alice, 1_000);
         secondary.mint(address(extensionDualBacked), amount);
-        extensionDualBacked.setSecondarySupply(1_000);
 
         vm.prank(alice);
         mToken.approve(address(swapFacility), amount);
@@ -274,18 +267,18 @@ contract SwapFacilityUnitTests is Test {
         emit ISwapFacility.ReplacedSecondaryBacker(address(extensionDualBacked), address(secondary), amount);
 
         vm.prank(alice);
-        swapFacility.replaceSecondary(address(extensionDualBacked), amount, alice);
+        swapFacility.swapSecondary(address(extensionDualBacked), amount, alice);
 
         assertEq(secondary.balanceOf(alice), 1_000);
         assertEq(mToken.balanceOf(address(extensionDualBacked)), 1_000);
         assertEq(extensionDualBacked.balanceOf(alice), amount);
     }
 
-    function test_replaceSecondary_nonSecondary() external {
+    function test_swapSecondary_nonSecondary() external {
         vm.expectRevert(abi.encodeWithSelector(ISwapFacility.NotDualBackedExtension.selector, address(extensionA)));
 
         vm.prank(alice);
-        swapFacility.replaceSecondary(address(extensionA), 1_000, alice);
+        swapFacility.swapSecondary(address(extensionA), 1_000, alice);
     }
 
     /* ============ setPermissionedExtension ============ */

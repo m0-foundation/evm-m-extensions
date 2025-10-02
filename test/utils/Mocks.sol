@@ -117,7 +117,7 @@ contract MockRegistrar {
     }
 }
 
-abstract contract MockERC20 {
+contract MockERC20 {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
@@ -170,6 +170,10 @@ abstract contract MockERC20 {
         return true;
     }
 
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
+
     function _mint(address to, uint256 amount) internal virtual {
         totalSupply += amount;
 
@@ -180,6 +184,10 @@ abstract contract MockERC20 {
         emit Transfer(address(0), to, amount);
     }
 
+    function burn(address from, uint256 amount) public {
+        _burn(from, amount);
+    }
+
     function _burn(address from, uint256 amount) internal virtual {
         balanceOf[from] -= amount;
 
@@ -188,14 +196,6 @@ abstract contract MockERC20 {
         }
 
         emit Transfer(from, address(0), amount);
-    }
-}
-
-contract MockSecondaryBacker is MockERC20 {
-    constructor() MockERC20("MockSecondaryBacker", "MSB", 6) {}
-
-    function mint(address account, uint256 amount) public {
-        _mint(account, amount);
     }
 }
 
@@ -225,41 +225,25 @@ contract MockMExtension is MockERC20 {
 }
 
 contract MockDualBackedMExtension is MockMExtension {
-    address public _secondaryBacker;
-    uint256 public secondarySupply;
+    address public secondaryToken;
 
     constructor(
         address mToken_,
         address swapFacility_,
-        address secondaryBacker_
+        address secondaryToken_
     ) MockMExtension(mToken_, swapFacility_) {
-        _secondaryBacker = secondaryBacker_;
+        secondaryToken = secondaryToken_;
     }
 
     function wrapSecondary(address recipient, uint256 amount) external {
-        IERC20(_secondaryBacker).transferFrom(msg.sender, address(this), amount);
-        secondarySupply += amount;
+        IERC20(secondaryToken).transferFrom(msg.sender, address(this), amount);
         _mint(recipient, amount);
     }
 
-    function replaceSecondary(address recipient, uint256 amount) external {
+    function swapSecondary(address recipient, uint256 amount) external {
         mToken.transferFrom(msg.sender, address(this), amount);
 
-        IERC20(_secondaryBacker).transfer(recipient, amount);
-
-        secondarySupply -= amount;
-    }
-
-    function secondaryBacker() public view returns (address) {
-        return _secondaryBacker;
-    }
-
-    function setSecondarySupply(uint256 supply) public {
-        secondarySupply = supply;
-    }
-
-    function mint(address account, uint256 amount) public {
-        _mint(account, amount);
+        IERC20(secondaryToken).transfer(recipient, amount);
     }
 }
 
