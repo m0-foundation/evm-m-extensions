@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 
+import { IMDualBackedYieldToOne } from "../projects/dualBackedYieldToOne/IMDualBackedYieldToOne.sol";
+
 import { IMTokenLike } from "../interfaces/IMTokenLike.sol";
 import { IMExtension } from "../interfaces/IMExtension.sol";
 
@@ -181,6 +183,16 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
     }
 
     /// @inheritdoc ISwapFacility
+    function swapInSecondary(address extensionOut, uint256 amount, address recipient) external isNotLocked {
+        _swapInSecondary(extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapSecondary(address extension, uint256 amount, address recipient) external isNotLocked {
+        _swapSecondary(extension, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
     function setPermissionedExtension(address extension, bool permissioned) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (extension == address(0)) revert ZeroExtension();
 
@@ -278,6 +290,41 @@ contract SwapFacility is ISwapFacility, ReentrancyLock, SwapFacilityUpgradeableS
         IMExtension(extensionOut).wrap(recipient, amount);
 
         emit SwappedInM(extensionOut, amount, recipient);
+    }
+
+    function _swapInSecondary(address extensionOut, uint256 amount, address receiver) private {
+        _revertIfNotApprovedExtension(extensionOut);
+
+        address secondaryToken;
+
+        try IMDualBackedYieldToOne(extensionOut).secondaryToken() returns (address secondary) {
+            secondaryToken = secondary;
+        } catch {
+            revert NotDualBackedExtension(extensionOut);
+        }
+
+        IERC20(secondaryToken).transferFrom(msg.sender, address(this), amount);
+        IERC20(secondaryToken).approve(extensionOut, amount);
+        IMDualBackedYieldToOne(extensionOut).wrapSecondary(receiver, amount);
+
+        emit SwappedInSecondaryBacker(extensionOut, secondaryToken, amount, receiver);
+    }
+
+    function _swapSecondary(address extension, uint256 amount, address recipient) private {
+        address secondaryToken;
+
+        try IMDualBackedYieldToOne(extension).secondaryToken() returns (address secondary) {
+            secondaryToken = secondary;
+        } catch {
+            revert NotDualBackedExtension(extension);
+        }
+
+        IERC20(mToken).transferFrom(msg.sender, address(this), amount);
+        IERC20(mToken).approve(extension, amount);
+        IMDualBackedYieldToOne(extension).swapSecondary(recipient, amount);
+
+        // TODO: event here AND in the extension?
+        emit ReplacedSecondaryBacker(extension, secondaryToken, amount);
     }
 
     /**
