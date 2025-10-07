@@ -59,7 +59,9 @@ contract ScriptBase is Script, Config {
     function _writeDeployment(uint256 chainId_, string memory key_, address value_) internal {
         string memory root = "";
 
-        Deployments memory deployments_ = _readDeployment(chainId_);
+        Deployments memory deployments_ = vm.isFile(_deployOutputPath(chainId_))
+            ? _readDeployment(chainId_)
+            : Deployments(new address[](0), new string[](0), address(0), address(0));
 
         if (
             keccak256(bytes(key_)) != keccak256(bytes("swapAdapter")) &&
@@ -90,7 +92,7 @@ contract ScriptBase is Script, Config {
 
     function _readDeployment(uint256 chainId_) internal view returns (Deployments memory) {
         if (!vm.isFile(_deployOutputPath(chainId_))) {
-            revert("Deployment artifacts not found");
+            return Deployments(new address[](0), new string[](0), address(0), address(0));
         }
 
         bytes memory data = vm.parseJson(vm.readFile(_deployOutputPath(chainId_)));
