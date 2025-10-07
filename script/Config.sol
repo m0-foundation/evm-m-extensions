@@ -35,90 +35,70 @@ contract Config {
     uint256 public constant ETHEREUM_CHAIN_ID = 1;
     uint256 public constant ARBITRUM_CHAIN_ID = 42161;
     uint256 public constant OPTIMISM_CHAIN_ID = 10;
+    uint256 public constant HYPER_EVM_CHAIN_ID = 999;
+    uint256 public constant PLUME_CHAIN_ID = 98866;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
     uint256 public constant SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
     uint256 public constant OPTIMISM_SEPOLIA_CHAIN_ID = 11155420;
+    uint256 public constant APECHAIN_TESTNET_CHAIN_ID = 33111;
+
+    address public constant DEPLOYER = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
 
     address public constant M_TOKEN = 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
     address public constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address public constant REGISTRAR = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
-    address public constant UNISWAP_ROUTER_ETHEREUM = address(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
-    address public constant UNISWAP_ROUTER_ARBITRUM = address(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
-    address public constant UNISWAP_ROUTER_OPTIMISM = address(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
+    address public constant UNISWAP_ROUTER_ETHEREUM = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    address public constant UNISWAP_ROUTER_SEPOLIA = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
 
-    address public constant UNISWAP_ROUTER_SEPOLIA = address(0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E);
-    address public constant UNISWAP_ROUTER_ARBITRUM_SEPOLIA = address(0x101F443B4d1b059569D643917553c771E1b9663E);
+    address public constant WHITELISTED_TOKEN_0_ETHEREUM = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // USDC
+    address public constant WHITELISTED_TOKEN_1_ETHEREUM = 0xdAC17F958D2ee523a2206206994597C13D831ec7; // USDT
 
-    address public constant WHITELISTED_TOKEN_0_ETHEREUM = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC
-    address public constant WHITELISTED_TOKEN_1_ETHEREUM = address(0xdAC17F958D2ee523a2206206994597C13D831ec7); // USDT
-
-    address public constant WHITELISTED_TOKEN_0_SEPOLIA = address(0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238); // USDC on Sepolia
-    address public constant WHITELISTED_TOKEN_1_SEPOLIA = address(0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0); // USDT on Sepolia
+    address public constant WHITELISTED_TOKEN_0_SEPOLIA = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // USDC on Sepolia
+    address public constant WHITELISTED_TOKEN_1_SEPOLIA = 0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0; // USDT on Sepolia
 
     function _getDeployConfig(uint256 chainId_) internal pure returns (DeployConfig memory) {
         DeployConfig memory config;
 
         // Mainnet configs
         if (chainId_ == ETHEREUM_CHAIN_ID) {
-            config.mToken = M_TOKEN;
-            config.wrappedMToken = WRAPPED_M_TOKEN;
-            config.registrar = REGISTRAR;
+            config = _getDefaultDeployConfig();
+            // SwapAdapter is deployed only on Ethereum
             config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
-            config.admin = address(0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB);
             return config;
         }
-
-        if (chainId_ == ARBITRUM_CHAIN_ID) {
-            config.mToken = M_TOKEN;
-            config.wrappedMToken = WRAPPED_M_TOKEN;
-            config.registrar = REGISTRAR;
-            config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM;
-            config.admin = address(0);
-            return config;
-        }
-
-        if (chainId_ == OPTIMISM_CHAIN_ID) {
-            config.mToken = M_TOKEN;
-            config.wrappedMToken = WRAPPED_M_TOKEN;
-            config.registrar = REGISTRAR;
-            config.uniswapV3Router = UNISWAP_ROUTER_OPTIMISM;
-            config.admin = address(0);
-            return config;
-        }
+        if (chainId_ == ARBITRUM_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == OPTIMISM_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == HYPER_EVM_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == PLUME_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs
-        if (chainId_ == LOCAL_CHAIN_ID) {
-            config.mToken = M_TOKEN;
-            config.wrappedMToken = WRAPPED_M_TOKEN;
-            config.registrar = REGISTRAR;
-            config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
-            config.admin = address(0);
-            return config;
-        }
-
+        if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == SEPOLIA_CHAIN_ID) {
-            config.mToken = M_TOKEN;
-            config.wrappedMToken = WRAPPED_M_TOKEN;
-            config.registrar = REGISTRAR;
+            config = _getDefaultDeployConfig();
             config.uniswapV3Router = UNISWAP_ROUTER_SEPOLIA;
-            config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
             return config;
         }
-
-        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) {
-            config.mToken = M_TOKEN;
-            config.wrappedMToken = WRAPPED_M_TOKEN;
-            config.registrar = REGISTRAR;
-            config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM_SEPOLIA;
-            config.admin = address(0);
-            return config;
-        }
+        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == OPTIMISM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == APECHAIN_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
 
         revert UnsupportedChain(chainId_);
+    }
+
+    /// @dev Default config for EVM chains
+    function _getDefaultDeployConfig() internal pure returns (DeployConfig memory) {
+        return
+            DeployConfig({
+                mToken: M_TOKEN,
+                wrappedMToken: WRAPPED_M_TOKEN,
+                registrar: REGISTRAR,
+                uniswapV3Router: address(0),
+                admin: DEPLOYER
+            });
     }
 
     function _getExtensionConfig(
