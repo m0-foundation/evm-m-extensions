@@ -140,7 +140,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /// @inheritdoc IMYieldToOne
-    function yield() public view returns (uint256) {
+    function yield() public view virtual returns (uint256) {
         unchecked {
             uint256 balance_ = _mBalanceOf(address(this));
             uint256 totalSupply_ = totalSupply();

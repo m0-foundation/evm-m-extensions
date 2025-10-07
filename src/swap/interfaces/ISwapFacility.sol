@@ -49,6 +49,28 @@ interface ISwapFacility {
      */
     event PermissionedMSwapperSet(address indexed extension, address indexed swapper, bool allowed);
 
+    /**
+     * @notice Emitted when $M token is swapped for $M Extension.
+     * @param extensionOut      The address of the output dual backed $M Extension.
+     * @param secondaryToken    The address of the secondary backing asset.
+     * @param amount            The amount swapped.
+     * @param recipient         The address to receive the output $M Extension token.
+     */
+    event SwappedInSecondaryBacker(
+        address indexed extensionOut,
+        address indexed secondaryToken,
+        uint256 amount,
+        address indexed recipient
+    );
+
+    /**
+     * @notice Emitted when $M token is swapped for $M Extension.
+     * @param extension         The address of the dual backed $M Extension.
+     * @param secondaryToken    The address secondary backing asset.
+     * @param amount            The amount replaced.
+     */
+    event ReplacedSecondaryBacker(address indexed extension, address indexed secondaryToken, uint256 amount);
+
     /* ============ Custom Errors ============ */
 
     /// @notice Thrown in the constructor if $M Token is 0x0.
@@ -74,6 +96,9 @@ interface ISwapFacility {
 
     /// @notice Thrown in `swap` function if the extension is permissioned.
     error PermissionedExtension(address extension);
+
+    /// @notice Thrown when trying to interact with an $M Dual Backed extension that is not dual backed
+    error NotDualBackedExtension(address extension);
 
     /* ============ Interactive Functions ============ */
 
@@ -169,6 +194,22 @@ interface ISwapFacility {
         uint256 deadline,
         bytes calldata signature
     ) external;
+
+    /**
+     * @notice Swaps in a secondary token to mint an $M Extension.
+     * @param extensionOut The address of the $M Extension to swap into.
+     * @param amount       The amount of the secondary token to swap.
+     * @param recipient    The address to receive the minted $M Extension tokens.
+     */
+    function swapInSecondary(address extensionOut, uint256 amount, address recipient) external;
+
+    /**
+     * @notice Replaces secondary backing with $M for a dual backed extension
+     * @param extension The address of the dual backed $M Extension to replace secondary backing in.
+     * @param amount    The amount of M to replace with
+     * @param recipient The address to receive the replaced secondary backing tokens.
+     */
+    function swapSecondary(address extension, uint256 amount, address recipient) external;
 
     /**
      * @notice Swaps $M Extension to $M token.

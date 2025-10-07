@@ -6,6 +6,10 @@ import {
     Initializable
 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
+import {
+    IERC20
+} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 contract MockM {
@@ -113,7 +117,7 @@ contract MockRegistrar {
     }
 }
 
-abstract contract MockERC20 {
+contract MockERC20 {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
@@ -166,6 +170,10 @@ abstract contract MockERC20 {
         return true;
     }
 
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
+
     function _mint(address to, uint256 amount) internal virtual {
         totalSupply += amount;
 
@@ -174,6 +182,10 @@ abstract contract MockERC20 {
         }
 
         emit Transfer(address(0), to, amount);
+    }
+
+    function burn(address from, uint256 amount) public {
+        _burn(from, amount);
     }
 
     function _burn(address from, uint256 amount) internal virtual {
@@ -209,6 +221,29 @@ contract MockMExtension is MockERC20 {
     function unwrap(address recipient, uint256 amount) external {
         _burn(msg.sender, amount);
         mToken.transfer(msg.sender, amount);
+    }
+}
+
+contract MockDualBackedMExtension is MockMExtension {
+    address public secondaryToken;
+
+    constructor(
+        address mToken_,
+        address swapFacility_,
+        address secondaryToken_
+    ) MockMExtension(mToken_, swapFacility_) {
+        secondaryToken = secondaryToken_;
+    }
+
+    function wrapSecondary(address recipient, uint256 amount) external {
+        IERC20(secondaryToken).transferFrom(msg.sender, address(this), amount);
+        _mint(recipient, amount);
+    }
+
+    function swapSecondary(address recipient, uint256 amount) external {
+        mToken.transferFrom(msg.sender, address(this), amount);
+
+        IERC20(secondaryToken).transfer(recipient, amount);
     }
 }
 
