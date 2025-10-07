@@ -260,7 +260,7 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedYieldToOneS
     /**
      * @dev    Converts secondary token amount to extension token amount (6 decimals).
      * @param  amount Amount in secondary token decimals.
-     * @return The normalized amount in 6 decimals.
+     * @return The normalized amount in 6 decimals, capped at max uint256 if overflow would occur.
      */
     function _toExtensionAmount(uint256 amount) internal view returns (uint256) {
         uint8 secondaryDecimals_ = secondaryDecimals();
@@ -268,9 +268,14 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedYieldToOneS
         if (secondaryDecimals_ == M_DECIMALS) {
             return amount;
         } else if (secondaryDecimals_ < M_DECIMALS) {
-            unchecked {
-                return amount * 10 ** (M_DECIMALS - secondaryDecimals_);
+            uint256 scaleFactor_ = 10 ** (M_DECIMALS - secondaryDecimals_);
+
+            // NOTE: Cap to max amount if scaling would overflow
+            if (amount > type(uint256).max / scaleFactor_) {
+                return type(uint256).max;
             }
+
+            return amount * scaleFactor_;
         } else {
             unchecked {
                 return amount / 10 ** (secondaryDecimals_ - M_DECIMALS);
@@ -281,7 +286,7 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedYieldToOneS
     /**
      * @dev    Converts extension token amount to secondary token amount.
      * @param  amount Amount in extension token decimals.
-     * @return Amount in secondary token decimals.
+     * @return Amount in secondary token decimals, capped at max uint256 if overflow would occur.
      */
     function _toSecondaryAmount(uint256 amount) internal view returns (uint256) {
         uint8 secondaryDecimals_ = secondaryDecimals();
@@ -289,9 +294,14 @@ contract MDualBackedYieldToOne is IMDualBackedYieldToOne, MDualBackedYieldToOneS
         if (secondaryDecimals_ == M_DECIMALS) {
             return amount;
         } else if (secondaryDecimals_ > M_DECIMALS) {
-            unchecked {
-                return amount * 10 ** (secondaryDecimals_ - M_DECIMALS);
+            uint256 scaleFactor_ = 10 ** (secondaryDecimals_ - M_DECIMALS);
+
+            // NOTE: Cap to max amount if scaling would overflow
+            if (amount > type(uint256).max / scaleFactor_) {
+                return type(uint256).max;
             }
+
+            return amount * scaleFactor_;
         } else {
             unchecked {
                 return amount / 10 ** (M_DECIMALS - secondaryDecimals_);

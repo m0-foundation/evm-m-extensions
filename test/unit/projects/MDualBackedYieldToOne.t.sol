@@ -19,10 +19,7 @@ import { MDualBackedYieldToOne } from "../../../src/projects/dualBackedYieldToOn
 import { IMDualBackedYieldToOne } from "../../../src/projects/dualBackedYieldToOne/IMDualBackedYieldToOne.sol";
 import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
 
-import { IFreezable } from "../../../src/components/IFreezable.sol";
 import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
-
-import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
 import { MDualBackedYieldToOneHarness } from "../../harness/MDualBackedYieldToOneHarness.sol";
 
@@ -241,6 +238,64 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
         assertEq(secondary18Decimals.balanceOf(alice), secondaryAmount);
     }
 
+    function testFuzz_swapSecondary(uint240 amount) public {
+        mToken.setBalanceOf(address(swapFacility), amount);
+        assertEq(mToken.balanceOf(address(swapFacility)), amount);
+
+        secondary.mint(address(mDualBackedToOne), amount);
+        assertEq(secondary.balanceOf(address(mDualBackedToOne)), amount);
+
+        if (amount == 0) {
+            vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
+        } else {
+            vm.expectEmit();
+            emit IERC20.Transfer(address(mDualBackedToOne), alice, amount);
+
+            vm.expectEmit();
+            emit IMDualBackedYieldToOne.SwappedSecondaryToken(address(secondary), amount);
+        }
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne.swapSecondary(alice, amount);
+
+        assertEq(mDualBackedToOne.balanceOf(alice), 0);
+        assertEq(mToken.balanceOf(alice), 0);
+
+        assertEq(secondary.balanceOf(address(mDualBackedToOne)), 0);
+        assertEq(secondary.balanceOf(alice), amount);
+    }
+
+    function testFuzz_swapSecondary_diffDecimals(uint240 amount) public {
+        uint256 extensionAmount = mDualBackedToOne18Decimals.toExtensionAmount(amount);
+        uint256 expectedTransferAmount = mDualBackedToOne18Decimals.toSecondaryAmount(extensionAmount);
+
+        mToken.setBalanceOf(address(swapFacility), extensionAmount);
+        assertEq(mToken.balanceOf(address(swapFacility)), extensionAmount);
+
+        secondary18Decimals.mint(address(mDualBackedToOne18Decimals), amount);
+        assertEq(secondary18Decimals.balanceOf(address(mDualBackedToOne18Decimals)), amount);
+
+        if (amount == 0) {
+            vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
+        } else {
+            vm.expectEmit();
+            emit IERC20.Transfer(address(mDualBackedToOne18Decimals), alice, expectedTransferAmount);
+
+            vm.expectEmit();
+            emit IMDualBackedYieldToOne.SwappedSecondaryToken(address(secondary18Decimals), amount);
+        }
+
+        vm.prank(address(swapFacility));
+        mDualBackedToOne18Decimals.swapSecondary(alice, amount);
+
+        assertEq(mDualBackedToOne18Decimals.balanceOf(alice), 0);
+        assertEq(mToken.balanceOf(alice), 0);
+
+        assertEq(secondary18Decimals.balanceOf(address(mDualBackedToOne18Decimals)), amount - expectedTransferAmount);
+
+        assertEq(secondary18Decimals.balanceOf(alice), expectedTransferAmount);
+    }
+
     /* ============ wrapSecondary ============ */
 
     function test_wrapSecondary_onlySwapFacility() external {
@@ -384,32 +439,31 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
 
     /* ============ yield ============ */
 
-    function testFuzz_yield(uint256 mBalance, uint256 secondarySupply, uint256 totalSupply) external {
-        mBalance = bound(mBalance, 0, type(uint128).max);
-        secondarySupply = bound(secondarySupply, 0, type(uint128).max);
-        totalSupply = bound(totalSupply, 0, mBalance + secondarySupply);
+    function testFuzz_yield(uint240 mBalance, uint240 secondarySupply) external {
+        uint256 totalSupply = uint256(mBalance) + secondarySupply;
+        totalSupply = bound(totalSupply, 0, totalSupply > type(uint240).max ? type(uint240).max : totalSupply);
 
         mToken.setBalanceOf(address(mDualBackedToOne), mBalance);
         secondary.mint(address(mDualBackedToOne), secondarySupply);
         mDualBackedToOne.setTotalSupply(totalSupply);
 
-        uint256 mBacking = totalSupply < secondarySupply ? 0 : totalSupply - secondarySupply;
+        uint240 mBacking = totalSupply < secondarySupply ? 0 : uint240(totalSupply) - secondarySupply;
 
         assertEq(mDualBackedToOne.yield(), mBalance > mBacking ? mBalance - mBacking : 0);
     }
 
-    function testFuzz_yield_diffDecimals(uint256 mBalance, uint256 secondarySupply, uint256 totalSupply) external {
-        mBalance = bound(mBalance, 0, type(uint128).max);
-        secondarySupply = bound(secondarySupply, 0, type(uint128).max);
-        totalSupply = bound(totalSupply, 0, mBalance + secondarySupply);
+    function testFuzz_yield_diffDecimals(uint240 mBalance, uint240 secondarySupply) external {
+        uint256 totalSupply = uint256(mBalance) + secondarySupply;
+        totalSupply = bound(totalSupply, 0, totalSupply > type(uint240).max ? type(uint240).max : totalSupply);
 
         mToken.setBalanceOf(address(mDualBackedToOne18Decimals), mBalance);
         secondary18Decimals.mint(address(mDualBackedToOne18Decimals), secondarySupply);
         mDualBackedToOne18Decimals.setTotalSupply(totalSupply);
 
-        if (secondarySupply > 0) secondarySupply = mDualBackedToOne18Decimals.toExtensionAmount(secondarySupply);
+        if (secondarySupply > 0)
+            secondarySupply = uint240(mDualBackedToOne18Decimals.toExtensionAmount(secondarySupply));
 
-        uint256 mBacking = totalSupply < secondarySupply ? 0 : totalSupply - secondarySupply;
+        uint240 mBacking = totalSupply < secondarySupply ? 0 : uint240(totalSupply) - secondarySupply;
 
         assertEq(mDualBackedToOne18Decimals.yield(), mBalance > mBacking ? mBalance - mBacking : 0);
     }
@@ -466,35 +520,41 @@ contract MYDualBackedYieldToOneUnitTests is BaseUnitTest {
 
     /* ============ _toExtensionAmount ============ */
 
-    function testFuzz_toExtensionAmount_lessDecimals(uint256 amount) external {
-        amount = bound(amount, 0, type(uint128).max);
-        assertEq(mDualBackedToOne4Decimals.toExtensionAmount(amount), amount * 100);
+    function testFuzz_toExtensionAmount_lessDecimals(uint240 amount) external {
+        uint256 scaleFactor = 10 ** 2;
+
+        if (uint256(amount) > type(uint256).max / scaleFactor) {
+            assertEq(mDualBackedToOne4Decimals.toExtensionAmount(amount), type(uint256).max);
+        } else {
+            assertEq(mDualBackedToOne4Decimals.toExtensionAmount(amount), uint256(amount) * scaleFactor);
+        }
     }
 
-    function testFuzz_toExtensionAmount_sameDecimals(uint256 amount) external {
-        amount = bound(amount, 0, type(uint128).max);
+    function testFuzz_toExtensionAmount_sameDecimals(uint240 amount) external {
         assertEq(mDualBackedToOne.toExtensionAmount(amount), amount);
     }
 
-    function testFuzz_toExtensionAmount_moreDecimals(uint256 amount) external {
-        amount = bound(amount, 0, type(uint128).max);
-        assertEq(mDualBackedToOne18Decimals.toExtensionAmount(amount), amount / 1e12);
+    function testFuzz_toExtensionAmount_moreDecimals(uint240 amount) external {
+        assertEq(mDualBackedToOne18Decimals.toExtensionAmount(amount), uint256(amount) / 10 ** 12);
     }
 
     /* ============ _toSecondaryAmount ============ */
 
-    function testFuzz_toSecondaryAmount_lessDecimals(uint256 amount) external {
-        amount = bound(amount, 0, type(uint128).max);
-        assertEq(mDualBackedToOne4Decimals.toSecondaryAmount(amount), amount / 100);
+    function testFuzz_toSecondaryAmount_lessDecimals(uint240 amount) external {
+        assertEq(mDualBackedToOne4Decimals.toSecondaryAmount(amount), uint256(amount) / 10 ** 2);
     }
 
-    function testFuzz_toSecondaryAmount_sameDecimals(uint256 amount) external {
-        amount = bound(amount, 0, type(uint128).max);
+    function testFuzz_toSecondaryAmount_sameDecimals(uint240 amount) external {
         assertEq(mDualBackedToOne.toSecondaryAmount(amount), amount);
     }
 
-    function testFuzz_toSecondaryAmount_moreDecimals(uint256 amount) external {
-        amount = bound(amount, 0, type(uint128).max);
-        assertEq(mDualBackedToOne18Decimals.toSecondaryAmount(amount), amount * 1e12);
+    function testFuzz_toSecondaryAmount_moreDecimals(uint240 amount) external {
+        uint256 scaleFactor = 10 ** 12;
+
+        if (uint256(amount) > type(uint256).max / scaleFactor) {
+            assertEq(mDualBackedToOne18Decimals.toSecondaryAmount(amount), type(uint256).max);
+        } else {
+            assertEq(mDualBackedToOne18Decimals.toSecondaryAmount(amount), uint256(amount) * scaleFactor);
+        }
     }
 }
