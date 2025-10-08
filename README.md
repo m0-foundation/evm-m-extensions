@@ -38,6 +38,23 @@ Each extension inherits from the abstract `MExtension` base contract, which defi
   - Uses an external `rateOracle` for fee calculation
   - Inherits most behavior from `MYieldFee`
 
+### Vendor Extensions
+
+#### USDZ (by Braid)
+
+This extension is derived from [MYieldToOne](https://github.com/m0-foundation/evm-m-extensions/blob/main/src/projects/yieldToOne/MYieldToOne.sol), an upgradeable ERC20 token contract designed to wrap $M into a non-rebasing token, where all accrued $M yield is claimable by a single designated recipient.
+
+Additionally, **USDZ** includes the following functionality:
+
+- Pausing logic.
+- Ability to force transfers from frozen accounts.
+- Restrictions on who can trigger claiming of yield for `claimRecipient`.
+
+This extension was originally built for [MetaMask (mUSD)](https://github.com/m0-foundation/mUSD) and has been adapted for Braid's USDZ stablecoin.
+
+It was audited by four different firms whose audits can be found here:
+https://github.com/m0-foundation/mUSD/tree/main/audits
+
 ---
 
 ### 🔁 SwapFacility
