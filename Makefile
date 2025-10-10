@@ -42,7 +42,7 @@ sizes:
 clean:
 	forge clean && rm -rf ./abi && rm -rf ./bytecode && rm -rf ./types
 
-
+# Deploy tasks
 deploy-yield-to-one:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
 	forge script script/deploy/DeployYieldToOne.s.sol:DeployYieldToOne \
@@ -99,6 +99,23 @@ deploy-swap-facility-mainnet: deploy-swap-facility
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: deploy-swap-facility
 
+deploy-usdz:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	forge script script/deploy/vendor/braid/DeployUSDZ.s.sol:DeployUSDZ \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive --broadcast --verify
+
+deploy-usdz-local: RPC_URL=$(LOCALHOST_RPC_URL)
+deploy-usdz-local: deploy-usdz
+
+deploy-usdz-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-usdz-mainnet: deploy-usdz
+
+deploy-usdz-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+deploy-usdz-arbitrum: deploy-usdz
+
+# Upgrade tasks
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
