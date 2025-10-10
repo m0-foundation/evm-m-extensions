@@ -84,3 +84,15 @@ A helper contract that enables token swaps via Uniswap V3.
 - Token whitelist is controlled via `DEFAULT_ADMIN_ROLE`
 
 ---
+
+### 🚀 Deployments
+
+#### Mainnet
+
+##### USDZ (by Braid)
+
+| Network  | Implementation                                                                                                        | Proxy                                                                                                                 | Proxy Admin                                                                                                           |
+| -------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| --       |
+| Ethereum | [0xf3ae57bDFdcC6732b5Ab076d6B0A7c8a858C14b8](https://etherscan.io/address/0xf3ae57bDFdcC6732b5Ab076d6B0A7c8a858C14b8) | [0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56](https://etherscan.io/address/0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56) | [0x97F4fB0619390cBa95802d780B74EcD88fc9C08F](https://etherscan.io/address/0x97F4fB0619390cBa95802d780B74EcD88fc9C08F) |
+| Arbitrum | [0xD87c75a92db19Fe334FE7812890f893449Ff1bdA](https://arbiscan.io/address/0xD87c75a92db19Fe334FE7812890f893449Ff1bdA)  | [0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56](https://arbiscan.io/address/0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56)  | [0x97F4fB0619390cBa95802d780B74EcD88fc9C08F](https://arbiscan.io/address/0x97F4fB0619390cBa95802d780B74EcD88fc9C08F)  |
