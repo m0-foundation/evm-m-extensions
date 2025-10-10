@@ -101,15 +101,19 @@ deploy-swap-facility-sepolia: deploy-swap-facility
 
 deploy-usdz:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
-	forge script script/deploy/DeployUSDZ.s.sol:DeployUSDZ \
+	forge script script/deploy/vendor/braid/DeployUSDZ.s.sol:DeployUSDZ \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-usdz-local: RPC_URL=$(LOCALHOST_RPC_URL)
+deploy-usdz-local: deploy-usdz
 
 deploy-usdz-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-usdz-mainnet: deploy-usdz
+
 deploy-usdz-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+deploy-usdz-arbitrum: deploy-usdz
 
 # Upgrade tasks
 upgrade-swap-facility:
