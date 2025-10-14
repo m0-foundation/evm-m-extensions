@@ -108,6 +108,9 @@ deploy-swap-facility-hyper-evm: deploy-swap-facility
 deploy-swap-facility-plume: RPC_URL=$(PLUME_RPC_URL)
 deploy-swap-facility-plume: deploy-swap-facility
 
+deploy-swap-facility-bnb: RPC_URL=$(BNB_RPC_URL)
+deploy-swap-facility-bnb: deploy-swap-facility
+
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: deploy-swap-facility
 
@@ -119,6 +122,9 @@ deploy-swap-facility-optimism-sepolia: deploy-swap-facility
 
 deploy-swap-facility-apechain-testnet: RPC_URL=$(APECHAIN_TESTNET_RPC)
 deploy-swap-facility-apechain-testnet: deploy-swap-facility
+
+deploy-swap-facility-bnb-testnet: RPC_URL=$(BNB_TESTNET_RPC_URL)
+deploy-swap-facility-bnb-testnet: deploy-swap-facility
 
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
