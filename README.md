@@ -38,6 +38,12 @@ Each extension inherits from the abstract `MExtension` base contract, which defi
   - Uses an external `rateOracle` for fee calculation
   - Inherits most behavior from `MYieldFee`
 
+### Vendor Extensions
+
+#### 0fns (by Dfns)
+
+This extension is derived from [MEarnerManager](https://github.com/m0-foundation/evm-m-extensions/blob/main/src/projects/earnerManager/MEarnerManager.sol).
+
 ---
 
 ### 🔁 SwapFacility
