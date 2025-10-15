@@ -38,6 +38,23 @@ Each extension inherits from the abstract `MExtension` base contract, which defi
   - Uses an external `rateOracle` for fee calculation
   - Inherits most behavior from `MYieldFee`
 
+### Vendor Extensions
+
+#### USDZ (by Braid)
+
+This extension is derived from [MYieldToOne](https://github.com/m0-foundation/evm-m-extensions/blob/main/src/projects/yieldToOne/MYieldToOne.sol), an upgradeable ERC20 token contract designed to wrap $M into a non-rebasing token, where all accrued $M yield is claimable by a single designated recipient.
+
+Additionally, **USDZ** includes the following functionality:
+
+- Pausing logic.
+- Ability to force transfers from frozen accounts.
+- Restrictions on who can trigger claiming of yield for `claimRecipient`.
+
+This extension was originally built for [MetaMask (mUSD)](https://github.com/m0-foundation/mUSD) and has been adapted for Braid's USDZ stablecoin.
+
+It was audited by four different firms whose audits can be found here:
+https://github.com/m0-foundation/mUSD/tree/main/audits
+
 ---
 
 ### 🔁 SwapFacility
@@ -67,3 +84,15 @@ A helper contract that enables token swaps via Uniswap V3.
 - Token whitelist is controlled via `DEFAULT_ADMIN_ROLE`
 
 ---
+
+### 🚀 Deployments
+
+#### Mainnet
+
+##### USDZ (by Braid)
+
+| Network  | Implementation                                                                                                        | Proxy                                                                                                                 | Proxy Admin                                                                                                           |
+| -------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| --       |
+| Ethereum | [0xf3ae57bDFdcC6732b5Ab076d6B0A7c8a858C14b8](https://etherscan.io/address/0xf3ae57bDFdcC6732b5Ab076d6B0A7c8a858C14b8) | [0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56](https://etherscan.io/address/0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56) | [0x97F4fB0619390cBa95802d780B74EcD88fc9C08F](https://etherscan.io/address/0x97F4fB0619390cBa95802d780B74EcD88fc9C08F) |
+| Arbitrum | [0xD87c75a92db19Fe334FE7812890f893449Ff1bdA](https://arbiscan.io/address/0xD87c75a92db19Fe334FE7812890f893449Ff1bdA)  | [0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56](https://arbiscan.io/address/0xA4B6DF229AEe22b4252dc578FEB2720E8A2C4A56)  | [0x97F4fB0619390cBa95802d780B74EcD88fc9C08F](https://arbiscan.io/address/0x97F4fB0619390cBa95802d780B74EcD88fc9C08F)  |
