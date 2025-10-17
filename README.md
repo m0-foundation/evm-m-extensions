@@ -73,3 +73,14 @@ A helper contract that enables token swaps via Uniswap V3.
 - Token whitelist is controlled via `DEFAULT_ADMIN_ROLE`
 
 ---
+
+### 🚀 Deployments
+
+#### Mainnet
+
+##### 0fns (by Dfns)
+
+| Network  | Implementation                                                                                                        | Proxy                                                                                                                 | Proxy Admin                                                                                                           |
+| -------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| --       |
+| Ethereum | [0x4ffbc316CF29e8Eb39cBf819Cfd3D5F5b34033Ef](https://etherscan.io/address/0x4ffbc316CF29e8Eb39cBf819Cfd3D5F5b34033Ef) | [0x64df20A1814a6DD0F3d6f0A14073c47214c53f58](https://etherscan.io/address/0x64df20A1814a6DD0F3d6f0A14073c47214c53f58) | [0x1cb69655Ad51c8A12f5dCFd552c26473bD74D73A](https://etherscan.io/address/0x1cb69655Ad51c8A12f5dCFd552c26473bD74D73A) |
