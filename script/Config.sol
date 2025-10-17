@@ -49,9 +49,11 @@ contract Config {
 
     address public constant DEPLOYER = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
 
+    /// @dev Same address across all supported mainnet and testnets networks.
     address public constant M_TOKEN = 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
     address public constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address public constant REGISTRAR = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
+    address public constant SWAP_FACILITY = 0xB6807116b3B1B321a390594e31ECD6e0076f6278;
 
     address public constant UNISWAP_ROUTER_ETHEREUM = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
     address public constant UNISWAP_ROUTER_SEPOLIA = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
