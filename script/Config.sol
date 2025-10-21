@@ -53,14 +53,9 @@ contract Config {
     address public constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address public constant REGISTRAR = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
-    address public constant UNISWAP_ROUTER_ETHEREUM = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    // Same address across all supported chains
+    address public constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
     address public constant UNISWAP_ROUTER_SEPOLIA = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
-
-    address public constant WHITELISTED_TOKEN_0_ETHEREUM = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // USDC
-    address public constant WHITELISTED_TOKEN_1_ETHEREUM = 0xdAC17F958D2ee523a2206206994597C13D831ec7; // USDT
-
-    address public constant WHITELISTED_TOKEN_0_SEPOLIA = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // USDC on Sepolia
-    address public constant WHITELISTED_TOKEN_1_SEPOLIA = 0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0; // USDT on Sepolia
 
     function _getDeployConfig(uint256 chainId_) internal pure returns (DeployConfig memory) {
         DeployConfig memory config;
@@ -68,11 +63,16 @@ contract Config {
         // Mainnet configs
         if (chainId_ == ETHEREUM_CHAIN_ID) {
             config = _getDefaultDeployConfig();
-            // SwapAdapter is deployed only on Ethereum
-            config.uniswapV3Router = UNISWAP_ROUTER_ETHEREUM;
+            config.uniswapV3Router = UNISWAP_V3_ROUTER;
             return config;
         }
-        if (chainId_ == ARBITRUM_CHAIN_ID) return _getDefaultDeployConfig();
+
+        if (chainId_ == ARBITRUM_CHAIN_ID) {
+            config = _getDefaultDeployConfig();
+            config.uniswapV3Router = UNISWAP_V3_ROUTER;
+            return config;
+        }
+
         if (chainId_ == OPTIMISM_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == HYPER_EVM_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == PLUME_CHAIN_ID) return _getDefaultDeployConfig();
@@ -142,14 +142,19 @@ contract Config {
     function _getWhitelistedTokens(uint256 chainId_) internal pure returns (address[] memory whitelistedTokens) {
         if (chainId_ == ETHEREUM_CHAIN_ID) {
             whitelistedTokens = new address[](2);
-            whitelistedTokens[0] = WHITELISTED_TOKEN_0_ETHEREUM;
-            whitelistedTokens[1] = WHITELISTED_TOKEN_1_ETHEREUM;
+            whitelistedTokens[0] = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // USDC
+            whitelistedTokens[1] = 0xdAC17F958D2ee523a2206206994597C13D831ec7; // USDT
+        }
+
+        if (chainId_ == ARBITRUM_CHAIN_ID) {
+            whitelistedTokens = new address[](1);
+            whitelistedTokens[0] = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831; // USDC
         }
 
         if (chainId_ == SEPOLIA_CHAIN_ID) {
             whitelistedTokens = new address[](2);
-            whitelistedTokens[0] = WHITELISTED_TOKEN_0_SEPOLIA;
-            whitelistedTokens[1] = WHITELISTED_TOKEN_1_SEPOLIA;
+            whitelistedTokens[0] = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // USDC
+            whitelistedTokens[1] = 0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0; // USDT
         }
 
         return whitelistedTokens;
