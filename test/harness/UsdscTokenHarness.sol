@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.26;
 
-import { UsdrToken } from "../../src/UsdrToken.sol";
+import { UsdscToken } from "../../src/UsdscToken.sol";
 
-contract UsdrTokenHarness is UsdrToken {
+contract UsdscTokenHarness is UsdscToken {
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address mToken, address swapFacility) UsdrToken(mToken, swapFacility) {}
+    constructor(address mToken, address swapFacility) UsdscToken(mToken, swapFacility) {}
 
     function initialize(
         string memory name,

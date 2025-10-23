@@ -11,13 +11,12 @@ import { ScriptBase } from "../ScriptBase.s.sol";
 
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
-import { UsdrToken } from "../../src/UsdrToken.sol";
+import { UsdscToken } from "../../src/UsdscToken.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 import { console } from "forge-std/console.sol";
-
 
 contract DeployBase is DeployHelpers, ScriptBase {
     Options public deployOptions;
@@ -120,7 +119,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
         proxyAdmin = extensionConfig.admin;
     }
 
-    function _deployUsdr(
+    function _deployUsdsc(
         address deployer
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
@@ -134,14 +133,14 @@ contract DeployBase is DeployHelpers, ScriptBase {
         console.log("Extension symbol:", extensionConfig.symbol);
         console.log("Extension admin:", extensionConfig.admin);
         console.log("Extension yield recipient:", extensionConfig.yieldRecipient);
+        // address swapFacilityMinato = 0x34F141dACB2DeF72D2196a473C585830af8B4004; // placeholder
 
-        implementation = address(new UsdrToken(config.mToken, _getSwapFacility()));
-
+        implementation = address(new UsdscToken(config.mToken, _getSwapFacility()));
         proxy = _deployCreate3TransparentProxy(
             implementation,
             extensionConfig.admin,
             abi.encodeWithSelector(
-                UsdrToken.initialize.selector,
+                UsdscToken.initialize.selector,
                 extensionConfig.name,
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
@@ -149,7 +148,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.freezeManager,
                 extensionConfig.yieldRecipientManager
             ),
-            _computeSalt(deployer, "USDRtestnet")
+            _computeSalt(deployer, "Startale USD Testnet")
         );
 
         proxyAdmin = extensionConfig.admin;

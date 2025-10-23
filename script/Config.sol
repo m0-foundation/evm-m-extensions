@@ -41,10 +41,12 @@ contract Config {
     uint256 public constant SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
     uint256 public constant OPTIMISM_SEPOLIA_CHAIN_ID = 11155420;
+    uint256 public constant SONEIUM_MINATO_CHAIN_ID = 1946;
 
     address public constant M_TOKEN = 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
     address public constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
     address public constant REGISTRAR = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
+    address public constant REGISTRAR_SONEIUM_MINATO = 0x09ddB94dE27d26Fa426276bF33932594B257F9B6;
 
     address public constant UNISWAP_ROUTER_ETHEREUM = address(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
     address public constant UNISWAP_ROUTER_ARBITRUM = address(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45);
@@ -52,6 +54,8 @@ contract Config {
 
     address public constant UNISWAP_ROUTER_SEPOLIA = address(0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E);
     address public constant UNISWAP_ROUTER_ARBITRUM_SEPOLIA = address(0x101F443B4d1b059569D643917553c771E1b9663E);
+    // Does not exist on Minato
+    address public constant UNISWAP_ROUTER_SONEIUM_MINATO = address(0x0000000000000000000000000000000000000000);
 
     address public constant WHITELISTED_TOKEN_0_ETHEREUM = address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC
     address public constant WHITELISTED_TOKEN_1_ETHEREUM = address(0xdAC17F958D2ee523a2206206994597C13D831ec7); // USDT
@@ -118,6 +122,15 @@ contract Config {
             return config;
         }
 
+        if (chainId_ == SONEIUM_MINATO_CHAIN_ID) {
+            config.mToken = M_TOKEN;
+            config.wrappedMToken = WRAPPED_M_TOKEN; // does not matter
+            config.registrar = REGISTRAR_SONEIUM_MINATO;
+            config.uniswapV3Router = UNISWAP_ROUTER_SONEIUM_MINATO; // does not exist on Minato
+            config.admin = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
+            return config;
+        }
+
         revert UnsupportedChain(chainId_);
     }
 
@@ -125,7 +138,7 @@ contract Config {
         uint256 chainId_,
         string memory name
     ) internal pure returns (DeployExtensionConfig memory config) {
-        if (chainId_ == SEPOLIA_CHAIN_ID) {
+        if (chainId_ == SEPOLIA_CHAIN_ID || chainId_ == SONEIUM_MINATO_CHAIN_ID) {
             if (keccak256(bytes(name)) == keccak256(bytes("MEarnerManagerTestnet"))) {
                 config.name = name;
                 config.symbol = "MEM";
@@ -153,9 +166,10 @@ contract Config {
                 config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
             }
 
-            if (keccak256(bytes(name)) == keccak256(bytes("USDRtestnet"))) {
+            if (keccak256(bytes(name)) == keccak256(bytes("Startale USD Testnet"))) {
                 config.name = name;
-                config.symbol = "USDR";
+                config.symbol = "USDSC";
+                // TODO: review as admin for proxy admin..?
                 config.admin = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
                 config.yieldRecipient = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;
                 config.freezeManager = 0x77001610a4fD68548B80E49226c02a99c3b6Ae14;

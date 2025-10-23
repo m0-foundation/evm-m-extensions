@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import { MYieldToOne } from "./projects/yieldToOne/MYieldToOne.sol";
 
-contract UsdrToken is MYieldToOne {
+contract UsdscToken is MYieldToOne {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address mToken_, address swapFacility_) MYieldToOne(mToken_, swapFacility_) {
         _disableInitializers();
@@ -17,13 +17,13 @@ contract UsdrToken is MYieldToOne {
         address freezeManager,
         address yieldRecipientManager
     ) public virtual override initializer {
-        MYieldToOne.initialize(
-            name,                    // "USDR token"
-            symbol,                  // "USDR"
-            yieldRecipient_,         // Treasury wallet address
-            admin,                   // Admin multisig address
-            freezeManager,           // Freeze manager address (can be same as admin)
-            yieldRecipientManager    // Yield recipient manager address
+        __MYieldToOne_init(
+            name, // "Startale USD"
+            symbol, // "USDSC"
+            yieldRecipient_, // Treasury wallet address
+            admin, // Admin multisig address
+            freezeManager, // Freeze manager address (can be same as admin)
+            yieldRecipientManager // Yield recipient manager address
         );
     }
 }

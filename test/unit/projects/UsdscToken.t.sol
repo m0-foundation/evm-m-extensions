@@ -17,22 +17,22 @@ import { IFreezable } from "../../../src/components/IFreezable.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
-import { UsdrTokenHarness } from "../../harness/UsdrTokenHarness.sol";
+import { UsdscTokenHarness } from "../../harness/UsdscTokenHarness.sol";
 
 import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
 
 contract MYieldToOneUnitTests is BaseUnitTest {
-    UsdrTokenHarness public mYieldToOne;
+    UsdscTokenHarness public mYieldToOne;
 
-    string public constant NAME = "USDR testnet";
-    string public constant SYMBOL = "USDR";
+    string public constant NAME = "Startale USD Testnet";
+    string public constant SYMBOL = "USDSC";
 
     function setUp() public override {
         super.setUp();
 
-        mYieldToOne = UsdrTokenHarness(
+        mYieldToOne = UsdscTokenHarness(
             UnsafeUpgrades.deployTransparentProxy(
-                address(new UsdrTokenHarness(address(mToken), address(swapFacility))),
+                address(new UsdscTokenHarness(address(mToken), address(swapFacility))),
                 admin,
                 abi.encodeWithSelector(
                     MYieldToOne.initialize.selector,
@@ -65,10 +65,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroYieldRecipient() external {
-        address implementation = address(new UsdrTokenHarness(address(mToken), address(swapFacility)));
+        address implementation = address(new UsdscTokenHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipient.selector);
-        UsdrTokenHarness(
+        UsdscTokenHarness(
             UnsafeUpgrades.deployTransparentProxy(
                 implementation,
                 admin,
@@ -86,10 +86,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroAdmin() external {
-        address implementation = address(new UsdrTokenHarness(address(mToken), address(swapFacility)));
+        address implementation = address(new UsdscTokenHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldToOne.ZeroAdmin.selector);
-        UsdrTokenHarness(
+        UsdscTokenHarness(
             UnsafeUpgrades.deployTransparentProxy(
                 implementation,
                 admin,
@@ -107,10 +107,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_initialize_zeroYieldRecipientManager() external {
-        address implementation = address(new UsdrTokenHarness(address(mToken), address(swapFacility)));
+        address implementation = address(new UsdscTokenHarness(address(mToken), address(swapFacility)));
 
         vm.expectRevert(IMYieldToOne.ZeroYieldRecipientManager.selector);
-        UsdrTokenHarness(
+        UsdscTokenHarness(
             UnsafeUpgrades.deployTransparentProxy(
                 implementation,
                 admin,
