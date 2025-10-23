@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
