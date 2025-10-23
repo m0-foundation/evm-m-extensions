@@ -31,7 +31,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
     address constant USER = 0x77BAB32F75996de8075eBA62aEa7b1205cf7E004;
 
     function setUp() public override {
-        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_757_587);
+        vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 23_641_266);
         super.setUp();
 
         super.setUp();
