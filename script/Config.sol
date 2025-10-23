@@ -37,7 +37,7 @@ contract Config {
     uint256 public constant OPTIMISM_CHAIN_ID = 10;
     uint256 public constant HYPER_EVM_CHAIN_ID = 999;
     uint256 public constant PLUME_CHAIN_ID = 98866;
-    uint256 public constant BNB_CHAIN_ID = 56;
+    uint256 public constant BSC_CHAIN_ID = 56;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -45,7 +45,8 @@ contract Config {
     uint256 public constant ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
     uint256 public constant OPTIMISM_SEPOLIA_CHAIN_ID = 11155420;
     uint256 public constant APECHAIN_TESTNET_CHAIN_ID = 33111;
-    uint256 public constant BNB_TESTNET_CHAIN_ID = 97;
+    uint256 public constant BSC_TESTNET_CHAIN_ID = 97;
+    uint256 public constant SONEIUM_TESTNET_CHAIN_ID = 1946;
 
     address public constant DEPLOYER = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
 
@@ -76,7 +77,7 @@ contract Config {
         if (chainId_ == OPTIMISM_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == HYPER_EVM_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == PLUME_CHAIN_ID) return _getDefaultDeployConfig();
-        if (chainId_ == BNB_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == BSC_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs
         if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
@@ -88,7 +89,13 @@ contract Config {
         if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == OPTIMISM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == APECHAIN_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
-        if (chainId_ == BNB_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == BSC_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == SONEIUM_TESTNET_CHAIN_ID) {
+            config = _getDefaultDeployConfig();
+            config.registrar = 0x09ddB94dE27d26Fa426276bF33932594B257F9B6;
+            config.uniswapV3Router = UNISWAP_V3_ROUTER;
+            return config;
+        }
 
         revert UnsupportedChain(chainId_);
     }

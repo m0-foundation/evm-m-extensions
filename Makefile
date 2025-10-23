@@ -97,40 +97,71 @@ deploy-swap-facility:
 	forge script script/deploy/DeploySwapFacility.s.sol:DeploySwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --broadcast --slow --non-interactive -v \
+	--verify --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+
+deploy-swap-facility-local: RPC_URL=$(LOCALHOST_RPC_URL)
+deploy-swap-facility-local: deploy-swap-facility
 
 deploy-swap-facility-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-swap-facility-mainnet: VERIFIER="etherscan"
+deploy-swap-facility-mainnet: VERIFIER_URL=${MAINNET_VERIFIER_URL}
 deploy-swap-facility-mainnet: deploy-swap-facility
 
 deploy-swap-facility-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+deploy-swap-facility-arbitrum: VERIFIER="etherscan"
+deploy-swap-facility-arbitrum: VERIFIER_URL=${ARBITRUM_VERIFIER_URL}
 deploy-swap-facility-arbitrum: deploy-swap-facility
 
 deploy-swap-facility-optimism: RPC_URL=$(OPTIMISM_RPC_URL)
+deploy-swap-facility-optimism: VERIFIER="etherscan"
+deploy-swap-facility-optimism: VERIFIER_URL=${OPTIMISM_VERIFIER_URL}
 deploy-swap-facility-optimism: deploy-swap-facility
 
-deploy-swap-facility-hyper-evm: RPC_URL=$(HYPER_EVM_RPC_URL)
-deploy-swap-facility-hyper-evm: deploy-swap-facility
+deploy-swap-facility-hyperliquid: RPC_URL=$(HYPERLIQUID_RPC_URL)
+deploy-swap-facility-hyperliquid: VERIFIER="etherscan"
+deploy-swap-facility-hyperliquid: VERIFIER_URL=${HYPERLIQUID_VERIFIER_URL}
+deploy-swap-facility-hyperliquid: deploy-swap-facility
 
 deploy-swap-facility-plume: RPC_URL=$(PLUME_RPC_URL)
+deploy-swap-facility-plume: VERIFIER="blockscout"
+deploy-swap-facility-plume: VERIFIER_URL=${PLUME_VERIFIER_URL}
 deploy-swap-facility-plume: deploy-swap-facility
 
-deploy-swap-facility-bnb: RPC_URL=$(BNB_RPC_URL)
-deploy-swap-facility-bnb: deploy-swap-facility
+deploy-swap-facility-bsc: RPC_URL=$(BSC_RPC_URL)
+deploy-swap-facility-bsc: VERIFIER="etherscan"
+deploy-swap-facility-bsc: VERIFIER_URL=${BSC_VERIFIER_URL}
+deploy-swap-facility-bsc: deploy-swap-facility
 
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+deploy-swap-facility-sepolia: VERIFIER="etherscan"
+deploy-swap-facility-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
 deploy-swap-facility-sepolia: deploy-swap-facility
 
 deploy-swap-facility-arbitrum-sepolia: RPC_URL=$(ARBITRUM_SEPOLIA_RPC_URL)
+deploy-swap-facility-arbitrum-sepolia: VERIFIER="etherscan"
+deploy-swap-facility-arbitrum-sepolia: VERIFIER_URL=${ARBITRUM_SEPOLIA_VERIFIER_URL}
 deploy-swap-facility-arbitrum-sepolia: deploy-swap-facility
 
 deploy-swap-facility-optimism-sepolia: RPC_URL=$(OPTIMISM_SEPOLIA_RPC_URL)
+deploy-swap-facility-optimism-sepolia: VERIFIER="etherscan"
+deploy-swap-facility-optimism-sepolia: VERIFIER_URL=${OPTIMISM_SEPOLIA_VERIFIER_URL}
 deploy-swap-facility-optimism-sepolia: deploy-swap-facility
 
-deploy-swap-facility-apechain-testnet: RPC_URL=$(APECHAIN_TESTNET_RPC)
+deploy-swap-facility-apechain-testnet: RPC_URL=$(APECHAIN_TESTNET_RPC_URL)
+deploy-swap-facility-apechain-testnet: VERIFIER="etherscan"
+deploy-swap-facility-apechain-testnet: VERIFIER_URL=${APECHAIN_TESTNET_VERIFIER_URL}
 deploy-swap-facility-apechain-testnet: deploy-swap-facility
 
-deploy-swap-facility-bnb-testnet: RPC_URL=$(BNB_TESTNET_RPC_URL)
-deploy-swap-facility-bnb-testnet: deploy-swap-facility
+deploy-swap-facility-bsc-testnet: RPC_URL=$(BSC_TESTNET_RPC_URL)
+deploy-swap-facility-bsc-testnet: VERIFIER="etherscan"
+deploy-swap-facility-bsc-testnet: VERIFIER_URL=${BSC_TESTNET_VERIFIER_URL}
+deploy-swap-facility-bsc-testnet: deploy-swap-facility
+
+deploy-swap-facility-soneium-testnet: RPC_URL=$(SONEIUM_TESTNET_RPC_URL)
+deploy-swap-facility-soneium-testnet: VERIFIER="blockscout"
+deploy-swap-facility-soneium-testnet: VERIFIER_URL=${SONEIUM_TESTNET_VERIFIER_URL}
+deploy-swap-facility-soneium-testnet: deploy-swap-facility
 
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
