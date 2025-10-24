@@ -20,6 +20,7 @@ import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 import { MExtensionHarness } from "../harness/MExtensionHarness.sol";
+import { MDualBackedYieldToOneHarness } from "../harness/MDualBackedYieldToOneHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
@@ -83,6 +84,7 @@ contract BaseIntegrationTest is Helpers, Test {
     address[] public accounts = [alice, bob, carol, charlie, david];
 
     MExtensionHarness public mExtension;
+    MDualBackedYieldToOneHarness public mDualBackedYieldToOne;
     MYieldToOneHarness public mYieldToOne;
     MYieldFeeHarness public mYieldFee;
     MEarnerManager public mEarnerManager;
