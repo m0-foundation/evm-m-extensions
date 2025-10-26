@@ -133,6 +133,11 @@ deploy-swap-facility-bsc: VERIFIER="etherscan"
 deploy-swap-facility-bsc: VERIFIER_URL=${BSC_VERIFIER_URL}
 deploy-swap-facility-bsc: deploy-swap-facility
 
+deploy-swap-facility-mantra: RPC_URL=$(MANTRA_RPC_URL)
+deploy-swap-facility-mantra: VERIFIER="blockscout"
+deploy-swap-facility-mantra: VERIFIER_URL=${MANTRA_VERIFIER_URL}
+deploy-swap-facility-mantra: deploy-swap-facility
+
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: VERIFIER="etherscan"
 deploy-swap-facility-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}

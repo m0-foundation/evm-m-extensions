@@ -38,6 +38,7 @@ contract Config {
     uint256 public constant HYPER_EVM_CHAIN_ID = 999;
     uint256 public constant PLUME_CHAIN_ID = 98866;
     uint256 public constant BSC_CHAIN_ID = 56;
+    uint256 public constant MANTRA_CHAIN_ID = 5888;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -78,6 +79,7 @@ contract Config {
         if (chainId_ == HYPER_EVM_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == PLUME_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BSC_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == MANTRA_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs
         if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
