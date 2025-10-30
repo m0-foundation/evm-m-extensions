@@ -105,7 +105,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IMYieldToOne
-    function claimYield() public returns (uint256) {
+    function claimYield() public virtual returns (uint256) {
         _beforeClaimYield();
 
         uint256 yield_ = yield();
