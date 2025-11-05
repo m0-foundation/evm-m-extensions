@@ -49,6 +49,7 @@ arbitrum = "${ARBITRUM_RPC_URL}"
 hyperliquid = "${HYPERLIQUID_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 plume = "${PLUME_RPC_URL}"
+base = "${BASE_RPC_URL}"
 
 sepolia = "${SEPOLIA_RPC_URL}"
 arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
@@ -56,6 +57,7 @@ bsc_testnet = "${BSC_TESTNET_RPC_URL}"
 curtis = "${APECHAIN_TESTNET_RPC_URL}"
 optimism_sepolia = "${OPTIMISM_SEPOLIA_RPC_URL}"
 soneium_minato_testnet = "${SONEIUM_TESTNET_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 
 etherscan_api_key = "${ETHERSCAN_API_KEY}"
 
@@ -65,11 +67,13 @@ arbitrum = { key = "${ETHERSCAN_API_KEY}", url = "${ARBITRUM_VERIFIER_URL}" }
 bsc = { key = "${ETHERSCAN_API_KEY}", url = "${BSC_VERIFIER_URL}" }
 hyperliquid = { key = "${ETHERSCAN_API_KEY}", url = "${HYPERLIQUID_VERIFIER_URL}" }
 optimism = { key = "${ETHERSCAN_API_KEY}", url = "${OPTIMISM_VERIFIER_URL}" }
+base = { key = "${ETHERSCAN_API_KEY}", url = "${BASE_VERIFIER_URL}" }
 
 sepolia = { key = "${ETHERSCAN_API_KEY}", url = "${SEPOLIA_VERIFIER_URL}" }
 arbitrum_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "${ARBITRUM_SEPOLIA_VERIFIER_URL}" }
 bsc_testnet = { key = "${ETHERSCAN_API_KEY}", url = "${BSC_TESTNET_VERIFIER_URL}" }
 curtis = { key = "${ETHERSCAN_API_KEY}", url = "${APECHAIN_TESTNET_VERIFIER_URL}" }
 optimism_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "${OPTIMISM_SEPOLIA_VERIFIER_URL}" }
+base_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "${BASE_SEPOLIA_VERIFIER_URL}" }
 
 # See more config options at https://github.com/foundry-rs/foundry/tree/master/crates/config
