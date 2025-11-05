@@ -39,6 +39,7 @@ contract Config {
     uint256 public constant PLUME_CHAIN_ID = 98866;
     uint256 public constant BSC_CHAIN_ID = 56;
     uint256 public constant MANTRA_CHAIN_ID = 5888;
+    uint256 public constant BASE_CHAIN_ID = 8453;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -48,6 +49,7 @@ contract Config {
     uint256 public constant APECHAIN_TESTNET_CHAIN_ID = 33111;
     uint256 public constant BSC_TESTNET_CHAIN_ID = 97;
     uint256 public constant SONEIUM_TESTNET_CHAIN_ID = 1946;
+    uint256 public constant BASE_SEPOLIA_CHAIN_ID = 84532;
 
     address public constant DEPLOYER = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
 
@@ -80,6 +82,7 @@ contract Config {
         if (chainId_ == PLUME_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BSC_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == MANTRA_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == BASE_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs
         if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
@@ -92,6 +95,7 @@ contract Config {
         if (chainId_ == OPTIMISM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == APECHAIN_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BSC_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == BASE_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == SONEIUM_TESTNET_CHAIN_ID) {
             config = _getDefaultDeployConfig();
             config.registrar = 0x09ddB94dE27d26Fa426276bF33932594B257F9B6;

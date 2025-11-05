@@ -168,6 +168,16 @@ deploy-swap-facility-soneium-testnet: VERIFIER="blockscout"
 deploy-swap-facility-soneium-testnet: VERIFIER_URL=${SONEIUM_TESTNET_VERIFIER_URL}
 deploy-swap-facility-soneium-testnet: deploy-swap-facility
 
+deploy-swap-facility-base-sepolia: RPC_URL=$(BASE_SEPOLIA_RPC_URL)
+deploy-swap-facility-base-sepolia: VERIFIER="etherscan"
+deploy-swap-facility-base-sepolia: VERIFIER_URL=${BASE_SEPOLIA_VERIFIER_URL}
+deploy-swap-facility-base-sepolia: deploy-swap-facility
+
+deploy-swap-facility-base: RPC_URL=$(BASE_RPC_URL)
+deploy-swap-facility-base: VERIFIER="etherscan"
+deploy-swap-facility-base: VERIFIER_URL=${BASE_VERIFIER_URL}
+deploy-swap-facility-base: deploy-swap-facility
+
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
