@@ -78,27 +78,39 @@ deploy-swap-adapter:
 	forge script script/deploy/DeploySwapAdapter.s.sol:DeploySwapAdapter \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive \
+	--broadcast --verify --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
 
 deploy-swap-adapter-local: RPC_URL=$(LOCALHOST_RPC_URL)
 deploy-swap-adapter-local: deploy-swap-adapter
 
 deploy-swap-adapter-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-swap-adapter-mainnet: VERIFIER="etherscan"
+deploy-swap-adapter-mainnet: VERIFIER_URL=${MAINNET_VERIFIER_URL}
 deploy-swap-adapter-mainnet: deploy-swap-adapter
 
 deploy-swap-adapter-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+deploy-swap-adapter-arbitrum: VERIFIER="etherscan"
+deploy-swap-adapter-arbitrum: VERIFIER_URL=${ARBITRUM_VERIFIER_URL}
 deploy-swap-adapter-arbitrum: deploy-swap-adapter
 
 deploy-swap-adapter-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+deploy-swap-adapter-sepolia: VERIFIER="etherscan"
+deploy-swap-adapter-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
 deploy-swap-adapter-sepolia: deploy-swap-adapter
+
+deploy-swap-adapter-soneium: RPC_URL=$(SONEIUM_RPC_URL)
+deploy-swap-adapter-soneium: VERIFIER="blockscout"
+deploy-swap-adapter-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
+deploy-swap-adapter-soneium: deploy-swap-adapter
 
 deploy-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeploySwapFacility.s.sol:DeploySwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --broadcast --slow --non-interactive -v \
-	--verify --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+	--skip test --slow --non-interactive -v \
+	--broadcast --verify --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
 
 deploy-swap-facility-local: RPC_URL=$(LOCALHOST_RPC_URL)
 deploy-swap-facility-local: deploy-swap-facility
@@ -177,6 +189,11 @@ deploy-swap-facility-base: RPC_URL=$(BASE_RPC_URL)
 deploy-swap-facility-base: VERIFIER="etherscan"
 deploy-swap-facility-base: VERIFIER_URL=${BASE_VERIFIER_URL}
 deploy-swap-facility-base: deploy-swap-facility
+
+deploy-swap-facility-soneium: RPC_URL=$(SONEIUM_RPC_URL)
+deploy-swap-facility-soneium: VERIFIER="blockscout"
+deploy-swap-facility-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
+deploy-swap-facility-soneium: deploy-swap-facility
 
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
