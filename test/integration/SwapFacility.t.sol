@@ -9,19 +9,24 @@ import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
 import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
-import { IFreezable } from "../../src/components/IFreezable.sol";
+import { IFreezable } from "../../src/components/freezable/IFreezable.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
+// import { MDualBackedYieldToOneHarness } from "../harness/MDualBackedYieldToOneHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
+import { JMIExtensionHarness } from "../harness/JMIExtensionHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
 contract SwapFacilityIntegrationTest is BaseIntegrationTest {
     // Holds USDC, USDT and wM
     address constant USER = 0x77BAB32F75996de8075eBA62aEa7b1205cf7E004;
+    address constant DAI_USER = 0x73781209F3B0f195D0D3fA9D6b95bB61c54c1ca6;
+    address constant USDC_USER = 0x2d4d2A025b10C09BDbd794B4FCe4F7ea8C7d7bB4;
 
     function setUp() public override {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_751_329);
@@ -63,8 +68,35 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
             )
         );
 
+        jmiExtension = JMIExtensionHarness(
+            Upgrades.deployTransparentProxy(
+                "JMIExtensionHarness.sol:JMIExtensionHarness",
+                admin,
+                abi.encodeWithSelector(
+                    JMIExtensionHarness.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    yieldRecipient,
+                    admin,
+                    assetCapManager,
+                    freezeManager,
+                    pauser,
+                    yieldRecipientManager
+                ),
+                mExtensionDeployOptions
+            )
+        );
+
         _addToList(EARNERS_LIST, address(mYieldToOne));
         _addToList(EARNERS_LIST, address(mYieldFee));
+        _addToList(EARNERS_LIST, address(jmiExtension));
+
+        vm.startPrank(assetCapManager);
+
+        jmiExtension.setAssetCap(USDC, 1_000_000_000e6); // 1B USDC cap
+        jmiExtension.setAssetCap(DAI, 1_000_000_000e18); // 1B DAI cap
+
+        vm.stopPrank();
 
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, USER);
@@ -85,13 +117,15 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         // WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
     }
 
+    /* ============ swap ============ */
+
     function test_swap_mYieldToOne_to_wrappedM() public {
         uint256 amount = 1_000_000;
         uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
 
@@ -110,7 +144,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
 
@@ -142,7 +176,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
 
@@ -169,7 +203,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         vm.startPrank(USER);
 
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
 
@@ -205,7 +239,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         // Swap $M to mYieldToOne
         vm.startPrank(alice);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, alice);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
         assertEq(IERC20(WRAPPED_M).balanceOf(alice), 0);
@@ -227,6 +261,8 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), 0);
     }
 
+    /* ============ swapInM ============ */
+
     function test_swapInM() public {
         uint256 amount = 1_000_000;
 
@@ -234,7 +270,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
     }
@@ -246,7 +282,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(WRAPPED_M, amount, USER);
+        swapFacility.swap(address(mToken), WRAPPED_M, amount, USER);
 
         assertApproxEqAbs(wrappedM.balanceOf(USER) - wrappedMBalanceBefore, amount, 2); // WrappedM V1 rounding error
     }
@@ -267,7 +303,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
     }
@@ -291,7 +327,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         );
 
         vm.prank(alice);
-        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+        swapFacility.swapWithPermit(address(mToken), address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
@@ -315,24 +351,33 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         );
 
         vm.prank(alice);
-        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
+        swapFacility.swapWithPermit(
+            address(mToken),
+            address(mYieldToOne),
+            amount,
+            alice,
+            block.timestamp,
+            abi.encodePacked(r, s, v)
+        );
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
+
+    /* ============ swapOutM ============ */
 
     function test_swapOutM() public {
         uint256 amount = 1_000_000;
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
 
         uint256 mBalanceBefore = IERC20(address(mToken)).balanceOf(USER);
 
         mYieldToOne.approve(address(swapFacility), amount);
-        swapFacility.swapOutM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mYieldToOne), address(mToken), amount, USER);
 
         uint256 mBalanceAfter = IERC20(address(mToken)).balanceOf(USER);
 
@@ -350,7 +395,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         vm.startPrank(USER);
 
         wrappedM.approve(address(swapFacility), amount);
-        swapFacility.swapOutM(address(wrappedM), amount, USER);
+        swapFacility.swap(address(wrappedM), address(mToken), amount, USER);
 
         uint256 mBalanceAfter = IERC20(address(mToken)).balanceOf(USER);
 
@@ -371,14 +416,14 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
 
         assertEq(mYieldToOne.balanceOf(USER), amount);
 
         uint256 mBalanceBefore = IERC20(address(mToken)).balanceOf(USER);
 
         mYieldToOne.approve(address(swapFacility), amount);
-        swapFacility.swapOutM(address(mYieldToOne), amount, USER);
+        swapFacility.swap(address(mYieldToOne), address(mToken), amount, USER);
 
         uint256 mBalanceAfter = IERC20(address(mToken)).balanceOf(USER);
 
@@ -396,7 +441,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         // Swap $M to mYieldToOne
         vm.startPrank(alice);
         IERC20(address(mToken)).approve(address(swapFacility), amount);
-        swapFacility.swapInM(address(mYieldToOne), amount, alice);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
         assertEq(IERC20(address(mToken)).balanceOf(alice), 0);
@@ -412,9 +457,486 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         );
 
         // Swap mYieldToOne to M
-        swapFacility.swapOutMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+        swapFacility.swapWithPermit(address(mYieldToOne), address(mToken), amount, alice, block.timestamp, v, r, s);
 
         assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
         assertEq(mYieldToOne.balanceOf(alice), 0);
+    }
+
+    /* ============ JMI Extension Swap Tests ============ */
+
+    function test_swap_usdc_to_jmiExtension() public {
+        uint256 amount = 1_000_000e6; // 1M USDC (6 decimals)
+
+        assertEq(jmiExtension.balanceOf(USDC_USER), 0);
+
+        vm.startPrank(USDC_USER);
+
+        IERC20(USDC).approve(address(swapFacility), amount);
+        swapFacility.swap(USDC, address(jmiExtension), amount, USDC_USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USDC_USER), amount);
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swap_usdc_to_jmiExtension(uint256 amount) public {
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(USDC).balanceOf(USDC_USER));
+
+        assertEq(jmiExtension.balanceOf(USDC_USER), 0);
+
+        vm.startPrank(USDC_USER);
+
+        IERC20(USDC).approve(address(swapFacility), amount);
+        swapFacility.swap(USDC, address(jmiExtension), amount, USDC_USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USDC_USER), amount);
+    }
+
+    function test_swap_dai_to_jmiExtension() public {
+        uint256 amount = 1_000_000e18; // 1M DAI
+
+        assertEq(jmiExtension.balanceOf(DAI_USER), 0);
+
+        vm.startPrank(DAI_USER);
+
+        IERC20(DAI).approve(address(swapFacility), amount);
+        swapFacility.swap(DAI, address(jmiExtension), amount, DAI_USER);
+
+        vm.stopPrank();
+
+        // DAI has 18 decimals, JMI has 6, so amount gets scaled down
+        assertEq(jmiExtension.balanceOf(DAI_USER), amount / 1e12);
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swap_dai_to_jmiExtension(uint256 amount) public {
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(DAI).balanceOf(DAI_USER));
+
+        assertEq(jmiExtension.balanceOf(DAI_USER), 0);
+
+        vm.startPrank(DAI_USER);
+
+        IERC20(DAI).approve(address(swapFacility), amount);
+        swapFacility.swap(DAI, address(jmiExtension), amount, DAI_USER);
+
+        vm.stopPrank();
+
+        // DAI has 18 decimals, JMI has 6, so amount gets scaled down
+        assertEq(jmiExtension.balanceOf(DAI_USER), amount / 1e12);
+    }
+
+    function test_swap_mYieldToOne_to_jmiExtension() public {
+        uint256 amount = 1_000_000;
+
+        vm.startPrank(USER);
+
+        // First swap M to mYieldToOne
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, USER);
+
+        assertEq(mYieldToOne.balanceOf(USER), amount);
+        assertEq(jmiExtension.balanceOf(USER), 0);
+
+        // Swap mYieldToOne to jmiExtension
+        mYieldToOne.approve(address(swapFacility), amount);
+        swapFacility.swap(address(mYieldToOne), address(jmiExtension), amount, USER);
+
+        vm.stopPrank();
+
+        assertEq(mYieldToOne.balanceOf(USER), 0);
+        assertEq(jmiExtension.balanceOf(USER), amount);
+    }
+
+    function test_swap_jmiExtension_to_mYieldToOne() public {
+        uint256 amount = 1_000_000;
+
+        vm.startPrank(USER);
+
+        // First swap M to jmiExtension
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(jmiExtension), amount, USER);
+
+        assertEq(jmiExtension.balanceOf(USER), amount);
+        assertEq(mYieldToOne.balanceOf(USER), 0);
+
+        // Swap jmiExtension to mYieldToOne
+        jmiExtension.approve(address(swapFacility), amount);
+        swapFacility.swap(address(jmiExtension), address(mYieldToOne), amount, USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USER), 0);
+        assertEq(mYieldToOne.balanceOf(USER), amount);
+    }
+
+    function test_swap_wrappedM_to_jmiExtension() public {
+        uint256 amount = 1_000_000;
+
+        uint256 wrappedMBalance = IERC20(WRAPPED_M).balanceOf(USER);
+        assertTrue(wrappedMBalance >= amount, "Insufficient WrappedM balance");
+
+        assertEq(jmiExtension.balanceOf(USER), 0);
+
+        vm.startPrank(USER);
+
+        IERC20(WRAPPED_M).approve(address(swapFacility), amount);
+        swapFacility.swap(WRAPPED_M, address(jmiExtension), amount, USER);
+
+        vm.stopPrank();
+
+        assertApproxEqAbs(jmiExtension.balanceOf(USER), amount, 1); // WrappedM V1 rounding error
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swap_wrappedM_to_jmiExtension(uint256 amount) public {
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(WRAPPED_M).balanceOf(USER));
+
+        assertEq(jmiExtension.balanceOf(USER), 0);
+
+        vm.startPrank(USER);
+
+        IERC20(WRAPPED_M).approve(address(swapFacility), amount);
+        swapFacility.swap(WRAPPED_M, address(jmiExtension), amount, USER);
+
+        vm.stopPrank();
+
+        assertApproxEqAbs(jmiExtension.balanceOf(USER), amount, 2); // WrappedM V1 rounding error
+    }
+
+    function test_swap_jmiExtension_to_wrappedM() public {
+        uint256 amount = 1_000_000;
+
+        vm.startPrank(USER);
+
+        // First swap M to jmiExtension
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(jmiExtension), amount, USER);
+
+        assertEq(jmiExtension.balanceOf(USER), amount);
+
+        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
+
+        // Swap jmiExtension to WrappedM
+        jmiExtension.approve(address(swapFacility), amount);
+        swapFacility.swap(address(jmiExtension), WRAPPED_M, amount, USER);
+
+        uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USER), 0);
+        assertApproxEqAbs(wrappedMBalanceAfter - wrappedMBalanceBefore, amount, 1); // WrappedM V1 rounding error
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swap_jmiExtension_to_wrappedM(uint256 amount) public {
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource));
+
+        _giveM(USER, amount);
+
+        vm.startPrank(USER);
+
+        // First swap M to jmiExtension
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(jmiExtension), amount, USER);
+
+        assertEq(jmiExtension.balanceOf(USER), amount);
+
+        uint256 wrappedMBalanceBefore = IERC20(WRAPPED_M).balanceOf(USER);
+
+        // Swap jmiExtension to WrappedM
+        jmiExtension.approve(address(swapFacility), amount);
+        swapFacility.swap(address(jmiExtension), WRAPPED_M, amount, USER);
+
+        uint256 wrappedMBalanceAfter = IERC20(WRAPPED_M).balanceOf(USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USER), 0);
+        assertApproxEqAbs(wrappedMBalanceAfter - wrappedMBalanceBefore, amount, 1); // WrappedM V1 rounding error
+    }
+
+    /* ============ JMIExtension replaceAssetWithM tests ============ */
+
+    function test_replaceAssetWithM() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount * 2);
+
+        vm.prank(USER);
+        IERC20(USDC).transfer(alice, amount);
+
+        vm.startPrank(alice);
+
+        // Alice swaps M for mYieldToOne
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+
+        // Alice swaps USDC for JMI Extension
+        IERC20(USDC).approve(address(swapFacility), amount);
+        swapFacility.swap(USDC, address(jmiExtension), amount, alice);
+
+        assertEq(jmiExtension.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), 0);
+
+        // Approve mYieldToOne tokens to swapFacility
+        mYieldToOne.approve(address(swapFacility), amount);
+
+        // Replace USDC with M in JMI Extension
+        swapFacility.replaceAssetWithM(USDC, address(mYieldToOne), address(jmiExtension), amount, alice);
+
+        vm.stopPrank();
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+        assertEq(jmiExtension.balanceOf(alice), amount);
+
+        assertEq(IERC20(USDC).balanceOf(address(jmiExtension)), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(address(jmiExtension)), amount);
+    }
+
+    function test_replaceAssetWithMWithPermit_vrs() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount * 2);
+
+        vm.prank(USER);
+        IERC20(USDC).transfer(alice, amount);
+
+        vm.startPrank(alice);
+
+        // Alice swaps M for mYieldToOne
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+
+        // Alice swaps USDC for jmiExtension
+        IERC20(USDC).approve(address(swapFacility), amount);
+        swapFacility.swap(USDC, address(jmiExtension), amount, alice);
+
+        assertEq(jmiExtension.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), 0);
+
+        // Get permit signature for mYieldToOne
+        (uint8 v, bytes32 r, bytes32 s) = _getExtensionPermit(
+            address(mYieldToOne),
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        // Replace USDC with M in JMI Extension using permit
+        swapFacility.replaceAssetWithMWithPermit(
+            USDC,
+            address(mYieldToOne),
+            address(jmiExtension),
+            amount,
+            alice,
+            block.timestamp,
+            v,
+            r,
+            s
+        );
+
+        vm.stopPrank();
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+        assertEq(jmiExtension.balanceOf(alice), amount);
+
+        assertEq(IERC20(USDC).balanceOf(address(jmiExtension)), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(address(jmiExtension)), amount);
+    }
+
+    function test_replaceAssetWithMWithPermit_signature() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(USER);
+        IERC20(address(mToken)).transfer(alice, amount * 2);
+
+        vm.prank(USER);
+        IERC20(USDC).transfer(alice, amount);
+
+        // Alice swaps M for mYieldToOne
+        vm.startPrank(alice);
+
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+
+        // Alice swaps USDC for JMI Extension
+        IERC20(USDC).approve(address(swapFacility), amount);
+        swapFacility.swap(USDC, address(jmiExtension), amount, alice);
+
+        assertEq(jmiExtension.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), 0);
+
+        // Get permit signature for mYieldToOne
+        (uint8 v, bytes32 r, bytes32 s) = _getExtensionPermit(
+            address(mYieldToOne),
+            address(swapFacility),
+            alice,
+            aliceKey,
+            amount,
+            0,
+            block.timestamp
+        );
+
+        // Replace USDC with M in JMI Extension using permit with signature bytes
+        swapFacility.replaceAssetWithMWithPermit(
+            USDC,
+            address(mYieldToOne),
+            address(jmiExtension),
+            amount,
+            alice,
+            block.timestamp,
+            abi.encodePacked(r, s, v)
+        );
+
+        vm.stopPrank();
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+        assertEq(jmiExtension.balanceOf(alice), amount);
+
+        assertEq(IERC20(USDC).balanceOf(address(jmiExtension)), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(address(jmiExtension)), amount);
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_replaceAssetWithM(uint256 amount) public {
+        // Ensure the amount is not zero, above 1 to account for possible rounding, and does not exceed available balances
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource) / 2); // Divide by 2 since we need 2x amount
+        vm.assume(amount <= IERC20(USDC).balanceOf(USDC_USER));
+
+        // Give alice 2x amount of M tokens and amount of USDC
+        _giveM(alice, amount * 2);
+
+        vm.prank(USDC_USER);
+        IERC20(USDC).transfer(alice, amount);
+
+        vm.startPrank(alice);
+
+        // Alice swaps M for mYieldToOne
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+
+        // Alice swaps USDC for JMI Extension
+        IERC20(USDC).approve(address(swapFacility), amount);
+        swapFacility.swap(USDC, address(jmiExtension), amount, alice);
+
+        assertEq(jmiExtension.balanceOf(alice), amount);
+        assertEq(IERC20(USDC).balanceOf(alice), 0);
+
+        // Approve mYieldToOne tokens to swapFacility
+        mYieldToOne.approve(address(swapFacility), amount);
+
+        // Replace USDC with M in JMI Extension
+        swapFacility.replaceAssetWithM(USDC, address(mYieldToOne), address(jmiExtension), amount, alice);
+
+        vm.stopPrank();
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(USDC).balanceOf(alice), amount);
+        assertEq(jmiExtension.balanceOf(alice), amount);
+
+        assertEq(IERC20(USDC).balanceOf(address(jmiExtension)), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(address(jmiExtension)), amount);
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_replaceAssetWithM_moreDecimals(uint256 amount) public {
+        // amount is in JMI Extension decimals (6 decimals), same as M
+        // For DAI, we need to scale up by 1e12 to get 18 decimals
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(address(mToken)).balanceOf(mSource) / 2); // Divide by 2 since we need 2x amount
+        vm.assume(amount <= IERC20(DAI).balanceOf(DAI_USER) / 1e12);
+
+        uint256 daiAmount = amount * 1e12; // Scale up to DAI's 18 decimals
+
+        // Give alice 2x amount of M tokens and daiAmount of DAI
+        _giveM(alice, amount * 2);
+
+        vm.prank(DAI_USER);
+        IERC20(DAI).transfer(alice, daiAmount);
+
+        vm.startPrank(alice);
+
+        // Alice swaps M for mYieldToOne
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amount, alice);
+
+        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(IERC20(DAI).balanceOf(alice), daiAmount);
+
+        // Alice swaps DAI for JMI Extension
+        IERC20(DAI).approve(address(swapFacility), daiAmount);
+        swapFacility.swap(DAI, address(jmiExtension), daiAmount, alice);
+
+        assertEq(jmiExtension.balanceOf(alice), amount);
+        assertEq(IERC20(DAI).balanceOf(alice), 0);
+
+        // Approve mYieldToOne tokens to swapFacility
+        mYieldToOne.approve(address(swapFacility), amount);
+
+        // Replace DAI with M in JMI Extension
+        swapFacility.replaceAssetWithM(DAI, address(mYieldToOne), address(jmiExtension), amount, alice);
+
+        vm.stopPrank();
+
+        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(IERC20(DAI).balanceOf(alice), daiAmount);
+        assertEq(jmiExtension.balanceOf(alice), amount);
+
+        assertEq(IERC20(DAI).balanceOf(address(jmiExtension)), 0);
+        assertEq(IERC20(address(mToken)).balanceOf(address(jmiExtension)), amount);
     }
 }

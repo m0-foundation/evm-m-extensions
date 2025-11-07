@@ -2,13 +2,14 @@
 
 pragma solidity 0.8.26;
 
-import {
-    Initializable
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+import { Initializable } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+
+import { IERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
 contract MockM {
+    uint8 public constant decimals = 6;
     uint128 public currentIndex;
     uint32 public earnerRate;
     uint128 public latestIndex;
@@ -113,7 +114,7 @@ contract MockRegistrar {
     }
 }
 
-abstract contract MockERC20 {
+contract MockERC20 {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
@@ -166,6 +167,10 @@ abstract contract MockERC20 {
         return true;
     }
 
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
+
     function _mint(address to, uint256 amount) internal virtual {
         totalSupply += amount;
 
@@ -174,6 +179,10 @@ abstract contract MockERC20 {
         }
 
         emit Transfer(address(0), to, amount);
+    }
+
+    function burn(address from, uint256 amount) public {
+        _burn(from, amount);
     }
 
     function _burn(address from, uint256 amount) internal virtual {
@@ -209,6 +218,29 @@ contract MockMExtension is MockERC20 {
     function unwrap(address recipient, uint256 amount) external {
         _burn(msg.sender, amount);
         mToken.transfer(msg.sender, amount);
+    }
+}
+
+contract MockJMIExtension is MockMExtension {
+    address public asset;
+
+    constructor(address mToken_, address swapFacility_, address asset_) MockMExtension(mToken_, swapFacility_) {
+        asset = asset_;
+    }
+
+    function isAllowedAsset(address asset_) external view returns (bool) {
+        return asset_ == asset;
+    }
+
+    function wrap(address asset_, address recipient, uint256 amount) external {
+        IERC20(asset_).transferFrom(msg.sender, address(this), amount);
+        _mint(recipient, amount);
+    }
+
+    function replaceAssetWithM(address asset_, address recipient, uint256 amount) external {
+        mToken.transferFrom(msg.sender, address(this), amount);
+
+        IERC20(asset_).transfer(recipient, amount);
     }
 }
 

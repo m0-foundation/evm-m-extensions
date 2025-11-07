@@ -5,9 +5,7 @@ pragma solidity 0.8.26;
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import {
-    IAccessControl
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -16,7 +14,7 @@ import { MockM } from "../../utils/Mocks.sol";
 import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
 import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
 
-import { IFreezable } from "../../../src/components/IFreezable.sol";
+import { IFreezable } from "../../../src/components/freezable/IFreezable.sol";
 import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
 
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
@@ -226,7 +224,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
 
         mYieldToOne.setBalanceOf(address(swapFacility), amount);
-        mYieldToOne.setBalanceOf(alice, amount);
         mYieldToOne.setTotalSupply(amount);
 
         mToken.setBalanceOf(address(mYieldToOne), amount);

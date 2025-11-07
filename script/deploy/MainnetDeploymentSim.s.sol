@@ -44,7 +44,7 @@ contract MainnetDeploymentSim is DeployBase {
         wm.approve(address(adapter), type(uint256).max);
         IERC20(USDC).approve(address(adapter), type(uint256).max);
 
-        facility.swapInM(WRAPPED_M_TOKEN, 10000, deployer);
+        facility.swap(M_TOKEN, WRAPPED_M_TOKEN, 10000, deployer);
 
         uint256 wmBalance = wm.balanceOf(deployer);
 
@@ -64,7 +64,7 @@ contract MainnetDeploymentSim is DeployBase {
 
         uint256 mBalanceBefore = m.balanceOf(deployer);
 
-        facility.swapOutM(WRAPPED_M_TOKEN, wmBalance, deployer);
+        facility.swap(WRAPPED_M_TOKEN, M_TOKEN, wmBalance, deployer);
 
         uint256 mBalanceAfter = m.balanceOf(deployer);
 

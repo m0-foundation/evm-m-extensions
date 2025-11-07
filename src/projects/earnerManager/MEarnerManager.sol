@@ -4,9 +4,7 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
-import {
-    AccessControlUpgradeable
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import { AccessControlUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IndexingMath } from "../../libs/IndexingMath.sol";
 import { UIntMath } from "../../../lib/common/src/libs/UIntMath.sol";

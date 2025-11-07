@@ -2,17 +2,15 @@
 
 pragma solidity 0.8.26;
 
-import {
-    IAccessControl
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
-import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { IFreezable } from "../../../src/components/IFreezable.sol";
+import { IFreezable } from "../../../../src/components/freezable/IFreezable.sol";
 
-import { FreezableHarness } from "../../harness/FreezableHarness.sol";
+import { FreezableHarness } from "../../../harness/FreezableHarness.sol";
 
-import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
+import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
 
 contract FreezableUnitTests is BaseUnitTest {
     FreezableHarness public freezable;

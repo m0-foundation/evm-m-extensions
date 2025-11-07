@@ -25,7 +25,9 @@ contract BaseUnitTest is Helpers, Test {
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+    bytes32 public constant ASSET_CAP_MANAGER_ROLE = keccak256("ASSET_CAP_MANAGER_ROLE");
     bytes32 public constant FREEZE_MANAGER_ROLE = keccak256("FREEZE_MANAGER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
@@ -42,7 +44,9 @@ contract BaseUnitTest is Helpers, Test {
     uint32 public mYiedFeeEarnerRate;
 
     address public admin = makeAddr("admin");
+    address public assetCapManager = makeAddr("assetCapManager");
     address public freezeManager = makeAddr("freezeManager");
+    address public pauser = makeAddr("pauser");
     address public earnerManager = makeAddr("earnerManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
@@ -75,7 +79,7 @@ contract BaseUnitTest is Helpers, Test {
             UnsafeUpgrades.deployTransparentProxy(
                 address(new SwapFacility(address(mToken), address(registrar))),
                 admin,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin, pauser)
             )
         );
 

@@ -4,7 +4,7 @@
   "rules": {
     "prettier/prettier": "error",
     "code-complexity": ["warn", 10],
-    "compiler-version": ["error", "0.8.26"],
+    "compiler-version": ["warn", "0.8.26"],
     "comprehensive-interface": "off",
     "const-name-snakecase": "off",
     "func-name-mixedcase": "off",
@@ -21,12 +21,14 @@
     "no-empty-blocks": "off",
     "no-inline-assembly": "off",
     "not-rely-on-time": "off",
+    "one-contract-per-file": "off",
     "private-vars-leading-underscore": [
       "warn",
       {
         "strict": true
       }
     ],
+    "use-natspec": "off",
     "visibility-modifier-order": "error"
   }
 }

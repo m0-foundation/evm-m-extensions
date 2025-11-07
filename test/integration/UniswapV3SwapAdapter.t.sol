@@ -2,13 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import {
-    IERC20
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-import {
-    SafeERC20
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+import { SafeERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -18,7 +14,7 @@ import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMT
 
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
-import { IFreezable } from "../../src/components/IFreezable.sol";
+import { IFreezable } from "../../src/components/freezable/IFreezable.sol";
 
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 
@@ -238,7 +234,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amountIn);
-        swapFacility.swapInM(address(mYieldToOne), amountIn, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amountIn, USER);
 
         mYieldToOne.approve(address(swapAdapter), amountIn);
         swapAdapter.swapOut(address(mYieldToOne), amountIn, USDC, minAmountOut, USER, "");
@@ -254,7 +250,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
 
         vm.startPrank(USER);
         IERC20(address(mToken)).approve(address(swapFacility), amountIn);
-        swapFacility.swapInM(address(mYieldToOne), amountIn, USER);
+        swapFacility.swap(address(mToken), address(mYieldToOne), amountIn, USER);
 
         // Encode path for USDT -> USDC -> Wrapped M
         bytes memory path = abi.encodePacked(

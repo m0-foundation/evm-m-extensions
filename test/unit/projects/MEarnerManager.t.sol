@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import {
-    IAccessControl
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -645,7 +643,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         vm.expectRevert(IMExtension.EarningIsDisabled.selector);
 
         vm.prank(alice);
-        swapFacility.swapInM(address(mEarnerManager), amount, alice);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, alice);
     }
 
     function test_wrap() external {

@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { Freezable } from "../../src/components/Freezable.sol";
+import { Freezable } from "../../src/components/freezable/Freezable.sol";
 
 contract FreezableHarness is Freezable {
     /// @custom:oz-upgrades-unsafe-allow constructor

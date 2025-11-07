@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import {
-    AccessControlUpgradeable
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import { AccessControlUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
