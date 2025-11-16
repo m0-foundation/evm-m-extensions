@@ -189,12 +189,12 @@ upgrade-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 upgrade-swap-facility-sepolia: upgrade-swap-facility
 
 propose-transfer-swap-facility-owner:
-    FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
-    forge script script/ProposeTransferSwapFacilityOwner.s.sol:ProposeTransferSwapFacilityOwner \
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	forge script script/ProposeTransferSwapFacilityOwner.s.sol:ProposeTransferSwapFacilityOwner \
 	--sig "run(address)" $(NEW_OWNER) \
-    --rpc-url $(RPC_URL) \
-    --private-key $(PRIVATE_KEY) \
-    --skip test --slow --non-interactive --broadcast
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive --broadcast
 
 propose-transfer-swap-facility-owner-sepolia: NEW_OWNER=$(SEPOLIA_TIMELOCK)
 propose-transfer-swap-facility-owner-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)

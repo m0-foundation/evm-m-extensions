@@ -5,9 +5,9 @@ pragma solidity 0.8.26;
 import { console } from "../lib/forge-std/src/console.sol";
 import { AccessControl } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { ScriptBase } from "./ScriptBase.s.sol";
-import { SwapFacility } from "../src/swap/SwapFacility.sol";
+// import { SwapFacility } from "../src/swap/SwapFacility.sol";
 import { MultiSigBatchBase } from "../lib/common/script/MultiSigBatchBase.sol";
-import { ProxyAdmin } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
+import { Ownable } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 
 /**
@@ -36,13 +36,13 @@ contract ProposeTransferSwapFacilityOwner is MultiSigBatchBase {
         console.log("Proposer:", proposer_);
 
         // transfer proxyAdmin ownership to newOwner_ 
-        _addToBatch(_PROXY_ADMIN, abi.encodeCall(ProxyAdmin.transferOwnership, (newOwner_)));
+        _addToBatch(_PROXY_ADMIN, abi.encodeCall(Ownable.transferOwnership, (newOwner_)));
 
         // transfer swap facility DEFAULT_ADMIN_ROLE to newOwner_ 
-        _addToBatch(_SWAP_FACILITY, abi.encodeCall(SwapFacility.grantRole, (DEFAULT_ADMIN_ROLE, newOwner_)));
+        _addToBatch(_SWAP_FACILITY, abi.encodeCall(AccessControl.grantRole, (DEFAULT_ADMIN_ROLE, newOwner_)));
 
         // renounce swap facility DEFAULT_ADMIN_ROLE from Multisig
-        _addToBatch(_SWAP_FACILITY, abi.encodeCall(SwapFacility.renounceRole, (DEFAULT_ADMIN_ROLE, _SAFE_MULTISIG)));
+        _addToBatch(_SWAP_FACILITY, abi.encodeCall(AccessControl.renounceRole, (DEFAULT_ADMIN_ROLE, _SAFE_MULTISIG)));
 
         console.log("SwapFacility ownership transfer proposed.");
     }
