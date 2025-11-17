@@ -21,6 +21,7 @@ contract ProposeTransferSwapFacilityOwner is MultiSigBatchBase {
     address constant _SAFE_MULTISIG = 0xdcf79C332cB3Fe9d39A830a5f8de7cE6b1BD6fD1;
     address constant _PROXY_ADMIN = 0x0f38D8A5583f9316084E9c40737244870c565924;
     address constant _MAINNET_TIMELOCK = 0x23CA665c8a73292Fc7AC2cC4493d2cE883BBA468;
+    address constant _ENG_MULTISIG = 0xb7A9B5f301eF3bAD36C2b4964E82931Dd7fb989C;
 
     // TransparentProxy address of SwapFacility on mainnet
     address constant _SWAP_FACILITY = 0xB6807116b3B1B321a390594e31ECD6e0076f6278;
@@ -41,7 +42,7 @@ contract ProposeTransferSwapFacilityOwner is MultiSigBatchBase {
         _addToBatch(_PROXY_ADMIN, abi.encodeCall(Ownable.transferOwnership, (_MAINNET_TIMELOCK)));
 
         // transfer swap facility DEFAULT_ADMIN_ROLE to newOwner_
-        _addToBatch(_SWAP_FACILITY, abi.encodeCall(AccessControl.grantRole, (DEFAULT_ADMIN_ROLE, _MAINNET_TIMELOCK)));
+        _addToBatch(_SWAP_FACILITY, abi.encodeCall(AccessControl.grantRole, (DEFAULT_ADMIN_ROLE, _ENG_MULTISIG)));
 
         // renounce swap facility DEFAULT_ADMIN_ROLE from Multisig
         _addToBatch(_SWAP_FACILITY, abi.encodeCall(AccessControl.renounceRole, (DEFAULT_ADMIN_ROLE, _SAFE_MULTISIG)));
