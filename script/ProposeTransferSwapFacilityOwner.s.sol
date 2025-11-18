@@ -47,6 +47,10 @@ contract ProposeTransferSwapFacilityOwner is MultiSigBatchBase {
         // renounce swap facility DEFAULT_ADMIN_ROLE from Multisig
         _addToBatch(_SWAP_FACILITY, abi.encodeCall(AccessControl.renounceRole, (DEFAULT_ADMIN_ROLE, _SAFE_MULTISIG)));
 
+        // execute `the batch via multisig
+        _simulateBatch(_SAFE_MULTISIG);
+        _proposeBatch(_SAFE_MULTISIG, proposer_);
+
         console.log("SwapFacility ownership transfer proposed.");
     }
 }
