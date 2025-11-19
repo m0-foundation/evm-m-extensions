@@ -220,7 +220,6 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
     function _beforeWrap(address asset, address account, address recipient, uint256 amount) internal view virtual {
         _requireNotPaused();
 
-        if (!isAllowedAsset(asset)) revert AssetNotAllowed(asset);
         if (!isAllowedToWrap(asset, amount)) revert AssetCapReached(asset);
 
         super._beforeWrap(account, recipient, amount);

@@ -255,7 +255,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         vm.prank(assetCapManager);
         jmi.setAssetCap(address(mockDAI), 0);
 
-        vm.expectRevert(abi.encodeWithSelector(IJMIExtension.AssetNotAllowed.selector, address(mockDAI)));
+        vm.expectRevert(abi.encodeWithSelector(IJMIExtension.AssetCapReached.selector, address(mockDAI)));
 
         vm.prank(address(swapFacility));
         jmi.wrap(address(mockDAI), alice, 1);

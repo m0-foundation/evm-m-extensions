@@ -32,12 +32,6 @@ interface IJMIExtension is IMYieldToOne {
     error AssetCapReached(address asset);
 
     /**
-     * @notice Emitted if the asset is not allowed to be swapped.
-     * @param  asset Address of the asset.
-     */
-    error AssetNotAllowed(address asset);
-
-    /**
      * @notice Emitted if `replaceAssetWithM` is called but there is not enough asset to replace M with.
      * @param  asset          Address of the asset.
      * @param  amount         Amount of M to unwrap requested.
