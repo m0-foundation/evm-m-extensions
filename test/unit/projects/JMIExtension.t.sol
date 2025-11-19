@@ -262,23 +262,11 @@ contract JMIExtensionUnitTests is BaseUnitTest {
     }
 
     function test_wrap_withM() public {
-        uint256 amount = 1_000e6;
-
-        mToken.setBalanceOf(address(swapFacility), amount);
-        assertEq(mToken.balanceOf(address(swapFacility)), amount);
-
-        vm.expectEmit();
-        emit IERC20.Transfer(address(0), alice, amount);
+        // `wrap(address recipient, uint256 amount)` can be used to wrap with M directly.
+        vm.expectRevert(abi.encodeWithSelector(IJMIExtension.InvalidAsset.selector, address(mToken)));
 
         vm.prank(address(swapFacility));
-        jmi.wrap(address(mToken), alice, amount);
-
-        assertEq(jmi.balanceOf(alice), amount);
-        assertEq(jmi.totalAssets(), 0);
-        assertEq(jmi.totalSupply(), amount);
-
-        assertEq(mToken.balanceOf(alice), 0);
-        assertEq(mToken.balanceOf(address(jmi)), amount);
+        jmi.wrap(address(mToken), alice, 1_000e6);
     }
 
     function test_wrap() public {

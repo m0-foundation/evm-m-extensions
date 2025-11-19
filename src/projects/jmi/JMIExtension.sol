@@ -264,11 +264,9 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
 
         uint256 jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
 
-        if (asset != mToken) {
-            unchecked {
-                // Update total non-M asset amount backing JMI extension token.
-                _getJMIExtensionStorageLocation().totalAssets += jmiAmount_;
-            }
+        unchecked {
+            // Update total non-M asset amount backing JMI extension token.
+            _getJMIExtensionStorageLocation().totalAssets += jmiAmount_;
         }
 
         _mint(recipient, jmiAmount_);
@@ -283,9 +281,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
      */
     function _replaceAssetWithM(address asset, address recipient, uint256 amount) internal virtual {
         _requireNotPaused();
-
-        if (asset == address(0) || asset == address(mToken)) revert InvalidAsset(asset);
-
+        _revertIfInvalidAsset(asset);
         _revertIfInvalidRecipient(recipient);
         _revertIfInsufficientAmount(amount);
 
@@ -318,11 +314,12 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
     }
 
     /**
-     * @dev   Reverts if `asset` is address(0).
+     * @dev   Reverts if `asset` is address(0) or M token.
+     *       `wrap(address recipient, uint256 amount)` MUST be used to wrap M.
      * @param asset Address of an asset.
      */
-    function _revertIfInvalidAsset(address asset) internal pure {
-        if (asset == address(0)) revert InvalidAsset(asset);
+    function _revertIfInvalidAsset(address asset) internal view {
+        if (asset == address(0) || asset == mToken) revert InvalidAsset(asset);
     }
 
     /**
