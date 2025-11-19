@@ -261,6 +261,21 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.wrap(address(mockDAI), alice, 1);
     }
 
+    function test_wrap_withM_enforcedPause() public {
+        uint256 amount = 1_000e6;
+
+        mToken.setBalanceOf(address(swapFacility), amount);
+        assertEq(mToken.balanceOf(address(swapFacility)), amount);
+
+        vm.prank(pauser);
+        jmi.pause();
+
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+
+        vm.prank(address(swapFacility));
+        jmi.wrap(address(mToken), alice, amount);
+    }
+
     function test_wrap_withM() public {
         // `wrap(address recipient, uint256 amount)` can be used to wrap with M directly.
         vm.expectRevert(abi.encodeWithSelector(IJMIExtension.InvalidAsset.selector, address(mToken)));

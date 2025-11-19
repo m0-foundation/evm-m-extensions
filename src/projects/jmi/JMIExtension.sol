@@ -211,6 +211,18 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
     /* ============ Hooks For Internal Interactive Functions ============ */
 
     /**
+     * @dev    Hook called before wrapping M into extension tokens.
+     * @param  account   The account from which M is deposited.
+     * @param  recipient The account receiving the minted extension tokens.
+     * @param  amount    The amount of M deposited.
+     */
+    function _beforeWrap(address account, address recipient, uint256 amount) internal view virtual override {
+        _requireNotPaused();
+
+        super._beforeWrap(account, recipient, amount);
+    }
+
+    /**
      * @dev   Hook called before wrapping `asset` into extension's tokens.
      * @param asset     Address of the asset being deposited.
      * @param account   The account initiating the wrap.

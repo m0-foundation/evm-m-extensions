@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { PausableUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
+
 import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
@@ -285,6 +287,22 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         swapFacility.swap(address(mToken), WRAPPED_M, amount, USER);
 
         assertApproxEqAbs(wrappedM.balanceOf(USER) - wrappedMBalanceBefore, amount, 2); // WrappedM V1 rounding error
+    }
+
+    function test_swapInM_jmiExtension_paused() public {
+        uint256 amount = 1_000_000;
+
+        vm.prank(pauser);
+        jmiExtension.pause();
+
+        vm.startPrank(USER);
+
+        IERC20(address(mToken)).approve(address(swapFacility), amount);
+
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        swapFacility.swap(address(mToken), address(jmiExtension), amount, USER);
+
+        vm.stopPrank();
     }
 
     /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
