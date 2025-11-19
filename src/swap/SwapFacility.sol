@@ -229,6 +229,21 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
 
     /// @inheritdoc ISwapFacility
     function canSwapViaPath(address swapper, address tokenIn, address tokenOut) external view returns (bool) {
+        bool isTokenInPaused = false;
+        bool isTokenOutPaused = false;
+
+        // If `tokenIn` or `tokenOut` are not valid contracts, return false
+        if (tokenIn.code.length == 0 || tokenOut.code.length == 0) return false;
+
+        // If contracts are paused, return false
+        try Pausable(tokenIn).paused() returns (bool tokenInPaused) {
+            isTokenInPaused = tokenInPaused;
+        } catch {}
+        try Pausable(tokenOut).paused() returns (bool tokenOutPaused) {
+            isTokenOutPaused = tokenOutPaused;
+        } catch {}
+        if (paused() || isTokenInPaused || isTokenOutPaused) return false;
+
         // If the input token is $M, we swap it for the output token, which must be an extension
         // The tokenOut must be an approved extension and the swapper must be allowed to swap in M
         if (tokenIn == mToken) {

@@ -93,6 +93,24 @@ contract SwapFacilityUnitTests is Test {
 
     /* ============ canSwapViaPath ============ */
 
+    function test_canSwapViaPath_paused() external {
+        vm.mockCall(address(extensionA), abi.encodeWithSelector(PausableUpgradeable.paused.selector), abi.encode(true));
+        assertFalse(swapFacility.canSwapViaPath(alice, address(extensionA), address(extensionB)));
+
+        vm.mockCall(address(extensionB), abi.encodeWithSelector(PausableUpgradeable.paused.selector), abi.encode(true));
+        assertFalse(swapFacility.canSwapViaPath(alice, address(extensionA), address(extensionB)));
+
+        vm.prank(pauser);
+        swapFacility.pause();
+
+        assertFalse(swapFacility.canSwapViaPath(alice, address(extensionA), address(mToken)));
+    }
+
+    function test_canSwapViaPath_notValidContracts() external {
+        assertFalse(swapFacility.canSwapViaPath(alice, address(0x123), address(mToken)));
+        assertFalse(swapFacility.canSwapViaPath(alice, address(mToken), address(0x123)));
+    }
+
     // tokenIn == mToken
     function test_canSwapViaPath_tokenInIsMToken_notApprovedExtension() external {
         assertFalse(swapFacility.canSwapViaPath(alice, address(mToken), address(0x123)));
