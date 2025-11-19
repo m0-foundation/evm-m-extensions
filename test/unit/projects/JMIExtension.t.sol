@@ -251,6 +251,19 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.wrap(address(mockUSDC), alice, 0);
     }
 
+    function test_wrap_insufficientJMIAmount() external {
+        uint256 amount = 1;
+
+        mockDAI.mint(address(swapFacility), amount);
+        assertEq(mockDAI.balanceOf(address(swapFacility)), amount);
+
+        // Truncates down when converting from asset to extension amount.
+        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
+
+        vm.prank(address(swapFacility));
+        jmi.wrap(address(mockDAI), alice, amount);
+    }
+
     function test_wrap_assetNotAllowed() external {
         vm.prank(assetCapManager);
         jmi.setAssetCap(address(mockDAI), 0);
@@ -404,7 +417,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         asset.mint(address(swapFacility), amount);
         assertEq(asset.balanceOf(address(swapFacility)), amount);
 
-        if (amount == 0) {
+        if (amount == 0 || extensionAmount == 0) {
             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
         } else if (assetCapReached) {
             vm.expectRevert(abi.encodeWithSelector(IJMIExtension.AssetCapReached.selector, address(asset)));
@@ -423,7 +436,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         vm.prank(address(swapFacility));
         jmi.wrap(address(asset), alice, amount);
 
-        if (assetCapReached || amount == 0) {
+        if (assetCapReached || amount == 0 || extensionAmount == 0) {
             return;
         }
 
@@ -633,6 +646,18 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         vm.prank(address(swapFacility));
         jmi.replaceAssetWithM(address(mockUSDC), alice, 0);
+    }
+
+    function test_replaceAssetWithM_insufficientAssetAmount() external {
+        uint256 amount = 1;
+
+        mockAsset4Decimals.mint(address(jmi), amount);
+        assertEq(mockAsset4Decimals.balanceOf(address(jmi)), amount);
+
+        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
+
+        vm.prank(address(swapFacility));
+        jmi.replaceAssetWithM(address(mockAsset4Decimals), alice, amount);
     }
 
     function test_replaceAssetWithM_insufficientAssetBacking() external {
@@ -879,7 +904,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         bool assetBackingInsufficient = amount > assetBacking;
 
-        if (extensionAmount == 0) {
+        if (extensionAmount == 0 || amount == 0) {
             vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
         } else if (assetBackingInsufficient) {
             vm.expectRevert(
@@ -907,7 +932,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         vm.prank(address(swapFacility));
         jmi.replaceAssetWithM(address(asset), alice, extensionAmount);
 
-        if (assetBackingInsufficient || extensionAmount == 0) {
+        if (assetBackingInsufficient || extensionAmount == 0 || amount == 0) {
             return;
         }
 

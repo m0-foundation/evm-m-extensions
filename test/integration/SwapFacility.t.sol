@@ -5,6 +5,7 @@ pragma solidity 0.8.26;
 import { PausableUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
 import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
 import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
@@ -546,15 +547,22 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         assertEq(jmiExtension.balanceOf(DAI_USER), 0);
 
+        uint256 expectedJmiAmount = amount / 1e12;
+
         vm.startPrank(DAI_USER);
 
         IERC20(DAI).approve(address(swapFacility), amount);
+
+        if (expectedJmiAmount == 0) {
+            vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
+        }
+
         swapFacility.swap(DAI, address(jmiExtension), amount, DAI_USER);
 
         vm.stopPrank();
 
         // DAI has 18 decimals, JMI has 6, so amount gets scaled down
-        assertEq(jmiExtension.balanceOf(DAI_USER), amount / 1e12);
+        assertEq(jmiExtension.balanceOf(DAI_USER), expectedJmiAmount);
     }
 
     function test_swap_mYieldToOne_to_jmiExtension() public {

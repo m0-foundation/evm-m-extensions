@@ -275,6 +275,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         IERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
+        _revertIfInsufficientAmount(jmiAmount_);
 
         unchecked {
             // Update total non-M asset amount backing JMI extension token.
@@ -297,9 +298,10 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         _revertIfInvalidRecipient(recipient);
         _revertIfInsufficientAmount(amount);
 
-        uint256 assetAmount = _fromExtensionToAssetAmount(asset, amount);
+        uint256 assetAmount_ = _fromExtensionToAssetAmount(asset, amount);
+        _revertIfInsufficientAmount(assetAmount_);
 
-        _revertIfInsufficientAssetBacking(asset, assetAmount);
+        _revertIfInsufficientAssetBacking(asset, assetAmount_);
 
         // NOTE: Update total non-M asset amount backing JMI extension token.
         _getJMIExtensionStorageLocation().totalAssets -= amount;
@@ -308,9 +310,9 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
         IMTokenLike(mToken).transferFrom(msg.sender, address(this), amount);
 
-        IERC20(asset).safeTransfer(recipient, assetAmount);
+        IERC20(asset).safeTransfer(recipient, assetAmount_);
 
-        emit AssetReplacedWithM(asset, assetAmount, recipient, amount);
+        emit AssetReplacedWithM(asset, assetAmount_, recipient, amount);
     }
 
     /* ============ Internal View Functions ============ */
