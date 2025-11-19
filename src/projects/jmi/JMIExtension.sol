@@ -214,8 +214,8 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
      * @dev   Hook called before wrapping `asset` into extension's tokens.
      * @param asset     Address of the asset being deposited.
      * @param account   The account initiating the wrap.
-     * @param recipient The address that will receive `amount` of extension tokens.
-     * @param amount    The amount of extension tokens to mint.
+     * @param recipient The address that will receive extension tokens.
+     * @param amount    The amount of `asset` being deposited.
      */
     function _beforeWrap(address asset, address account, address recipient, uint256 amount) internal view virtual {
         _requireNotPaused();
