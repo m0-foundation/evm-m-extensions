@@ -40,6 +40,7 @@ contract Config {
     uint256 public constant BSC_CHAIN_ID = 56;
     uint256 public constant MANTRA_CHAIN_ID = 5888;
     uint256 public constant BASE_CHAIN_ID = 8453;
+    uint256 public constant SONEIUM_CHAIN_ID = 1868;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -83,6 +84,11 @@ contract Config {
         if (chainId_ == BSC_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == MANTRA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BASE_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == SONEIUM_CHAIN_ID) {
+            config = _getDefaultDeployConfig();
+            config.uniswapV3Router = UNISWAP_V3_ROUTER;
+            return config;
+        }
 
         // Testnet configs
         if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
@@ -168,6 +174,11 @@ contract Config {
             whitelistedTokens = new address[](2);
             whitelistedTokens[0] = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // USDC
             whitelistedTokens[1] = 0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0; // USDT
+        }
+
+        if (chainId_ == SONEIUM_CHAIN_ID) {
+            whitelistedTokens = new address[](1);
+            whitelistedTokens[0] = 0xbA9986D2381edf1DA03B0B9c1f8b00dc4AacC369; // USDC.E (bridged)
         }
 
         return whitelistedTokens;
