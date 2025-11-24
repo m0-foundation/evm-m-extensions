@@ -2,10 +2,13 @@
 
 pragma solidity 0.8.26;
 
-import { PausableUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
+import { PausableUpgradeable } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
-import { IERC20 } from ".../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
+import { IERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
+import { SafeERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
 import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
@@ -26,10 +29,13 @@ import { JMIExtensionHarness } from "../harness/JMIExtensionHarness.sol";
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
 contract SwapFacilityIntegrationTest is BaseIntegrationTest {
+    using SafeERC20 for IERC20;
+
     // Holds USDC, USDT and wM
     address constant USER = 0x77BAB32F75996de8075eBA62aEa7b1205cf7E004;
     address constant DAI_USER = 0x73781209F3B0f195D0D3fA9D6b95bB61c54c1ca6;
     address constant USDC_USER = 0x2d4d2A025b10C09BDbd794B4FCe4F7ea8C7d7bB4;
+    address constant USDT_USER = 0xF977814e90dA44bFA03b6295A0616a897441aceC;
 
     function setUp() public override {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_751_329);
@@ -98,6 +104,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         jmiExtension.setAssetCap(USDC, 1_000_000_000e6); // 1B USDC cap
         jmiExtension.setAssetCap(DAI, 1_000_000_000e18); // 1B DAI cap
+        jmiExtension.setAssetCap(USDT, 28_000_000_000e6); // 28B USDT cap
 
         vm.stopPrank();
 
@@ -585,6 +592,42 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         assertEq(mYieldToOne.balanceOf(USER), 0);
         assertEq(jmiExtension.balanceOf(USER), amount);
+    }
+
+    function test_swap_usdt_to_jmiExtension() public {
+        uint256 amount = 1_000_000e6; // 1M USDT (6 decimals)
+
+        assertEq(jmiExtension.balanceOf(USDT_USER), 0);
+
+        vm.startPrank(USDT_USER);
+
+        IERC20(USDT).forceApprove(address(swapFacility), amount);
+        swapFacility.swap(USDT, address(jmiExtension), amount, USDT_USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USDT_USER), amount);
+    }
+
+    /// @dev Using lower fuzz runs and depth to avoid burning through RPC requests in CI
+    /// forge-config: default.fuzz.runs = 100
+    /// forge-config: default.fuzz.depth = 20
+    /// forge-config: ci.fuzz.runs = 10
+    /// forge-config: ci.fuzz.depth = 2
+    function testFuzz_swap_usdt_to_jmiExtension(uint256 amount) public {
+        vm.assume(amount > 1);
+        vm.assume(amount <= IERC20(USDT).balanceOf(USDT_USER));
+
+        assertEq(jmiExtension.balanceOf(USDT_USER), 0);
+
+        vm.startPrank(USDT_USER);
+
+        IERC20(USDT).forceApprove(address(swapFacility), amount);
+        swapFacility.swap(USDT, address(jmiExtension), amount, USDT_USER);
+
+        vm.stopPrank();
+
+        assertEq(jmiExtension.balanceOf(USDT_USER), amount);
     }
 
     function test_swap_jmiExtension_to_mYieldToOne() public {

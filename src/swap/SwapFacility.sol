@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+
+import { SafeERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { Pausable } from "../components/pausable/Pausable.sol";
 
@@ -41,6 +43,8 @@ abstract contract SwapFacilityUpgradeableStorageLayout {
  * @author M0 Labs
  */
 contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUpgradeableStorageLayout {
+    using SafeERC20 for IERC20;
+
     /// @inheritdoc ISwapFacility
     bytes32 public constant EARNERS_LIST_NAME = "earners";
 
@@ -372,8 +376,9 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
     function _swapInJMI(address asset, address extensionOut, uint256 amount, address recipient) private {
         _revertIfCannotJmi(asset, extensionOut);
 
-        IERC20(asset).transferFrom(msg.sender, address(this), amount);
-        IERC20(asset).approve(extensionOut, amount);
+        // NOTE: Use safeTransferFrom and forceApprove to handle assets that do not return a boolean value.
+        IERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
+        IERC20(asset).forceApprove(extensionOut, amount);
         IJMIExtension(extensionOut).wrap(asset, recipient, amount);
 
         emit SwappedInJMI(asset, extensionOut, amount, recipient);

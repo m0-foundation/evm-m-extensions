@@ -286,7 +286,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
 
         vm.prank(address(swapFacility));
-        jmi.wrap(address(mToken), alice, amount);
+        jmi.wrap(alice, amount);
     }
 
     function test_wrap_withM() public {
