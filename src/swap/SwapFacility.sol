@@ -323,9 +323,6 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
      * @param  recipient    The address to receive the swapped $M Extension tokens.
      */
     function _swapExtensions(address extensionIn, address extensionOut, uint256 amount, address recipient) private {
-        _revertIfNotApprovedExtension(extensionIn);
-        _revertIfNotApprovedExtension(extensionOut);
-
         _revertIfPermissionedExtension(extensionIn);
         _revertIfPermissionedExtension(extensionOut);
 
@@ -373,7 +370,6 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
      * @param  recipient    The address to receive `amount` of JMI Extension tokens.
      */
     function _swapInJMI(address asset, address extensionOut, uint256 amount, address recipient) private {
-        _revertIfNotApprovedExtension(extensionOut);
         _revertIfCannotJmi(asset, extensionOut);
 
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
