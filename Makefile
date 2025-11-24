@@ -105,7 +105,7 @@ deploy-swap-adapter-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
 deploy-swap-adapter-soneium: deploy-swap-adapter
 
 deploy-swap-facility:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
 	forge script script/deploy/DeploySwapFacility.s.sol:DeploySwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
@@ -196,7 +196,7 @@ deploy-swap-facility-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
 deploy-swap-facility-soneium: deploy-swap-facility
 
 upgrade-swap-facility:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \

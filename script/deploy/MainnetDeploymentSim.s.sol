@@ -16,10 +16,11 @@ contract MainnetDeploymentSim is DeployBase {
 
     function run() public {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
+        address pauser = vm.envAddress("PAUSER");
 
         vm.startPrank(deployer);
 
-        (, address swapFacilityProxy, ) = _deploySwapFacility(deployer);
+        (, address swapFacilityProxy, ) = _deploySwapFacility(deployer, pauser);
 
         console.log("SwapFacilityProxy:", swapFacilityProxy);
 

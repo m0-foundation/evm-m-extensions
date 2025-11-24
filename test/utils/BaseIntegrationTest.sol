@@ -20,7 +20,6 @@ import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 import { MExtensionHarness } from "../harness/MExtensionHarness.sol";
-// import { MDualBackedYieldToOneHarness } from "../harness/MDualBackedYieldToOneHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 import { JMIExtensionHarness } from "../harness/JMIExtensionHarness.sol";
@@ -34,6 +33,9 @@ interface IMinterGateway {
 }
 
 contract BaseIntegrationTest is Helpers, Test {
+    address public constant deployer = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
+    address public constant proxyAdmin = 0xdcf79C332cB3Fe9d39A830a5f8de7cE6b1BD6fD1;
+
     address public constant standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
     address public constant registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
@@ -44,7 +46,7 @@ contract BaseIntegrationTest is Helpers, Test {
 
     uint16 public constant YIELD_FEE_RATE = 2000; // 20%
 
-    bytes32 internal constant EARNERS_LIST = "earners";
+    bytes32 public constant EARNERS_LIST = "earners";
     uint32 public constant M_EARNER_RATE = ContinuousIndexingMath.BPS_SCALED_ONE / 10; // 10% APY
 
     uint56 public constant EXP_SCALED_ONE = 1e12;
@@ -61,11 +63,10 @@ contract BaseIntegrationTest is Helpers, Test {
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
     bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
 
-    address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
-    address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    address public constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
 
     address public admin = makeAddr("admin");
     address public assetCapManager = makeAddr("assetCapManager");
@@ -89,7 +90,6 @@ contract BaseIntegrationTest is Helpers, Test {
     address[] public accounts = [alice, bob, carol, charlie, david];
 
     MExtensionHarness public mExtension;
-    // MDualBackedYieldToOneHarness public mDualBackedYieldToOne;
     MYieldToOneHarness public mYieldToOne;
     MYieldFeeHarness public mYieldFee;
     JMIExtensionHarness public jmiExtension;
@@ -122,7 +122,7 @@ contract BaseIntegrationTest is Helpers, Test {
         swapAdapter = new UniswapV3SwapAdapter(
             WRAPPED_M,
             address(swapFacility),
-            UNISWAP_V3_ROUTER,
+            0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // Uniswap V3 Router
             admin,
             whitelistedTokens
         );

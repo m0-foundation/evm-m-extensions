@@ -24,7 +24,8 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
     using SafeERC20 for IERC20;
 
     // Holds USDC, USDT and wM
-    address constant USER = 0x77BAB32F75996de8075eBA62aEa7b1205cf7E004;
+    address public constant USER = 0x77BAB32F75996de8075eBA62aEa7b1205cf7E004;
+    address public constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
 
     function setUp() public override {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 22_757_587);

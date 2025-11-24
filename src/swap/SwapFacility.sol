@@ -80,12 +80,22 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
 
     /**
      * @notice Initializes SwapFacility Proxy.
+     * @dev    Used to initialize SwapFacility when deploying for the first time.
      * @param  admin  Address of the SwapFacility admin.
      * @param  pauser Address of the SwapFacility pauser.
      */
     function initialize(address admin, address pauser) external initializer {
-        __Pausable_init(pauser);
         __ReentrancyLock_init(admin);
+        __Pausable_init(pauser);
+    }
+
+    /**
+     * @notice Initializes SwapFacility V2 Proxy.
+     * @dev    Used to initialize SwapFacility when upgrading to V2.
+     * @param  pauser Address of the SwapFacility pauser.
+     */
+    function initializeV2(address pauser) external reinitializer(2) {
+        __Pausable_init(pauser);
     }
 
     /* ============ Interactive Functions ============ */

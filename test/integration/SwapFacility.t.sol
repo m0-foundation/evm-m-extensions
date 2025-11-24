@@ -15,20 +15,21 @@ import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
 import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
+import { UpgradeSwapFacilityBase } from "../../script/upgrade/UpgradeSwapFacilityBase.sol";
+
 import { IFreezable } from "../../src/components/freezable/IFreezable.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
-// import { MDualBackedYieldToOneHarness } from "../harness/MDualBackedYieldToOneHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
 import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 import { JMIExtensionHarness } from "../harness/JMIExtensionHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract SwapFacilityIntegrationTest is BaseIntegrationTest {
+contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeSwapFacilityBase {
     using SafeERC20 for IERC20;
 
     // Holds USDC, USDT and wM
@@ -1007,5 +1008,32 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
 
         assertEq(IERC20(DAI).balanceOf(address(jmiExtension)), 0);
         assertEq(IERC20(address(mToken)).balanceOf(address(jmiExtension)), amount);
+    }
+
+    /* ============  SwapFacility Upgrade ============ */
+
+    function test_upgradeSwapFacilityV2() public {
+        vm.rollFork(23_828_680); // Block number after SwapFacility deployment
+
+        Deployments memory deployments = _readDeployment(block.chainid);
+        SwapFacility swapFacilityProxy = SwapFacility(deployments.swapFacility);
+
+        vm.expectRevert();
+
+        vm.prank(pauser);
+        swapFacilityProxy.pause();
+
+        vm.startPrank(proxyAdmin);
+
+        _upgradeSwapFacility(address(swapFacilityProxy), pauser);
+
+        vm.stopPrank();
+
+        assertTrue(swapFacilityProxy.hasRole(PAUSER_ROLE, pauser));
+
+        vm.prank(pauser);
+        swapFacilityProxy.pause();
+
+        assertTrue(swapFacilityProxy.paused());
     }
 }

@@ -20,7 +20,8 @@ contract DeployBase is DeployHelpers, ScriptBase {
     Options public deployOptions;
 
     function _deploySwapFacility(
-        address deployer
+        address deployer,
+        address pauser
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
@@ -29,7 +30,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
         proxy = _deployCreate3TransparentProxy(
             implementation,
             config.admin,
-            abi.encodeWithSelector(SwapFacility.initialize.selector, config.admin),
+            abi.encodeWithSelector(SwapFacility.initialize.selector, config.admin, pauser),
             _computeSalt(deployer, "SwapFacility")
         );
 
