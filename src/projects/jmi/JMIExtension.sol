@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Metadata as IERC20 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-import { TransferHelper } from "../../../lib/common/src/libs/TransferHelper.sol";
+import { SafeERC20 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { Pausable } from "../../components/pausable/Pausable.sol";
 
@@ -49,7 +49,7 @@ abstract contract JMIExtensionLayout {
  * @author M0 Labs
  */
 contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausable {
-    using TransferHelper for IERC20;
+    using SafeERC20 for IERC20;
 
     /* ============ Variables ============ */
 
