@@ -45,6 +45,7 @@ abstract contract JMIExtensionLayout {
  *         The JMI backing model allows users to mint the extension token
  *         by depositing either M or an allowed asset token.
  *         It assumes that both tokens are pegged 1:1.
+ *         Fee on transfer tokens are not supported.
  * @author M0 Labs
  */
 contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausable {
@@ -271,8 +272,14 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         // NOTE: MYieldToOne's `_beforeWrap` checks that `account` and `recipient` are not frozen.
         _beforeWrap(asset, account, recipient, amount);
 
+        uint256 assetBalanceBefore_ = IERC20(asset).balanceOf(address(this));
+
         // NOTE: Transfers asset from SwapFacility to this contract (amount is in asset decimals).
         IERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
+
+        // NOTE: Check actual amount received and revert if less than expected (to prevent fee on transfer tokens).
+        uint256 amountReceived_ = IERC20(asset).balanceOf(address(this)) - assetBalanceBefore_;
+        if (amountReceived_ < amount) revert InsufficientAssetReceived(asset, amount, amountReceived_);
 
         uint256 jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
         _revertIfInsufficientAmount(jmiAmount_);

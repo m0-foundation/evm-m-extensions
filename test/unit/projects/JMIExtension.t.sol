@@ -11,7 +11,7 @@ import { PausableUpgradeable } from "../../../lib/common/lib/openzeppelin-contra
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MockERC20, MockM } from "../../utils/Mocks.sol";
+import { MockERC20, MockFeeOnTransferERC20, MockM } from "../../utils/Mocks.sol";
 
 import { JMIExtension } from "../../../src/projects/jmi/JMIExtension.sol";
 import { IJMIExtension } from "../../../src/projects/jmi/IJMIExtension.sol";
@@ -39,12 +39,16 @@ contract JMIExtensionUnitTests is BaseUnitTest {
     MockERC20 public mockDAI;
     uint256 public mockDAICap = 1_000_000_000e18;
 
+    MockFeeOnTransferERC20 public mockFeeOnTransferToken;
+    uint256 public mockFeeOnTransferTokenCap = 1_000_000_000e18;
+
     function setUp() public override {
         super.setUp();
 
         mockUSDC = new MockERC20("Mock USDC", "USDC", EXTENSION_DECIMALS);
         mockAsset4Decimals = new MockERC20("Mock Asset 4 Decimals", "MA4D", 4);
         mockDAI = new MockERC20("Mock DAI", "DAI", 18);
+        mockFeeOnTransferToken = new MockFeeOnTransferERC20("MockFeeOnTransferERC20", "MFOTERC20", 6);
 
         jmi = JMIExtensionHarness(
             Upgrades.deployTransparentProxy(
@@ -82,6 +86,12 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         vm.prank(address(swapFacility));
         mockDAI.approve(address(jmi), type(uint256).max);
+
+        vm.prank(assetCapManager);
+        jmi.setAssetCap(address(mockFeeOnTransferToken), mockFeeOnTransferTokenCap);
+
+        vm.prank(address(swapFacility));
+        mockFeeOnTransferToken.approve(address(jmi), type(uint256).max);
 
         registrar.setEarner(address(jmi), true);
     }
@@ -370,6 +380,36 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         assertEq(mockAsset4Decimals.balanceOf(alice), 0);
         assertEq(mockAsset4Decimals.balanceOf(address(jmi)), mockAsset4DecimalsAmount);
+    }
+
+    function test_wrap_feeOnTransfer() public {
+        uint256 amount = 1_000e6;
+        uint256 amountAfterFee = amount - 10e6;
+
+        mockFeeOnTransferToken.mint(address(swapFacility), amount);
+        assertEq(mockFeeOnTransferToken.balanceOf(address(swapFacility)), amount);
+
+        vm.expectCall(
+            address(mockFeeOnTransferToken),
+            abi.encodeWithSelector(
+                mockFeeOnTransferToken.transferFrom.selector,
+                address(swapFacility),
+                address(jmi),
+                amount
+            )
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IJMIExtension.InsufficientAssetReceived.selector,
+                address(mockFeeOnTransferToken),
+                amount,
+                amountAfterFee
+            )
+        );
+
+        vm.prank(address(swapFacility));
+        jmi.wrap(address(mockFeeOnTransferToken), alice, amount);
     }
 
     function testFuzz_wrap(uint240 amount) public {

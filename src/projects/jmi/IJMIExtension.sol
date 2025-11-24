@@ -40,6 +40,14 @@ interface IJMIExtension is IMYieldToOne {
     error InsufficientAssetBacking(address asset, uint256 amount, uint256 assetAvailable);
 
     /**
+     * @notice Emitted when wrapping `asset` for extension token and receiving less than expected.
+     * @param  asset          Address of the asset.
+     * @param  amountExpected Amount of `asset` expected.
+     * @param  amountReceived Amount of `asset` received.
+     */
+    error InsufficientAssetReceived(address asset, uint256 amountExpected, uint256 amountReceived);
+
+    /**
      * @notice Emitted if `unwrap()` is called but there is not enough M to unwrap with.
      * @param  amount     Amount of M to unwrap requested.
      * @param  mAvailable Amount of M available.

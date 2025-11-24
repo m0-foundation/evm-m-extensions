@@ -244,12 +244,51 @@ contract MockJMIExtension is MockMExtension {
     }
 }
 
+contract MockFeeOnTransferERC20 is MockERC20 {
+    uint256 public constant FEE_PERCENT = 100; // 1% (100 basis points)
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) MockERC20(name_, symbol_, decimals_) {}
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        uint256 fee = (amount * FEE_PERCENT) / 10000;
+
+        balanceOf[msg.sender] -= amount;
+
+        unchecked {
+            balanceOf[to] += (amount - fee);
+            totalSupply -= fee;
+        }
+
+        emit Transfer(msg.sender, to, amount);
+
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+        uint256 allowed = allowance[from][msg.sender];
+
+        if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
+
+        uint256 fee = (amount * FEE_PERCENT) / 10000;
+
+        balanceOf[from] -= amount;
+
+        unchecked {
+            balanceOf[to] += (amount - fee);
+            totalSupply -= fee;
+        }
+
+        emit Transfer(from, to, amount);
+
+        return true;
+    }
+}
+
 contract MExtensionUpgrade is Initializable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
-
     function bar() external pure returns (uint256) {
         return 1;
     }
