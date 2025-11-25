@@ -108,12 +108,33 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         assertEq(jmi.M_DECIMALS(), EXTENSION_DECIMALS);
 
         assertTrue(jmi.isAllowedAsset(address(mockUSDC)));
+        assertEq(jmi.assetCap(address(mockUSDC)), mockUSDCCap);
+        assertEq(jmi.assetDecimals(address(mockUSDC)), 6);
+
+        assertTrue(jmi.isAllowedAsset(address(mockAsset4Decimals)));
+        assertEq(jmi.assetCap(address(mockAsset4Decimals)), mockAsset4DecimalsCap);
+        assertEq(jmi.assetDecimals(address(mockAsset4Decimals)), 4);
+
+        assertTrue(jmi.isAllowedAsset(address(mockDAI)));
+        assertEq(jmi.assetCap(address(mockDAI)), mockDAICap);
+        assertEq(jmi.assetDecimals(address(mockDAI)), 18);
 
         assertTrue(IAccessControl(address(jmi)).hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(IAccessControl(address(jmi)).hasRole(ASSET_CAP_MANAGER_ROLE, assetCapManager));
         assertTrue(IAccessControl(address(jmi)).hasRole(FREEZE_MANAGER_ROLE, freezeManager));
         assertTrue(IAccessControl(address(jmi)).hasRole(PAUSER_ROLE, pauser));
         assertTrue(IAccessControl(address(jmi)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+    }
+
+    /* ============ assetBalanceOf ============ */
+
+    function test_assetBalanceOf() external {
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), 0);
+
+        uint256 amount = 1_000e6;
+
+        jmi.setAssetBalanceOf(address(mockUSDC), amount);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
     }
 
     /* ============ isAllowedAsset ============ */
@@ -140,7 +161,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         assertFalse(jmi.isAllowedToWrap(address(mToken), 0));
         assertFalse(jmi.isAllowedToWrap(address(mockUSDC), 0));
 
-        mockUSDC.mint(address(jmi), mockUSDCCap - 1);
+        jmi.setAssetBalanceOf(address(mockUSDC), mockUSDCCap - 1);
 
         assertTrue(jmi.isAllowedToWrap(address(mockUSDC), 1));
         assertFalse(jmi.isAllowedToWrap(address(mockUSDC), 2));
@@ -169,7 +190,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         assertFalse(jmi.isAllowedToReplaceAssetWithM(address(mockUSDC), 0));
         assertFalse(jmi.isAllowedToReplaceAssetWithM(address(mockUSDC), 1));
 
-        mockUSDC.mint(address(jmi), 100_000_000e6);
+        jmi.setAssetBalanceOf(address(mockUSDC), 100_000_000e6);
 
         assertTrue(jmi.isAllowedToReplaceAssetWithM(address(mockUSDC), 25_000_000e6));
         assertTrue(jmi.isAllowedToReplaceAssetWithM(address(mockUSDC), 100_000_000e6));
@@ -325,6 +346,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.wrap(address(mockUSDC), alice, amount);
 
         assertEq(jmi.balanceOf(alice), amount);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
+        assertEq(jmi.totalAssets(), amount);
         assertEq(jmi.totalSupply(), amount);
 
         assertEq(mockUSDC.balanceOf(alice), 0);
@@ -354,6 +377,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.wrap(address(mockDAI), alice, mockDAIAmount);
 
         assertEq(jmi.balanceOf(alice), extensionAmount);
+        assertEq(jmi.assetBalanceOf(address(mockDAI)), mockDAIAmount);
+        assertEq(jmi.totalAssets(), extensionAmount);
         assertEq(jmi.totalSupply(), extensionAmount);
 
         assertEq(mockDAI.balanceOf(alice), 0);
@@ -376,6 +401,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.wrap(address(mockAsset4Decimals), alice, mockAsset4DecimalsAmount);
 
         assertEq(jmi.balanceOf(alice), extensionAmount * 2);
+        assertEq(jmi.assetBalanceOf(address(mockAsset4Decimals)), mockAsset4DecimalsAmount);
+        assertEq(jmi.totalAssets(), extensionAmount * 2);
         assertEq(jmi.totalSupply(), extensionAmount * 2);
 
         assertEq(mockAsset4Decimals.balanceOf(alice), 0);
@@ -442,6 +469,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         }
 
         assertEq(jmi.balanceOf(alice), amount);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
+        assertEq(jmi.totalAssets(), amount);
         assertEq(jmi.totalSupply(), amount);
 
         assertEq(mockUSDC.balanceOf(alice), 0);
@@ -481,6 +510,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         }
 
         assertEq(jmi.balanceOf(alice), extensionAmount);
+        assertEq(jmi.assetBalanceOf(address(asset)), amount);
+        assertEq(jmi.totalAssets(), extensionAmount);
         assertEq(jmi.totalSupply(), extensionAmount);
 
         assertEq(asset.balanceOf(alice), 0);
@@ -504,7 +535,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         uint256 unwrapAmount = 1e6;
 
         jmi.setBalanceOf(address(swapFacility), amount);
-        mockUSDC.mint(address(jmi), amount);
+        jmi.setAssetBalanceOf(address(mockUSDC), amount);
 
         vm.expectRevert(abi.encodeWithSelector(IJMIExtension.InsufficientMBacking.selector, unwrapAmount, 0));
 
@@ -522,7 +553,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.setTotalSupply(totalSupply);
 
         mToken.setBalanceOf(address(jmi), amount);
-        mockUSDC.mint(address(jmi), amount);
+        jmi.setAssetBalanceOf(address(mockUSDC), amount);
 
         vm.expectEmit();
         emit IERC20.Transfer(address(swapFacility), address(0), unwrapAmount);
@@ -582,7 +613,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.setTotalSupply(totalSupply);
 
         mToken.setBalanceOf(address(jmi), mSupply);
-        mockUSDC.mint(address(jmi), totalAssets);
+        jmi.setAssetBalanceOf(address(mockUSDC), totalAssets);
 
         // Calculate expected M backing: totalSupply - totalAssets
         uint256 expectedMBacking = totalSupply > totalAssets ? totalSupply - totalAssets : 0;
@@ -636,11 +667,19 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         assertEq(jmi.balanceOf(alice), amount);
         assertEq(jmi.balanceOf(bob), 0);
 
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
+        assertEq(jmi.totalAssets(), amount);
+        assertEq(jmi.totalSupply(), amount);
+
         vm.prank(alice);
         jmi.transfer(bob, amount);
 
         assertEq(jmi.balanceOf(alice), 0);
         assertEq(jmi.balanceOf(bob), amount);
+
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
+        assertEq(jmi.totalAssets(), amount);
+        assertEq(jmi.totalSupply(), amount);
     }
 
     /* ============ replaceAssetWithM ============ */
@@ -714,8 +753,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
     function test_replaceAssetWithM_inflationAttack() public {
         uint256 amount = 1_000e6;
 
-        mockUSDC.mint(address(jmi), amount);
-        assertEq(mockUSDC.balanceOf(address(jmi)), amount);
+        jmi.setAssetBalanceOf(address(mockUSDC), amount);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
 
         mToken.setBalanceOf(address(swapFacility), amount * 4);
         assertEq(mToken.balanceOf(address(swapFacility)), amount * 4);
@@ -728,10 +767,16 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         // Send USDC directly to the contract to bypass `_revertIfInsufficientAssetBacking()` check.
         mockUSDC.mint(address(jmi), amount * 2);
-        assertEq(mockUSDC.balanceOf(address(jmi)), amount * 3);
+        assertEq(mockUSDC.balanceOf(address(jmi)), amount * 2);
 
-        // It will underflow when decrementing `totalAssets`.
-        vm.expectRevert();
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IJMIExtension.InsufficientAssetBacking.selector,
+                address(mockUSDC),
+                amount * 3,
+                amount
+            )
+        );
 
         vm.prank(address(swapFacility));
         jmi.replaceAssetWithM(address(mockUSDC), alice, amount * 3);
@@ -742,6 +787,9 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         mockUSDC.mint(address(jmi), amount);
         assertEq(mockUSDC.balanceOf(address(jmi)), amount);
+
+        jmi.setAssetBalanceOf(address(mockUSDC), amount);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), amount);
 
         mToken.setBalanceOf(address(swapFacility), amount);
         assertEq(mToken.balanceOf(address(swapFacility)), amount);
@@ -761,6 +809,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.replaceAssetWithM(address(mockUSDC), alice, amount);
 
         assertEq(jmi.balanceOf(alice), 0);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), 0);
         assertEq(jmi.totalAssets(), 0);
         assertEq(jmi.totalSupply(), amount);
 
@@ -780,8 +829,14 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         mockDAI.mint(address(jmi), mockDAIAmount);
         assertEq(mockDAI.balanceOf(address(jmi)), mockDAIAmount);
 
+        jmi.setAssetBalanceOf(address(mockDAI), mockDAIAmount);
+        assertEq(jmi.assetBalanceOf(address(mockDAI)), mockDAIAmount);
+
         mockAsset4Decimals.mint(address(jmi), mockAsset4DecimalsAmount);
         assertEq(mockAsset4Decimals.balanceOf(address(jmi)), mockAsset4DecimalsAmount);
+
+        jmi.setAssetBalanceOf(address(mockAsset4Decimals), mockAsset4DecimalsAmount);
+        assertEq(jmi.assetBalanceOf(address(mockAsset4Decimals)), mockAsset4DecimalsAmount);
 
         jmi.setTotalAssets(totalAmount);
         assertEq(jmi.totalAssets(), totalAmount);
@@ -827,6 +882,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         jmi.replaceAssetWithM(address(mockAsset4Decimals), alice, extensionAmount);
 
         assertEq(jmi.balanceOf(alice), 0);
+        assertEq(jmi.assetBalanceOf(address(mockAsset4Decimals)), 0);
         assertEq(jmi.totalAssets(), 0);
         assertEq(jmi.totalSupply(), totalAmount);
 
@@ -838,11 +894,14 @@ contract JMIExtensionUnitTests is BaseUnitTest {
     }
 
     function testFuzz_replaceAssetWithM(uint256 amount, uint256 usdcBacking, uint240 mSupply) public {
-        usdcBacking = bound(usdcBacking, 0, type(uint256).max - mSupply);
+        usdcBacking = bound(usdcBacking, 0, type(uint240).max - mSupply);
         uint256 extensionSupply = uint256(mSupply) + usdcBacking;
 
         mockUSDC.mint(address(jmi), usdcBacking);
         assertEq(mockUSDC.balanceOf(address(jmi)), usdcBacking);
+
+        jmi.setAssetBalanceOf(address(mockUSDC), usdcBacking);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), usdcBacking);
 
         mToken.setBalanceOf(address(swapFacility), amount);
         assertEq(mToken.balanceOf(address(swapFacility)), amount);
@@ -886,6 +945,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         }
 
         assertEq(jmi.balanceOf(alice), 0);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), usdcBacking - amount);
         assertEq(jmi.totalAssets(), usdcBacking - amount);
         assertEq(jmi.totalSupply(), extensionSupply);
 
@@ -902,7 +962,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         uint256 assetBacking,
         uint240 mSupply
     ) public {
-        assetBacking = bound(assetBacking, 0, type(uint256).max - mSupply);
+        assetBacking = bound(assetBacking, 0, type(uint240).max - mSupply);
 
         (MockERC20 asset, , uint8 assetDecimals) = _getRandomAsset(seed);
 
@@ -929,6 +989,9 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         asset.mint(address(jmi), assetBacking);
         assertEq(asset.balanceOf(address(jmi)), assetBacking);
+
+        jmi.setAssetBalanceOf(address(asset), assetBacking);
+        assertEq(jmi.assetBalanceOf(address(asset)), assetBacking);
 
         mToken.setBalanceOf(address(swapFacility), extensionAmount);
         assertEq(mToken.balanceOf(address(swapFacility)), extensionAmount);
@@ -977,6 +1040,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         }
 
         assertEq(jmi.balanceOf(alice), 0);
+        assertEq(jmi.assetBalanceOf(address(asset)), assetBacking - amount);
         assertEq(jmi.totalAssets(), extensionBacking - extensionAmount);
         assertEq(jmi.totalSupply(), extensionSupply);
 
@@ -996,7 +1060,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         uint256 totalSupply = bound(0, totalAssets, mBalance + totalAssets);
 
         mToken.setBalanceOf(address(jmi), mBalance);
-        mockUSDC.mint(address(jmi), totalAssets);
+        jmi.setAssetBalanceOf(address(mockUSDC), totalAssets);
         jmi.setTotalAssets(totalAssets);
         jmi.setTotalSupply(totalSupply);
 
@@ -1015,6 +1079,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         mToken.setBalanceOf(address(jmi), 1_500e6);
         mockUSDC.mint(address(jmi), 1_500e6);
+        jmi.setAssetBalanceOf(address(mockUSDC), 1_500e6);
         jmi.setTotalAssets(1_500e6);
         jmi.setTotalSupply(2_500e6);
 
@@ -1028,6 +1093,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         assertEq(mToken.balanceOf(address(jmi)), 1_500e6);
         assertEq(mockUSDC.balanceOf(address(jmi)), 1_500e6);
+        assertEq(jmi.assetBalanceOf(address(mockUSDC)), 1_500e6);
+        assertEq(jmi.totalAssets(), 1_500e6);
         assertEq(jmi.totalSupply(), 3_000e6);
 
         assertEq(mToken.balanceOf(yieldRecipient), 0);

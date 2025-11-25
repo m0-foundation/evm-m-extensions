@@ -17,12 +17,21 @@ import { MYieldToOne } from "../yieldToOne/MYieldToOne.sol";
 import { IJMIExtension } from "./IJMIExtension.sol";
 
 abstract contract JMIExtensionLayout {
-    struct JMIExtensionStorageStruct {
-        // All supported collateral assets and their caps.
-        // If an asset is not present in the mapping or has a cap of 0, it is not allowed.
-        // Cap amount MUST be formatted in the asset's decimals (i.e. 18 decimals for DAI).
+    struct Asset {
+        // Cap amount for the asset, formatted in the asset's decimals (i.e. 18 decimals for DAI).
         // Primary asset (M) is implicit and has no cap.
-        mapping(address asset => uint256 capAmount) assetCap;
+        uint256 cap;
+        // Balance of the asset backing the extension token.
+        // M token's supply can't exceed uint240, so uint240 is safe to use.
+        uint240 balance;
+        // Decimals of the asset.
+        uint8 decimals;
+    }
+
+    struct JMIExtensionStorageStruct {
+        // All supported collateral assets and their properties.
+        // If an asset is not present in the mapping or has a cap of 0, it is not allowed.
+        mapping(address asset => Asset) assets;
         // Total amount of non M assets backing the extension token, formatted in extension decimals (i.e. 6 decimals).
         uint256 totalAssets;
     }
@@ -152,9 +161,14 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
     function setAssetCap(address asset, uint256 cap) external onlyRole(ASSET_CAP_MANAGER_ROLE) {
         _revertIfInvalidAsset(asset);
 
-        if (assetCap(asset) == cap) return;
+        JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
 
-        _getJMIExtensionStorageLocation().assetCap[asset] = cap;
+        if ($.assets[asset].cap == cap) return;
+
+        // NOTE: Fetch and store asset decimals only once.
+        if ($.assets[asset].decimals == 0) $.assets[asset].decimals = IERC20(asset).decimals();
+
+        $.assets[asset].cap = cap;
 
         emit AssetCapSet(asset, cap);
     }
@@ -162,8 +176,18 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IJMIExtension
+    function assetBalanceOf(address asset) public view returns (uint256) {
+        return _getJMIExtensionStorageLocation().assets[asset].balance;
+    }
+
+    /// @inheritdoc IJMIExtension
     function assetCap(address asset) public view returns (uint256) {
-        return _getJMIExtensionStorageLocation().assetCap[asset];
+        return _getJMIExtensionStorageLocation().assets[asset].cap;
+    }
+
+    /// @inheritdoc IJMIExtension
+    function assetDecimals(address asset) public view returns (uint8) {
+        return _getJMIExtensionStorageLocation().assets[asset].decimals;
     }
 
     /// @inheritdoc IJMIExtension
@@ -173,7 +197,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
 
     /// @inheritdoc IJMIExtension
     function isAllowedAsset(address asset) public view returns (bool) {
-        return (asset == mToken) || (_getJMIExtensionStorageLocation().assetCap[asset] != 0);
+        return (asset == mToken) || (assetCap(asset) != 0);
     }
 
     /// @inheritdoc IJMIExtension
@@ -183,10 +207,8 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         // NOTE: Allow any amount of M (primary asset) to be wrapped into JMI extension token.
         if (asset == mToken) return true;
 
-        unchecked {
-            // NOTE: Check cap for other assets.
-            return assetCap(asset) >= (IERC20(asset).balanceOf(address(this)) + amount);
-        }
+        // NOTE: Check cap for other assets.
+        return assetCap(asset) >= (assetBalanceOf(asset) + amount);
     }
 
     /// @inheritdoc IJMIExtension
@@ -196,7 +218,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
 
     /// @inheritdoc IJMIExtension
     function isAllowedToReplaceAssetWithM(address asset, uint256 amount) external view returns (bool) {
-        return amount != 0 && IERC20(asset).balanceOf(address(this)) >= amount;
+        return amount != 0 && assetBalanceOf(asset) >= amount;
     }
 
     /// @inheritdoc IMYieldToOne
@@ -281,12 +303,18 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         uint256 amountReceived_ = IERC20(asset).balanceOf(address(this)) - assetBalanceBefore_;
         if (amountReceived_ < amount) revert InsufficientAssetReceived(asset, amount, amountReceived_);
 
-        uint256 jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
-        _revertIfInsufficientAmount(jmiAmount_);
+        uint256 jmiAmount_ = amount;
 
-        unchecked {
-            // Update total non-M asset amount backing JMI extension token.
-            _getJMIExtensionStorageLocation().totalAssets += jmiAmount_;
+        if (asset != mToken) {
+            // NOTE: Converts to extension amount and reverts in case it truncates to zero.
+            jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
+            _revertIfInsufficientAmount(jmiAmount_);
+
+            JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
+
+            // NOTE: Update non-M asset amount backing JMI extension token.
+            $.assets[asset].balance += uint240(amount);
+            $.totalAssets += jmiAmount_;
         }
 
         _mint(recipient, jmiAmount_);
@@ -305,18 +333,20 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         _revertIfInvalidRecipient(recipient);
         _revertIfInsufficientAmount(amount);
 
+        // NOTE: Converts to asset amount and reverts in case it truncates to zero.
         uint256 assetAmount_ = _fromExtensionToAssetAmount(asset, amount);
         _revertIfInsufficientAmount(assetAmount_);
-
         _revertIfInsufficientAssetBacking(asset, assetAmount_);
 
-        // NOTE: Update total non-M asset amount backing JMI extension token.
-        _getJMIExtensionStorageLocation().totalAssets -= amount;
+        JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
+
+        // NOTE: Update non-M asset amount backing JMI extension token.
+        $.assets[asset].balance -= uint240(assetAmount_);
+        $.totalAssets -= amount;
 
         // NOTE: `msg.sender` is always SwapFacility contract.
         // NOTE: The behavior of `IMTokenLike.transferFrom` is known, so its return can be ignored.
         IMTokenLike(mToken).transferFrom(msg.sender, address(this), amount);
-
         IERC20(asset).safeTransfer(recipient, assetAmount_);
 
         emit AssetReplacedWithM(asset, assetAmount_, recipient, amount);
@@ -358,7 +388,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
      * @param amount Amount of `asset` to check.
      */
     function _revertIfInsufficientAssetBacking(address asset, uint256 amount) internal view {
-        uint256 assetBacking_ = IERC20(asset).balanceOf(address(this));
+        uint256 assetBacking_ = assetBalanceOf(asset);
         if (amount > assetBacking_) revert InsufficientAssetBacking(asset, amount, assetBacking_);
     }
 
@@ -369,7 +399,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
      * @return Amount in extension decimals.
      */
     function _fromAssetToExtensionAmount(address asset, uint256 amount) internal view returns (uint256) {
-        return _convertAmounts(IERC20(asset).decimals(), M_DECIMALS, amount);
+        return _convertAmounts(assetDecimals(asset), M_DECIMALS, amount);
     }
 
     /**
@@ -379,7 +409,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
      * @return Amount in `asset` decimals.
      */
     function _fromExtensionToAssetAmount(address asset, uint256 amount) internal view returns (uint256) {
-        return _convertAmounts(M_DECIMALS, IERC20(asset).decimals(), amount);
+        return _convertAmounts(M_DECIMALS, assetDecimals(asset), amount);
     }
 
     /* ============ Internal Pure Functions ============ */

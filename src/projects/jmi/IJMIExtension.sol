@@ -98,8 +98,14 @@ interface IJMIExtension is IMYieldToOne {
     /// @notice Number of decimals used by the M token.
     function M_DECIMALS() external view returns (uint8);
 
+    /// @notice Gets the cached balance of a given asset held by the extension.
+    function assetBalanceOf(address asset) external view returns (uint256);
+
     /// @notice Gets the asset cap for a given asset.
     function assetCap(address asset) external view returns (uint256);
+
+    /// @notice Gets the cached decimals of a given asset.
+    function assetDecimals(address asset) external view returns (uint8);
 
     /// @notice Gets the total non-M assets held by the extension.
     function totalAssets() external view returns (uint256);
