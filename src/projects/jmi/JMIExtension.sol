@@ -16,6 +16,17 @@ import { MYieldToOne } from "../yieldToOne/MYieldToOne.sol";
 
 import { IJMIExtension } from "./IJMIExtension.sol";
 
+/**
+
+     ██╗██╗   ██╗███████╗████████╗    ███╗   ███╗██╗███╗   ██╗████████╗    ██╗████████╗
+     ██║██║   ██║██╔════╝╚══██╔══╝    ████╗ ████║██║████╗  ██║╚══██╔══╝    ██║╚══██╔══╝
+     ██║██║   ██║███████╗   ██║       ██╔████╔██║██║██╔██╗ ██║   ██║       ██║   ██║
+██   ██║██║   ██║╚════██║   ██║       ██║╚██╔╝██║██║██║╚██╗██║   ██║       ██║   ██║
+╚█████╔╝╚██████╔╝███████║   ██║       ██║ ╚═╝ ██║██║██║ ╚████║   ██║       ██║   ██║
+ ╚════╝  ╚═════╝ ╚══════╝   ╚═╝       ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝   ╚═╝       ╚═╝   ╚═╝
+
+*/
+
 abstract contract JMIExtensionLayout {
     struct Asset {
         // Cap amount for the asset, formatted in the asset's decimals (i.e. 18 decimals for DAI).
