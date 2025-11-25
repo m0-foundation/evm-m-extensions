@@ -154,6 +154,22 @@ interface ISwapFacility {
     ) external;
 
     /**
+     * @notice Swaps $M token to $M Extension.
+     * @param  extensionOut The address of the M Extension to swap to.
+     * @param  amount       The amount of $M token to swap.
+     * @param  recipient    The address to receive the swapped $M Extension tokens.
+     */
+    function swapInM(address extensionOut, uint256 amount, address recipient) external;
+
+    /**
+     * @notice Swaps $M Extension to $M token.
+     * @param  extensionIn The address of the $M Extension to swap from.
+     * @param  amount      The amount of $M Extension tokens to swap.
+     * @param  recipient   The address to receive $M tokens.
+     */
+    function swapOutM(address extensionIn, uint256 amount, address recipient) external;
+
+    /**
      * @notice Replaces `amount` of `asset` held in a JMI Extension with $M.
      * @param  asset        The address of the asset.
      * @param  extensionIn  The address of an $M extension to unwrap $M from and replace `asset` with.

@@ -134,6 +134,16 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
     }
 
     /// @inheritdoc ISwapFacility
+    function swapInM(address extensionOut, uint256 amount, address recipient) external isNotLocked {
+        _swap(mToken, extensionOut, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
+    function swapOutM(address extensionIn, uint256 amount, address recipient) external isNotLocked {
+        _swap(extensionIn, mToken, amount, recipient);
+    }
+
+    /// @inheritdoc ISwapFacility
     function replaceAssetWithM(
         address asset,
         address extensionIn,
