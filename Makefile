@@ -78,7 +78,7 @@ deploy-jmi-extension:
 	forge script script/deploy/DeployJMIExtension.s.sol:DeployJMIExtension \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive
+	--skip test --slow --non-interactive --broadcast --verify
 
 deploy-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-jmi-extension-sepolia: deploy-jmi-extension 
