@@ -314,19 +314,15 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         uint256 amountReceived_ = IERC20(asset).balanceOf(address(this)) - assetBalanceBefore_;
         if (amountReceived_ < amount) revert InsufficientAssetReceived(asset, amount, amountReceived_);
 
-        uint256 jmiAmount_ = amount;
+        // NOTE: Converts to extension amount and reverts in case it truncates to zero.
+        uint256 jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
+        _revertIfInsufficientAmount(jmiAmount_);
 
-        if (asset != mToken) {
-            // NOTE: Converts to extension amount and reverts in case it truncates to zero.
-            jmiAmount_ = _fromAssetToExtensionAmount(asset, amount);
-            _revertIfInsufficientAmount(jmiAmount_);
+        JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
 
-            JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
-
-            // NOTE: Update non-M asset amount backing JMI extension token.
-            $.assets[asset].balance += uint240(amount);
-            $.totalAssets += jmiAmount_;
-        }
+        // NOTE: Update non-M asset amount backing JMI extension token.
+        $.assets[asset].balance += uint240(amount);
+        $.totalAssets += jmiAmount_;
 
         _mint(recipient, jmiAmount_);
     }
