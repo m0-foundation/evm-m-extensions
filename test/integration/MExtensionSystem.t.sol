@@ -56,7 +56,8 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
                     SYMBOL,
                     admin,
                     earnerManager,
-                    feeRecipient
+                    feeRecipient,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -73,7 +74,8 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
                     yieldRecipient,
                     admin,
                     freezeManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -91,7 +93,9 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
                     feeRecipient,
                     admin,
                     feeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -138,6 +142,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mEarnerManager.mToken(), address(mToken));
         assertEq(mEarnerManager.feeRecipient(), feeRecipient);
         assertEq(mEarnerManager.ONE_HUNDRED_PERCENT(), 10_000);
+        assertTrue(mEarnerManager.hasRole(PAUSER_ROLE, pauser));
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
 
@@ -147,6 +152,7 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.mToken(), address(mToken));
         assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
+        assertTrue(mYieldToOne.hasRole(PAUSER_ROLE, pauser));
         assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
         assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
@@ -157,9 +163,11 @@ contract MExtensionSystemIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.mToken(), address(mToken));
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
         assertEq(mYieldFee.feeRate(), 1e3);
+        assertTrue(mYieldFee.hasRole(PAUSER_ROLE, pauser));
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, feeManager));
         assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
+        assertTrue(mYieldFee.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
     }
 
     function test_multiHopSwap_mYieldFee_to_mYieldToOne_to_wrappedM() public {

@@ -28,7 +28,8 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
                     SYMBOL,
                     admin,
                     earnerManager,
-                    feeRecipient
+                    feeRecipient,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -44,6 +45,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertEq(mEarnerManager.ONE_HUNDRED_PERCENT(), 10_000);
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
+        assertTrue(mEarnerManager.hasRole(PAUSER_ROLE, pauser));
     }
 
     /* ============ yield ============ */

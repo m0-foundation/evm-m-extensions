@@ -17,6 +17,9 @@ import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 import { IMYieldFee } from "./interfaces/IMYieldFee.sol";
 import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 
+import { Freezable } from "../../../src/components/freezable/Freezable.sol";
+import { Pausable } from "../../../src/components/pausable/Pausable.sol";
+
 import { MExtension } from "../../MExtension.sol";
 
 abstract contract MYieldFeeStorageLayout {
@@ -59,7 +62,15 @@ abstract contract MYieldFeeStorageLayout {
  * @dev    All holders of this ERC20 token are earners.
  * @author M0 Labs
  */
-contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable, MYieldFeeStorageLayout, MExtension {
+contract MYieldFee is
+    IContinuousIndexing,
+    IMYieldFee,
+    AccessControlUpgradeable,
+    MYieldFeeStorageLayout,
+    MExtension,
+    Freezable,
+    Pausable
+{
     /* ============ Variables ============ */
 
     /// @inheritdoc IMYieldFee
@@ -93,6 +104,8 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
      * @param admin                 The address administrating the M extension. Can grant and revoke roles.
      * @param feeManager            The address managing the fee rate and recipient.
      * @param claimRecipientManager The address managing claim recipients for accounts.
+     * @param freezeManager         The address of a freeze manager.
+     * @param pauser                The address of a pauser.
      */
     function initialize(
         string memory name,
@@ -101,7 +114,9 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
         address feeRecipient_,
         address admin,
         address feeManager,
-        address claimRecipientManager
+        address claimRecipientManager,
+        address freezeManager,
+        address pauser
     ) public virtual initializer {
         if (admin == address(0)) revert ZeroAdmin();
         if (feeManager == address(0)) revert ZeroFeeManager();
@@ -112,6 +127,9 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(FEE_MANAGER_ROLE, feeManager);
         _grantRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager);
+
+        __Freezable_init(freezeManager);
+        __Pausable_init(pauser);
 
         _setFeeRate(feeRate_);
         _setFeeRecipient(feeRecipient_);
@@ -379,6 +397,57 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
         // If no claim recipient is set, return the account itself.
         return recipient_ == address(0) ? account : recipient_;
+    }
+
+    /* ============ Hooks For Internal Interactive Functions ============ */
+
+    /**
+     * @dev    Hooks called before approval of M extension spend.
+     * @param  account The account from which M is deposited.
+     * @param  spender The account spending M Extension token.
+     */
+    function _beforeApprove(address account, address spender, uint256 /* amount */) internal view virtual override {
+        FreezableStorageStruct storage $ = _getFreezableStorageLocation();
+
+        _revertIfFrozen($, account);
+        _revertIfFrozen($, spender);
+    }
+
+    /**
+     * @dev    Hooks called before wrapping M into M Extension token.
+     * @param  account   The account from which M is deposited.
+     * @param  recipient The account receiving the minted M Extension token.
+     */
+    function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view virtual override {
+        _requireNotPaused();
+        FreezableStorageStruct storage $ = _getFreezableStorageLocation();
+
+        _revertIfFrozen($, account);
+        _revertIfFrozen($, recipient);
+    }
+
+    /**
+     * @dev   Hook called before unwrapping M Extension token.
+     * @param account The account from which M Extension token is burned.
+     */
+    function _beforeUnwrap(address account, uint256 /* amount */) internal view virtual override {
+        _requireNotPaused();
+        _revertIfFrozen(_getFreezableStorageLocation(), account);
+    }
+
+    /**
+     * @dev   Hook called before transferring M Extension token.
+     * @param sender    The address from which the tokens are being transferred.
+     * @param recipient The address to which the tokens are being transferred.
+     */
+    function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view virtual override {
+        _requireNotPaused();
+        FreezableStorageStruct storage $ = _getFreezableStorageLocation();
+
+        _revertIfFrozen($, msg.sender);
+
+        _revertIfFrozen($, sender);
+        _revertIfFrozen($, recipient);
     }
 
     /* ============ Internal Interactive Functions ============ */

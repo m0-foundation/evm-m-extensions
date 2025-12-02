@@ -2,26 +2,25 @@
 
 pragma solidity 0.8.26;
 
-import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
-import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
+import { IERC20 } from "../../../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../../../lib/common/src/interfaces/IERC20Extended.sol";
 
-import { IAccessControl } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { PausableUpgradeable } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
-import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
-import { MockM } from "../../utils/Mocks.sol";
+import { MYieldToOne } from "../../../../src/projects/yieldToOne/MYieldToOne.sol";
+import { IMYieldToOne } from "../../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
 
-import { MYieldToOne } from "../../../src/projects/yieldToOne/MYieldToOne.sol";
-import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
+import { IFreezable } from "../../../../src/components/freezable/IFreezable.sol";
+import { IPausable } from "../../../../src/components/pausable/IPausable.sol";
 
-import { IFreezable } from "../../../src/components/freezable/IFreezable.sol";
-import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
+import { ISwapFacility } from "../../../../src/swap/interfaces/ISwapFacility.sol";
 
-import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
+import { MYieldToOneHarness } from "../../../harness/MYieldToOneHarness.sol";
 
-import { MYieldToOneHarness } from "../../harness/MYieldToOneHarness.sol";
-
-import { BaseUnitTest } from "../../utils/BaseUnitTest.sol";
+import { BaseUnitTest } from "../../../utils/BaseUnitTest.sol";
 
 contract MYieldToOneUnitTests is BaseUnitTest {
     MYieldToOneHarness public mYieldToOne;
@@ -43,7 +42,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     yieldRecipient,
                     admin,
                     freezeManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -62,9 +62,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(FREEZE_MANAGER_ROLE, freezeManager));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(PAUSER_ROLE, pauser));
     }
 
     function test_initialize_zeroYieldRecipient() external {
@@ -82,7 +83,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(0),
                     admin,
                     freezeManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    pauser
                 )
             )
         );
@@ -103,7 +105,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(yieldRecipient),
                     address(0),
                     freezeManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    pauser
                 )
             )
         );
@@ -124,6 +127,29 @@ contract MYieldToOneUnitTests is BaseUnitTest {
                     address(yieldRecipient),
                     admin,
                     freezeManager,
+                    address(0),
+                    pauser
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroPauser() external {
+        address implementation = address(new MYieldToOneHarness(address(mToken), address(swapFacility)));
+
+        vm.expectRevert(IPausable.ZeroPauser.selector);
+        mYieldToOne = MYieldToOneHarness(
+            UnsafeUpgrades.deployTransparentProxy(
+                implementation,
+                admin,
+                abi.encodeWithSelector(
+                    MYieldToOne.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    yieldRecipient,
+                    admin,
+                    freezeManager,
+                    yieldRecipientManager,
                     address(0)
                 )
             )
@@ -182,6 +208,20 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.wrap(bob, amount);
     }
 
+    function test_wrap_paused() public {
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(address(swapFacility), amount);
+
+        vm.prank(pauser);
+        mYieldToOne.pause();
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(bob));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mYieldToOne.wrap(bob, 1);
+    }
+
     function test_wrap() external {
         uint256 amount = 1_000e6;
         mToken.setBalanceOf(address(swapFacility), amount);
@@ -218,6 +258,20 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
         vm.prank(address(swapFacility));
         mYieldToOne.unwrap(alice, amount);
+    }
+
+    function test_unwrap_paused() public {
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(address(swapFacility), amount);
+
+        vm.prank(pauser);
+        mYieldToOne.pause();
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(alice));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mYieldToOne.unwrap(alice, 1);
     }
 
     function test_unwrap() external {
@@ -305,6 +359,18 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
         vm.prank(alice);
         mYieldToOne.transfer(bob, amount);
+    }
+
+    function test_transfer_paused() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(pauser);
+        mYieldToOne.pause();
+
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, 1);
     }
 
     function test_transfer() external {

@@ -11,7 +11,7 @@ import { Pausable } from "../../components/pausable/Pausable.sol";
 import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 import { ISwapFacility } from "../../swap/interfaces/ISwapFacility.sol";
 
-import { IMYieldToOne } from "../yieldToOne/IMYieldToOne.sol";
+import { IMYieldToOne } from "../yieldToOne/interfaces/IMYieldToOne.sol";
 import { MYieldToOne } from "../yieldToOne/MYieldToOne.sol";
 
 import { IJMIExtension } from "./IJMIExtension.sol";
@@ -68,7 +68,7 @@ abstract contract JMIExtensionLayout {
  *         Fee on transfer tokens are not supported.
  * @author M0 Labs
  */
-contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausable {
+contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
     using SafeERC20 for IERC20;
 
     /* ============ Variables ============ */
@@ -146,8 +146,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne, Pausabl
         address pauser,
         address yieldRecipientManager
     ) internal onlyInitializing {
-        __MYieldToOne_init(name, symbol, yieldRecipient, admin, freezeManager, yieldRecipientManager);
-        __Pausable_init(pauser);
+        __MYieldToOne_init(name, symbol, yieldRecipient, admin, freezeManager, yieldRecipientManager, pauser);
 
         _grantRole(ASSET_CAP_MANAGER_ROLE, assetCapManager);
     }

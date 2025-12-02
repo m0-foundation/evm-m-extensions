@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import { IMYieldToOne } from "../yieldToOne/IMYieldToOne.sol";
+import { IMYieldToOne } from "../yieldToOne/interfaces/IMYieldToOne.sol";
 
 interface IJMIExtension is IMYieldToOne {
     /* ============ Events ============ */

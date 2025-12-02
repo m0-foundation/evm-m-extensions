@@ -4,7 +4,7 @@ gas_reports = ["*"]
 gas_reports_ignore = []
 ignored_error_codes = []
 optimizer = true
-optimizer_runs = 999999
+optimizer_runs = 19999
 solc_version = "0.8.26"
 verbosity = 3
 # Used to deploy transparent proxies

@@ -13,6 +13,8 @@ import { IMExtension } from "../../interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
 import { IMEarnerManager } from "./IMEarnerManager.sol";
 
+import { Pausable } from "../../components/pausable/Pausable.sol";
+
 import { MExtension } from "../../MExtension.sol";
 
 abstract contract MEarnerManagerStorageLayout {
@@ -61,7 +63,13 @@ abstract contract MEarnerManagerStorageLayout {
  * @title M Extension where Earner Manager whitelists accounts and sets fee rates for them.
  * @author M0 Labs
  */
-contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerManagerStorageLayout, MExtension {
+contract MEarnerManager is
+    IMEarnerManager,
+    AccessControlUpgradeable,
+    MEarnerManagerStorageLayout,
+    MExtension,
+    Pausable
+{
     /* ============ Variables ============ */
 
     /// @inheritdoc IMEarnerManager
@@ -90,18 +98,21 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      * @param admin              The address administrating the M extension. Can grant and revoke roles.
      * @param earnerManager      The address of earner manager
      * @param feeRecipient_      The address that will receive the fees from all the earners.
+     * @param pauser             The address of a pauser.
      */
     function initialize(
         string memory name,
         string memory symbol,
         address admin,
         address earnerManager,
-        address feeRecipient_
+        address feeRecipient_,
+        address pauser
     ) public virtual initializer {
         if (admin == address(0)) revert ZeroAdmin();
         if (earnerManager == address(0)) revert ZeroEarnerManager();
 
         __MExtension_init(name, symbol);
+        __Pausable_init(pauser);
 
         _setFeeRecipient(feeRecipient_);
 
@@ -327,6 +338,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      * @param  recipient The account receiving the minted M Extension token.
      */
     function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view override {
+        _requireNotPaused();
         if (!isEarningEnabled()) revert EarningIsDisabled();
 
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
@@ -340,6 +352,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      * @param account The account from which M Extension token is burned.
      */
     function _beforeUnwrap(address account, uint256 /* amount */) internal view override {
+        _requireNotPaused();
         _revertIfNotWhitelisted(_getMEarnerManagerStorageLocation(), account);
     }
 
@@ -349,6 +362,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
      * @param recipient The recipient's address.
      */
     function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view override {
+        _requireNotPaused();
         MEarnerManagerStorageStruct storage $ = _getMEarnerManagerStorageLocation();
 
         _revertIfNotWhitelisted($, msg.sender);

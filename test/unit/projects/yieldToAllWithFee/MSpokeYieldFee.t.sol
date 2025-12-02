@@ -39,7 +39,9 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     feeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 ),
                 deployOptions
             )
@@ -55,9 +57,13 @@ contract MSpokeYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
+
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, feeManager));
         assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
+        assertTrue(mYieldFee.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldFee.hasRole(PAUSER_ROLE, pauser));
+
         assertEq(mYieldFee.rateOracle(), address(rateOracle));
     }
 

@@ -15,7 +15,7 @@ import { MockERC20, MockFeeOnTransferERC20, MockM } from "../../utils/Mocks.sol"
 
 import { JMIExtension } from "../../../src/projects/jmi/JMIExtension.sol";
 import { IJMIExtension } from "../../../src/projects/jmi/IJMIExtension.sol";
-import { IMYieldToOne } from "../../../src/projects/yieldToOne/IMYieldToOne.sol";
+import { IMYieldToOne } from "../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
 
 import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
 

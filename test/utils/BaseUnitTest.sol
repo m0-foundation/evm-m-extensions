@@ -8,7 +8,7 @@ import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol
 
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
@@ -33,6 +33,7 @@ contract BaseUnitTest is Helpers, Test {
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
+    bytes32 public constant FORCED_TRANSFER_MANAGER_ROLE = keccak256("FORCED_TRANSFER_MANAGER_ROLE");
 
     MockM public mToken;
     MockRateOracle public rateOracle;
@@ -50,6 +51,7 @@ contract BaseUnitTest is Helpers, Test {
     address public earnerManager = makeAddr("earnerManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
+    address public forcedTransferManager = makeAddr("forcedTransferManager");
 
     address public feeRecipient = makeAddr("feeRecipient");
     address public feeManager = makeAddr("feeManager");

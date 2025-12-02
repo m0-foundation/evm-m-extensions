@@ -35,7 +35,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
                     yieldRecipient,
                     admin,
                     freezeManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -53,9 +54,11 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(FREEZE_MANAGER_ROLE, freezeManager));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(PAUSER_ROLE, pauser));
+        assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
     }
 
     function test_yieldAccumulationAndClaim() external {
