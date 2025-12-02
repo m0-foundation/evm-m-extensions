@@ -73,6 +73,16 @@ deploy-m-earner-manager:
 deploy-m-earner-manager-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-m-earner-manager-sepolia: deploy-m-earner-manager
 
+deploy-jmi-extension:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
+	forge script script/deploy/DeployJMIExtension.s.sol:DeployJMIExtension \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive --broadcast --verify
+
+deploy-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+deploy-jmi-extension-sepolia: deploy-jmi-extension 
+
 deploy-swap-adapter:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/deploy/DeploySwapAdapter.s.sol:DeploySwapAdapter \

@@ -29,6 +29,8 @@ contract Config {
         address yieldRecipient;
         address freezeManager;
         address yieldRecipientManager;
+        // just mint it
+        address pauser;
     }
 
     // Mainnet chain IDs
@@ -153,6 +155,16 @@ contract Config {
                 config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.freezeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+            }
+
+            if (keccak256(bytes(name)) == keccak256(bytes("JMIExtensionTestnet"))) {
+                config.name = name;
+                config.symbol = "JMI";
+                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.freezeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
+                config.pauser = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
                 config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
             }
         }

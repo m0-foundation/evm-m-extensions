@@ -12,6 +12,7 @@ import { ScriptBase } from "../ScriptBase.s.sol";
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { JMIExtension } from "../../src/projects/jmi/JMIExtension.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
@@ -105,6 +106,34 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.yieldRecipientManager
             ),
             _computeSalt(deployer, "MYieldToOne")
+        );
+
+        proxyAdmin = extensionConfig.admin;
+    }
+
+    function _deployJMIExtension(
+        address deployer
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+        DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
+
+        implementation = address(new JMIExtension(config.mToken, _getSwapFacility()));
+
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            extensionConfig.admin,
+            abi.encodeWithSelector(
+                JMIExtension.initialize.selector,
+                extensionConfig.name,
+                extensionConfig.symbol,
+                extensionConfig.yieldRecipient,
+                extensionConfig.admin,
+                extensionConfig.freezeManager,
+                extensionConfig.pauser,
+                extensionConfig.yieldRecipientManager
+            ),
+            _computeSalt(deployer, "JMIExtension")
         );
 
         proxyAdmin = extensionConfig.admin;
