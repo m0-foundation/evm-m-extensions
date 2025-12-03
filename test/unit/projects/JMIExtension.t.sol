@@ -521,6 +521,8 @@ contract JMIExtensionUnitTests is BaseUnitTest {
     /* ============ unwrap ============ */
 
     function test_unwrap_enforcedPause() external {
+        jmi.setTotalSupply(1);
+
         vm.prank(pauser);
         jmi.pause();
 
@@ -531,11 +533,7 @@ contract JMIExtensionUnitTests is BaseUnitTest {
     }
 
     function test_unwrap_insufficientMBacking() public {
-        uint256 amount = 1_000e6;
         uint256 unwrapAmount = 1e6;
-
-        jmi.setBalanceOf(address(swapFacility), amount);
-        jmi.setAssetBalanceOf(address(mockUSDC), amount);
 
         vm.expectRevert(abi.encodeWithSelector(IJMIExtension.InsufficientMBacking.selector, unwrapAmount, 0));
 

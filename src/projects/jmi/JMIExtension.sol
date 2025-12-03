@@ -244,18 +244,6 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
     /* ============ Hooks For Internal Interactive Functions ============ */
 
     /**
-     * @dev    Hook called before wrapping M into extension tokens.
-     * @param  account   The account from which M is deposited.
-     * @param  recipient The account receiving the minted extension tokens.
-     * @param  amount    The amount of M deposited.
-     */
-    function _beforeWrap(address account, address recipient, uint256 amount) internal view virtual override {
-        _requireNotPaused();
-
-        super._beforeWrap(account, recipient, amount);
-    }
-
-    /**
      * @dev   Hook called before wrapping `asset` into extension's tokens.
      * @param asset     Address of the asset being deposited.
      * @param account   The account initiating the wrap.
@@ -263,8 +251,6 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
      * @param amount    The amount of `asset` being deposited.
      */
     function _beforeWrap(address asset, address account, address recipient, uint256 amount) internal view virtual {
-        _requireNotPaused();
-
         if (!isAllowedToWrap(asset, amount)) revert AssetCapReached(asset);
 
         super._beforeWrap(account, recipient, amount);
@@ -276,22 +262,9 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
      * @param amount  The amount of tokens to burn.
      */
     function _beforeUnwrap(address account, uint256 amount) internal view virtual override {
-        _requireNotPaused();
         _revertIfInsufficientMBacking(amount);
 
         super._beforeUnwrap(account, amount);
-    }
-
-    /**
-     * @dev   Hook called before transferring extension tokens.
-     * @param sender    The address from which the tokens are being transferred.
-     * @param recipient The address to which the tokens are being transferred.
-     * @param amount    The amount of tokens to transfer.
-     */
-    function _beforeTransfer(address sender, address recipient, uint256 amount) internal view override {
-        _requireNotPaused();
-
-        super._beforeTransfer(sender, recipient, amount);
     }
 
     /* ============ Internal Interactive Functions ============ */
