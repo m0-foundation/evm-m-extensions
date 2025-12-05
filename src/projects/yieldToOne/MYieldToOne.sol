@@ -120,7 +120,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /// @inheritdoc IMYieldToOne
-    function setYieldRecipient(address account) external onlyRole(YIELD_RECIPIENT_MANAGER_ROLE) {
+    function setYieldRecipient(address account) external virtual onlyRole(YIELD_RECIPIENT_MANAGER_ROLE) {
         // Claim yield for the previous yield recipient.
         claimYield();
 
