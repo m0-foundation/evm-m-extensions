@@ -8,6 +8,14 @@ import { console } from "forge-std/console.sol";
 contract DeployMEarnerManager is DeployBase {
     function run() public {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
+        MEarnerManagerConfig memory extensionConfig;
+
+        extensionConfig.name = vm.envString("EXTENSION_NAME");
+        extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
+        extensionConfig.admin = vm.envAddress("ADMIN");
+        extensionConfig.earnerManager = vm.envAddress("EARNER_MANAGER");
+        extensionConfig.feeRecipient = vm.envAddress("FEE_RECIPIENT");
+        extensionConfig.pauser = vm.envAddress("PAUSER");
 
         vm.startBroadcast(deployer);
 
@@ -15,7 +23,7 @@ contract DeployMEarnerManager is DeployBase {
             address earnerManagerImplementation,
             address earnerManagerProxy,
             address earnerManagerProxyAdmin
-        ) = _deployMEarnerManager(deployer);
+        ) = _deployMEarnerManager(deployer, extensionConfig);
 
         vm.stopBroadcast();
 

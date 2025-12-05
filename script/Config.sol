@@ -12,24 +12,45 @@ contract Config {
         address admin;
     }
 
-    struct DeployExtensionConfig {
-        // common
+    struct MEarnerManagerConfig {
         string name;
         string symbol;
         address admin;
-        // earner manager and yield to all
-        address feeRecipient;
-        // earner manager
         address earnerManager;
-        // yield to all
-        uint16 feeRate;
-        address feeManager;
-        address claimRecipientManager;
-        // yield to one
+        address feeRecipient;
+        address pauser;
+    }
+
+    struct YieldToOneConfig {
+        string name;
+        string symbol;
         address yieldRecipient;
+        address admin;
         address freezeManager;
         address yieldRecipientManager;
-        // just mint it
+        address pauser;
+    }
+
+    struct JMIExtensionConfig {
+        string name;
+        string symbol;
+        address yieldRecipient;
+        address admin;
+        address assetCapManager;
+        address freezeManager;
+        address pauser;
+        address yieldRecipientManager;
+    }
+
+    struct YieldToAllWithFeeConfig {
+        string name;
+        string symbol;
+        uint16 feeRate;
+        address feeRecipient;
+        address admin;
+        address feeManager;
+        address claimRecipientManager;
+        address freezeManager;
         address pauser;
     }
 
@@ -124,50 +145,6 @@ contract Config {
                 uniswapV3Router: address(0),
                 admin: DEPLOYER
             });
-    }
-
-    function _getExtensionConfig(
-        uint256 chainId_,
-        string memory name
-    ) internal pure returns (DeployExtensionConfig memory config) {
-        if (chainId_ == SEPOLIA_CHAIN_ID) {
-            if (keccak256(bytes(name)) == keccak256(bytes("MEarnerManagerTestnet"))) {
-                config.name = name;
-                config.symbol = "MEM";
-                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.earnerManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.feeRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-            }
-
-            if (keccak256(bytes(name)) == keccak256(bytes("MYieldToAllTestnet"))) {
-                config.name = name;
-                config.symbol = "MYTA";
-                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.feeRate = 1000;
-                config.feeRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.feeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.claimRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-            }
-
-            if (keccak256(bytes(name)) == keccak256(bytes("MYieldToOneTestnet"))) {
-                config.name = name;
-                config.symbol = "MYT1";
-                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.freezeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-            }
-
-            if (keccak256(bytes(name)) == keccak256(bytes("JMIExtensionTestnet"))) {
-                config.name = name;
-                config.symbol = "JMI";
-                config.admin = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.yieldRecipient = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.freezeManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.pauser = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-                config.yieldRecipientManager = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
-            }
-        }
     }
 
     function _getWhitelistedTokens(uint256 chainId_) internal pure returns (address[] memory whitelistedTokens) {

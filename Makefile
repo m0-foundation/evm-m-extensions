@@ -55,7 +55,7 @@ deploy-yield-to-one-sepolia: deploy-yield-to-one
 
 deploy-yield-to-all:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
-	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYeildToAllWithFee \
+	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYieldToAllWithFee \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast --verify

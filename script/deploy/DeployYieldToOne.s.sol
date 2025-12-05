@@ -8,11 +8,21 @@ import { console } from "forge-std/console.sol";
 contract DeployYieldToOne is DeployBase {
     function run() public {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
+        YieldToOneConfig memory extensionConfig;
+
+        extensionConfig.name = vm.envString("EXTENSION_NAME");
+        extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
+        extensionConfig.yieldRecipient = vm.envAddress("YIELD_RECIPIENT");
+        extensionConfig.admin = vm.envAddress("ADMIN");
+        extensionConfig.freezeManager = vm.envAddress("FREEZE_MANAGER");
+        extensionConfig.yieldRecipientManager = vm.envAddress("YIELD_RECIPIENT_MANAGER");
+        extensionConfig.pauser = vm.envAddress("PAUSER");
 
         vm.startBroadcast(deployer);
 
         (address yieldToOneImplementation, address yieldToOneProxy, address yieldToOneProxyAdmin) = _deployYieldToOne(
-            deployer
+            deployer,
+            extensionConfig
         );
 
         vm.stopBroadcast();
