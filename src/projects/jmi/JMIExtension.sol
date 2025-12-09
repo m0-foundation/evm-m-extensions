@@ -146,6 +146,8 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
         address pauser,
         address yieldRecipientManager
     ) internal onlyInitializing {
+        if (assetCapManager == address(0)) revert ZeroAssetCapManager();
+
         __MYieldToOne_init(name, symbol, yieldRecipient, admin, freezeManager, yieldRecipientManager, pauser);
 
         _grantRole(ASSET_CAP_MANAGER_ROLE, assetCapManager);

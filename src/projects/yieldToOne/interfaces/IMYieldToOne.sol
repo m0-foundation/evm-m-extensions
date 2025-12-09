@@ -23,13 +23,13 @@ interface IMYieldToOne {
 
     /* ============ Custom Errors ============ */
 
-    /// @notice Emitted in constructor if Yield Recipient is 0x0.
+    /// @notice Emitted in initializer if Yield Recipient is 0x0.
     error ZeroYieldRecipient();
 
-    /// @notice Emitted in constructor if Yield Recipient Manager is 0x0.
+    /// @notice Emitted in initializer if Yield Recipient Manager is 0x0.
     error ZeroYieldRecipientManager();
 
-    /// @notice Emitted in constructor if Admin is 0x0.
+    /// @notice Emitted in initializer if Admin is 0x0.
     error ZeroAdmin();
 
     /* ============ Interactive Functions ============ */

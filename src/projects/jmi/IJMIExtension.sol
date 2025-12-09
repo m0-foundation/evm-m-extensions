@@ -60,6 +60,9 @@ interface IJMIExtension is IMYieldToOne {
      */
     error InvalidAsset(address asset);
 
+    /// @notice Emitted in initializer if Asset Cap Manager is 0x0.
+    error ZeroAssetCapManager();
+
     /* ============ Interactive Functions ============ */
 
     /*

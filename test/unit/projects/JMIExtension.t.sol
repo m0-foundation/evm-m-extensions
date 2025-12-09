@@ -126,6 +126,29 @@ contract JMIExtensionUnitTests is BaseUnitTest {
         assertTrue(IAccessControl(address(jmi)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
     }
 
+    function test_initialize_zeroAssetCapManager() external {
+        address implementation = address(new JMIExtensionHarness(address(mToken), address(swapFacility)));
+
+        vm.expectRevert(IJMIExtension.ZeroAssetCapManager.selector);
+        JMIExtensionHarness(
+            UnsafeUpgrades.deployTransparentProxy(
+                implementation,
+                admin,
+                abi.encodeWithSelector(
+                    JMIExtensionHarness.initialize.selector,
+                    NAME,
+                    SYMBOL,
+                    yieldRecipient,
+                    admin,
+                    address(0),
+                    freezeManager,
+                    pauser,
+                    yieldRecipientManager
+                )
+            )
+        );
+    }
+
     /* ============ assetBalanceOf ============ */
 
     function test_assetBalanceOf() external {
