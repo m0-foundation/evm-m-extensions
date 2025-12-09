@@ -253,8 +253,8 @@ contract SwapFacility is ISwapFacility, Pausable, ReentrancyLock, SwapFacilityUp
 
     /// @inheritdoc ISwapFacility
     function canSwapViaPath(address swapper, address tokenIn, address tokenOut) external view returns (bool) {
-        bool isTokenInPaused = false;
-        bool isTokenOutPaused = false;
+        bool isTokenInPaused;
+        bool isTokenOutPaused;
 
         // If `tokenIn` or `tokenOut` are not valid contracts, return false
         if (tokenIn.code.length == 0 || tokenOut.code.length == 0) return false;
