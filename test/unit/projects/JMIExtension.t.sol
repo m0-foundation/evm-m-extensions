@@ -11,6 +11,8 @@ import { PausableUpgradeable } from "../../../lib/common/lib/openzeppelin-contra
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
+import { UIntMath } from "../../../lib/common/src/libs/UIntMath.sol";
+
 import { MockERC20, MockFeeOnTransferERC20, MockM } from "../../utils/Mocks.sol";
 
 import { JMIExtension } from "../../../src/projects/jmi/JMIExtension.sol";
@@ -326,6 +328,22 @@ contract JMIExtensionUnitTests is BaseUnitTest {
 
         vm.prank(address(swapFacility));
         jmi.wrap(address(mockDAI), alice, 1);
+    }
+
+    function test_wrap_safe240_overflow() external {
+        uint256 amount = uint256(type(uint240).max) + 1;
+
+        mockUSDC.mint(address(swapFacility), amount);
+        assertEq(mockUSDC.balanceOf(address(swapFacility)), amount);
+
+        // Set asset cap to allow the maximum uint240 value
+        vm.prank(assetCapManager);
+        jmi.setAssetCap(address(mockUSDC), amount);
+
+        vm.expectRevert(abi.encodeWithSelector(UIntMath.InvalidUInt240.selector, address(mockUSDC)));
+
+        vm.prank(address(swapFacility));
+        jmi.wrap(address(mockUSDC), alice, amount);
     }
 
     function test_wrap_withM_enforcedPause() public {

@@ -6,6 +6,8 @@ import { IERC20Metadata as IERC20 } from "../../../lib/common/lib/openzeppelin-c
 
 import { SafeERC20 } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { UIntMath } from "../../../lib/common/src/libs/UIntMath.sol";
+
 import { Pausable } from "../../components/pausable/Pausable.sol";
 
 import { IMTokenLike } from "../../interfaces/IMTokenLike.sol";
@@ -33,7 +35,8 @@ abstract contract JMIExtensionLayout {
         // Primary asset (M) is implicit and has no cap.
         uint256 cap;
         // Balance of the asset backing the extension token.
-        // M token's supply can't exceed uint240, so uint240 is safe to use.
+        // Casted to uint240 to fit in a single storage slot with `decimals`.
+        // Aligns with M supply which can't exceed uint240.
         uint240 balance;
         // Decimals of the asset.
         uint8 decimals;
@@ -271,6 +274,14 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
 
     /* ============ Internal Interactive Functions ============ */
 
+    /**
+     * @notice Mint extension tokens by depositing `asset` tokens.
+     * @dev    `amount` must be formatted in the `asset` token's decimals.
+     * @param  asset     Address of the asset to deposit.
+     * @param  account   Address of the account initiating the wrap.
+     * @param  recipient Address that will receive the extension tokens.
+     * @param  amount    Amount of asset tokens to deposit.
+     */
     function _wrap(address asset, address account, address recipient, uint256 amount) internal virtual {
         _revertIfInvalidAsset(asset);
         _revertIfInvalidRecipient(recipient);
@@ -295,7 +306,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
         JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
 
         // NOTE: Update non-M asset amount backing JMI extension token.
-        $.assets[asset].balance += uint240(amount);
+        $.assets[asset].balance += UIntMath.safe240(amount);
         $.totalAssets += jmiAmount_;
 
         _mint(recipient, jmiAmount_);
@@ -306,7 +317,7 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
      * @dev    `amount` MUST be formatted in the M token's decimals.
      * @param  asset     Address of the asset being replaced.
      * @param  recipient Address that will receive the `asset` token.
-     * @param  amount    Amount of M to swap for `asset` token, formatted in M decimals.
+     * @param  amount    Amount of M to swap for `asset` token.
      */
     function _replaceAssetWithM(address asset, address recipient, uint256 amount) internal virtual {
         _requireNotPaused();
@@ -322,6 +333,8 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
         JMIExtensionStorageStruct storage $ = _getJMIExtensionStorageLocation();
 
         // NOTE: Update non-M asset amount backing JMI extension token.
+        // NOTE: No need to safe cast here since `balance` can't exceed uint240,
+        //       it will revert in `_revertIfInsufficientAssetBacking()` if `assetAmount_` is greater than `balance`.
         $.assets[asset].balance -= uint240(assetAmount_);
         $.totalAssets -= amount;
 

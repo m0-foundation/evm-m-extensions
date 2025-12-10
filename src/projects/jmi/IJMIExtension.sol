@@ -65,27 +65,27 @@ interface IJMIExtension is IMYieldToOne {
 
     /* ============ Interactive Functions ============ */
 
-    /*
+    /**
      * @notice Mint extension tokens by depositing `asset` tokens.
      * @dev    MUST only be callable by the SwapFacility.
      * @dev    `amount` must be formatted in the `asset` token's decimals.
      * @param  asset     Address of the asset to deposit.
      * @param  recipient Address that will receive the extension tokens.
-     * @param  amount    Amount of extension tokens to mint.
+     * @param  amount    Amount of asset tokens to deposit.
      */
     function wrap(address asset, address recipient, uint256 amount) external;
 
-    /*
+    /**
      * @notice Allows a M holder to swap M for the `asset` token.
      * @dev    MUST only be callable by the SwapFacility.
      * @dev    `amount` MUST be formatted in the M token's decimals.
      * @param  asset     Address of the asset to receive.
      * @param  recipient Address that will receive the `asset` token.
-     * @param  amount    Amount of M to swap for `asset` token, formatted in M decimals.
+     * @param  amount    Amount of M to swap for `asset` token.
      */
     function replaceAssetWithM(address asset, address recipient, uint256 amount) external;
 
-    /*
+    /**
      * @notice Sets the asset cap for a given `asset`.
      * @dev    MUST only be callable by an account with the ASSET_CAP_MANAGER_ROLE.
      * @param  asset Address of the asset.
@@ -125,7 +125,7 @@ interface IJMIExtension is IMYieldToOne {
      */
     function isAllowedToWrap(address asset, uint256 amount) external view returns (bool);
 
-    /*
+    /**
      * @notice Checks if unwrapping `amount` of extension tokens is allowed.
      * @dev    `amount` MUST be formatted in extension's decimals (i.e. 6).
      * @param  amount Amount of extension tokens to unwrap, formatted in extension's decimals.
