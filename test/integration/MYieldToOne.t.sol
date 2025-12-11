@@ -4,9 +4,7 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 
-import {
-    IAccessControl
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -37,7 +35,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
                     yieldRecipient,
                     admin,
                     freezeManager,
-                    yieldRecipientManager
+                    yieldRecipientManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -55,9 +54,11 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(FREEZE_MANAGER_ROLE, freezeManager));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(PAUSER_ROLE, pauser));
+        assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
     }
 
     function test_yieldAccumulationAndClaim() external {

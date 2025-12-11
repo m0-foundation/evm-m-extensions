@@ -6,11 +6,13 @@
       "options": {
         "bracketSpacing": true,
         "compiler": "0.8.26",
-        "parser": "solidity-parse",
+        "parser": "slang",
         "printWidth": 120,
+        "proseWrap": "always",
+        "singleQuote": false,
         "tabWidth": 4,
+        "useTabs": false
       }
     }
   ]
 }
-

@@ -12,6 +12,7 @@ import { ScriptBase } from "../ScriptBase.s.sol";
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { JMIExtension } from "../../src/projects/jmi/JMIExtension.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
@@ -20,7 +21,8 @@ contract DeployBase is DeployHelpers, ScriptBase {
     Options public deployOptions;
 
     function _deploySwapFacility(
-        address deployer
+        address deployer,
+        address pauser
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
@@ -29,7 +31,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
         proxy = _deployCreate3TransparentProxy(
             implementation,
             config.admin,
-            abi.encodeWithSelector(SwapFacility.initialize.selector, config.admin),
+            abi.encodeWithSelector(SwapFacility.initialize.selector, config.admin, pauser),
             _computeSalt(deployer, "SwapFacility")
         );
 
@@ -55,11 +57,10 @@ contract DeployBase is DeployHelpers, ScriptBase {
     }
 
     function _deployMEarnerManager(
-        address deployer
+        address deployer,
+        MEarnerManagerConfig memory extensionConfig
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
-
-        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
         implementation = address(new MEarnerManager(config.mToken, _getSwapFacility()));
 
@@ -72,7 +73,8 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.symbol,
                 extensionConfig.admin,
                 extensionConfig.earnerManager,
-                extensionConfig.feeRecipient
+                extensionConfig.feeRecipient,
+                extensionConfig.pauser
             ),
             _computeSalt(deployer, "MEarnerManager")
         );
@@ -83,11 +85,10 @@ contract DeployBase is DeployHelpers, ScriptBase {
     }
 
     function _deployYieldToOne(
-        address deployer
+        address deployer,
+        YieldToOneConfig memory extensionConfig
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
-
-        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
 
         implementation = address(new MYieldToOne(config.mToken, _getSwapFacility()));
 
@@ -101,7 +102,8 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.yieldRecipient,
                 extensionConfig.admin,
                 extensionConfig.freezeManager,
-                extensionConfig.yieldRecipientManager
+                extensionConfig.yieldRecipientManager,
+                extensionConfig.pauser
             ),
             _computeSalt(deployer, "MYieldToOne")
         );
@@ -109,15 +111,55 @@ contract DeployBase is DeployHelpers, ScriptBase {
         proxyAdmin = extensionConfig.admin;
     }
 
-    function _deployYieldToAllWithFee(
-        address deployer
+    function _deployJMIExtension(
+        address deployer,
+        JMIExtensionConfig memory extensionConfig
     ) internal returns (address implementation, address proxy, address proxyAdmin) {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
-        DeployExtensionConfig memory extensionConfig = _getExtensionConfig(block.chainid, _getExtensionName());
+        implementation = address(new JMIExtension(config.mToken, _getSwapFacility()));
+
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            extensionConfig.admin,
+            abi.encodeWithSelector(
+                JMIExtension.initialize.selector,
+                extensionConfig.name,
+                extensionConfig.symbol,
+                extensionConfig.yieldRecipient,
+                extensionConfig.admin,
+                extensionConfig.assetCapManager,
+                extensionConfig.freezeManager,
+                extensionConfig.pauser,
+                extensionConfig.yieldRecipientManager
+            ),
+            _computeSalt(deployer, "JMIExtension")
+        );
+
+        proxyAdmin = extensionConfig.admin;
+    }
+
+    function _deployYieldToAllWithFee(
+        address deployer,
+        YieldToAllWithFeeConfig memory extensionConfig
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+        DeployConfig memory config = _getDeployConfig(block.chainid);
 
         implementation = address(new MYieldFee(config.mToken, _getSwapFacility()));
 
+        // delegate to helper function to avoid stack too deep
+        proxy = _deployYieldToAllWithFeeProxy(deployer, implementation, extensionConfig);
+        proxyAdmin = extensionConfig.admin;
+
+        return (implementation, proxy, proxyAdmin);
+    }
+
+    // helper function to avoid stack too deep
+    function _deployYieldToAllWithFeeProxy(
+        address deployer,
+        address implementation,
+        YieldToAllWithFeeConfig memory extensionConfig
+    ) private returns (address proxy) {
         proxy = _deployCreate3TransparentProxy(
             implementation,
             extensionConfig.admin,
@@ -129,13 +171,11 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.feeRecipient,
                 extensionConfig.admin,
                 extensionConfig.feeManager,
-                extensionConfig.claimRecipientManager
+                extensionConfig.claimRecipientManager,
+                extensionConfig.freezeManager,
+                extensionConfig.pauser
             ),
             _computeSalt(deployer, "MYieldFee")
         );
-
-        proxyAdmin = extensionConfig.admin;
-
-        return (implementation, proxy, proxyAdmin);
     }
 }

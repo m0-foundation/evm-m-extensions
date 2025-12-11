@@ -28,7 +28,8 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
                     SYMBOL,
                     admin,
                     earnerManager,
-                    feeRecipient
+                    feeRecipient,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -44,6 +45,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         assertEq(mEarnerManager.ONE_HUNDRED_PERCENT(), 10_000);
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
+        assertTrue(mEarnerManager.hasRole(PAUSER_ROLE, pauser));
     }
 
     /* ============ yield ============ */
@@ -80,7 +82,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(alice);
-        swapFacility.swapInM(address(mEarnerManager), amount, alice);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, alice);
 
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, bob);
@@ -89,7 +91,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(bob);
-        swapFacility.swapInM(address(mEarnerManager), amount, bob);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, bob);
 
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, carol);
@@ -98,7 +100,7 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(carol);
-        swapFacility.swapInM(address(mEarnerManager), amount, carol);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, carol);
 
         // Check balances of MEarnerManager and users after wrapping
         assertEq(mEarnerManager.balanceOf(alice), amount);
@@ -176,13 +178,13 @@ contract MEarnerManagerIntegrationTests is BaseIntegrationTest {
         vm.prank(alice);
         mToken.approve(address(swapFacility), amount);
         vm.prank(alice);
-        swapFacility.swapInM(address(mEarnerManager), amount, alice);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, alice);
 
         // Mint tokens for Bob
         vm.prank(bob);
         mToken.approve(address(swapFacility), amount);
         vm.prank(bob);
-        swapFacility.swapInM(address(mEarnerManager), amount, bob);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, bob);
 
         vm.warp(vm.getBlockTimestamp() + 365 days);
 

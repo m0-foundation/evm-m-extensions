@@ -13,20 +13,17 @@ Each extension inherits from the abstract `MExtension` base contract, which defi
 #### In-Scope Extensions
 
 - **`MYieldToOne`**
-
   - All yield goes to a single configurable `yieldRecipient`
   - Includes a blacklist enforced on all user actions
   - Handles loss of `$M` earner status gracefully
 
 - **`MEarnerManager`**
-
   - Redistributes yield to all holders minus per-address `feeRate`
   - Enforces a whitelist; non-whitelisted users are frozen and yield is redirected as fee
   - Yield is claimed via `claimFor(address)`
   - **Does not handle loss of `$M` earner status**, leading to potential insolvency if not upgraded
 
 - **`MYieldFee`**
-
   - All users receive the same yield rate, discounted by a global `feeRate`
   - Yield can be redirected via `claimRecipient` per user
   - Includes `updateIndex()` to resync with new `$M` rates
@@ -37,6 +34,13 @@ Each extension inherits from the abstract `MExtension` base contract, which defi
   - Index updates occur via bridging, not time-based growth
   - Uses an external `rateOracle` for fee calculation
   - Inherits most behavior from `MYieldFee`
+
+- **`JMIExtension`**
+  - Wraps `$M` token into a non-rebasing equivalent with a "Just Mint It" (JMI) backing model
+  - Allows minting by depositing `$M` or other approved collateral assets, assuming a 1:1 peg
+  - All yield is consolidated and claimable by a single, designated `yieldRecipient`
+  - Includes pausing functionality, asset freezes, and caps on non-`$M` collateral
+  - Inherits core `MExtension` functionality and yield direction from `MYieldToOne`
 
 ---
 

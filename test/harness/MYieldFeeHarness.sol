@@ -4,8 +4,6 @@ pragma solidity 0.8.26;
 
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 
-import { console } from "forge-std/console.sol";
-
 contract MYieldFeeHarness is MYieldFee {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address mToken, address swapFacility) MYieldFee(mToken, swapFacility) {}
@@ -17,9 +15,21 @@ contract MYieldFeeHarness is MYieldFee {
         address feeRecipient,
         address admin,
         address feeManager,
-        address claimRecipientManager
+        address claimRecipientManager,
+        address freezeManager,
+        address pauser
     ) public override initializer {
-        super.initialize(name, symbol, feeRate, feeRecipient, admin, feeManager, claimRecipientManager);
+        super.initialize(
+            name,
+            symbol,
+            feeRate,
+            feeRecipient,
+            admin,
+            feeManager,
+            claimRecipientManager,
+            freezeManager,
+            pauser
+        );
     }
 
     function latestEarnerRateAccrualTimestamp() external view returns (uint40) {

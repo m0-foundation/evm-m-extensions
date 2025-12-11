@@ -13,9 +13,10 @@ contract MEarnerManagerHarness is MEarnerManager {
         string memory symbol,
         address admin,
         address earnerManager,
-        address feeRecipient_
+        address feeRecipient_,
+        address pauser
     ) public override initializer {
-        super.initialize(name, symbol, admin, earnerManager, feeRecipient_);
+        super.initialize(name, symbol, admin, earnerManager, feeRecipient_, pauser);
     }
 
     function setAccountOf(

@@ -4,9 +4,10 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
-import { IMYieldToOne } from "./IMYieldToOne.sol";
+import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
 
-import { Freezable } from "../../components/Freezable.sol";
+import { Freezable } from "../../components/freezable/Freezable.sol";
+import { Pausable } from "../../components/pausable/Pausable.sol";
 import { MExtension } from "../../MExtension.sol";
 
 abstract contract MYieldToOneStorageLayout {
@@ -34,7 +35,7 @@ abstract contract MYieldToOneStorageLayout {
  *         with yield claimable by a single recipient.
  * @author M0 Labs
  */
-contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Freezable {
+contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Freezable, Pausable {
     /* ============ Variables ============ */
 
     /// @inheritdoc IMYieldToOne
@@ -61,6 +62,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param admin                 The address of an admin.
      * @param freezeManager         The address of a freeze manager.
      * @param yieldRecipientManager The address of a yield recipient setter.
+     * @param pauser                The address of a pauser.
      */
     function initialize(
         string memory name,
@@ -68,9 +70,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         address yieldRecipient_,
         address admin,
         address freezeManager,
-        address yieldRecipientManager
+        address yieldRecipientManager,
+        address pauser
     ) public virtual initializer {
-        __MYieldToOne_init(name, symbol, yieldRecipient_, admin, freezeManager, yieldRecipientManager);
+        __MYieldToOne_init(name, symbol, yieldRecipient_, admin, freezeManager, yieldRecipientManager, pauser);
     }
 
     /**
@@ -81,6 +84,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param admin                 The address of an admin.
      * @param freezeManager         The address of a freeze manager.
      * @param yieldRecipientManager The address of a yield recipient setter.
+     * @param pauser                The address of a pauser.
      */
     function __MYieldToOne_init(
         string memory name,
@@ -88,13 +92,15 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         address yieldRecipient_,
         address admin,
         address freezeManager,
-        address yieldRecipientManager
+        address yieldRecipientManager,
+        address pauser
     ) internal onlyInitializing {
         if (yieldRecipientManager == address(0)) revert ZeroYieldRecipientManager();
         if (admin == address(0)) revert ZeroAdmin();
 
         __MExtension_init(name, symbol);
         __Freezable_init(freezeManager);
+        __Pausable_init(pauser);
 
         _setYieldRecipient(yieldRecipient_);
 
@@ -140,7 +146,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /// @inheritdoc IMYieldToOne
-    function yield() public view returns (uint256) {
+    function yield() public view virtual returns (uint256) {
         unchecked {
             uint256 balance_ = _mBalanceOf(address(this));
             uint256 totalSupply_ = totalSupply();
@@ -174,6 +180,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param  recipient The account receiving the minted M Extension token.
      */
     function _beforeWrap(address account, address recipient, uint256 /* amount */) internal view virtual override {
+        _requireNotPaused();
         FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
         _revertIfFrozen($, account);
@@ -185,6 +192,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param account The account from which M Extension token is burned.
      */
     function _beforeUnwrap(address account, uint256 /* amount */) internal view virtual override {
+        _requireNotPaused();
         _revertIfFrozen(_getFreezableStorageLocation(), account);
     }
 
@@ -194,6 +202,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @param recipient The address to which the tokens are being transferred.
      */
     function _beforeTransfer(address sender, address recipient, uint256 /* amount */) internal view virtual override {
+        _requireNotPaused();
         FreezableStorageStruct storage $ = _getFreezableStorageLocation();
 
         _revertIfFrozen($, msg.sender);

@@ -55,7 +55,7 @@ deploy-yield-to-one-sepolia: deploy-yield-to-one
 
 deploy-yield-to-all:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
-	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYeildToAllWithFee \
+	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYieldToAllWithFee \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast --verify
@@ -72,6 +72,16 @@ deploy-m-earner-manager:
 
 deploy-m-earner-manager-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-m-earner-manager-sepolia: deploy-m-earner-manager
+
+deploy-jmi-extension:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
+	forge script script/deploy/DeployJMIExtension.s.sol:DeployJMIExtension \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive --broadcast --verify
+
+deploy-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+deploy-jmi-extension-sepolia: deploy-jmi-extension 
 
 deploy-swap-adapter:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
@@ -105,7 +115,7 @@ deploy-swap-adapter-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
 deploy-swap-adapter-soneium: deploy-swap-adapter
 
 deploy-swap-facility:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
 	forge script script/deploy/DeploySwapFacility.s.sol:DeploySwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
@@ -196,7 +206,7 @@ deploy-swap-facility-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
 deploy-swap-facility-soneium: deploy-swap-facility
 
 upgrade-swap-facility:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \

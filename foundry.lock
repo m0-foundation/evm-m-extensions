@@ -1,8 +1,8 @@
 {
   "lib/common": {
-    "branch": {
-      "name": "release-v1.3.0",
-      "rev": "66657d984bb77ba83863dd4607704594a6c610bc"
+    "tag": {
+      "name": "v1.4.0",
+      "rev": "613d2d95a476612270324ecbe92317eb5e9bc98f"
     }
   },
   "lib/forge-std": {

@@ -6,12 +6,14 @@ import { UpgradeSwapFacilityBase } from "./UpgradeSwapFacilityBase.sol";
 
 contract UpgradeSwapFacility is UpgradeSwapFacilityBase {
     function run() external {
-        address deployer_ = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
-        Deployments memory deployments_ = _readDeployment(block.chainid);
+        address deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
+        address pauser = vm.envAddress("PAUSER");
 
-        vm.startBroadcast(deployer_);
+        Deployments memory deployments = _readDeployment(block.chainid);
 
-        _upgradeSwapFacility(deployments_.swapFacility);
+        vm.startBroadcast(deployer);
+
+        _upgradeSwapFacility(deployments.swapFacility, pauser);
 
         vm.stopBroadcast();
     }

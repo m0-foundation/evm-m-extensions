@@ -4,9 +4,7 @@ pragma solidity 0.8.26;
 
 import { Test } from "../../../lib/forge-std/src/Test.sol";
 
-import {
-    IAccessControl
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 import { IUniswapV3SwapAdapter } from "../../../src/swap/interfaces/IUniswapV3SwapAdapter.sol";
 import { UniswapV3SwapAdapter } from "../../../src/swap/UniswapV3SwapAdapter.sol";

@@ -2,9 +2,8 @@
 
 pragma solidity 0.8.26;
 
-import {
-    IAccessControl
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { PausableUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
 import { Upgrades, UnsafeUpgrades } from "../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -12,6 +11,7 @@ import { IMExtension } from "../../../src/interfaces/IMExtension.sol";
 import { IMEarnerManager } from "../../../src/projects/earnerManager/IMEarnerManager.sol";
 import { ISwapFacility } from "../../../src/swap/interfaces/ISwapFacility.sol";
 
+import { IPausable } from "../../../src/components/pausable/IPausable.sol";
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
@@ -38,7 +38,8 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     "MEM",
                     admin,
                     earnerManager,
-                    feeRecipient
+                    feeRecipient,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -57,6 +58,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
     function test_initialize() external view {
         assertEq(mEarnerManager.ONE_HUNDRED_PERCENT(), 10_000);
         assertEq(mEarnerManager.feeRecipient(), feeRecipient);
+        assertTrue(mEarnerManager.hasRole(PAUSER_ROLE, pauser));
         assertTrue(mEarnerManager.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mEarnerManager.hasRole(EARNER_MANAGER_ROLE, earnerManager));
     }
@@ -75,7 +77,8 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     "MEM",
                     address(0),
                     earnerManager,
-                    feeRecipient
+                    feeRecipient,
+                    pauser
                 )
             )
         );
@@ -95,7 +98,8 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     "MEM",
                     admin,
                     address(0),
-                    feeRecipient
+                    feeRecipient,
+                    pauser
                 )
             )
         );
@@ -115,6 +119,28 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
                     "MEM",
                     admin,
                     earnerManager,
+                    address(0),
+                    pauser
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroPauser() external {
+        address implementation = address(new MEarnerManagerHarness(address(mToken), address(swapFacility)));
+
+        vm.expectRevert(IPausable.ZeroPauser.selector);
+        MEarnerManagerHarness(
+            UnsafeUpgrades.deployTransparentProxy(
+                implementation,
+                admin,
+                abi.encodeWithSelector(
+                    MEarnerManagerHarness.initialize.selector,
+                    "MEarnerManager",
+                    "MEM",
+                    admin,
+                    earnerManager,
+                    feeRecipient,
                     address(0)
                 )
             )
@@ -578,15 +604,6 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         mEarnerManager.approve(bob, 1_000e6);
     }
 
-    function test_approve_frozenSpender() public {
-        mEarnerManager.setAccountOf(alice, 1_000e6, 1_000e6, true, 1_000);
-
-        vm.expectRevert(abi.encodeWithSelector(IMEarnerManager.NotWhitelisted.selector, bob));
-
-        vm.prank(alice);
-        mEarnerManager.approve(bob, 1_000e6);
-    }
-
     /* ============ _wrap ============ */
 
     function test_wrap_notWhitelistedAccount() external {
@@ -613,6 +630,22 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
 
         vm.prank(address(swapFacility));
         mEarnerManager.wrap(bob, amount);
+    }
+
+    function test_wrap_paused() public {
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(address(swapFacility), amount);
+
+        mEarnerManager.setAccountOf(bob, 0, 0, true, 1_000);
+
+        vm.prank(pauser);
+        mEarnerManager.pause();
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(bob));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mEarnerManager.wrap(bob, 1);
     }
 
     function test_wrap_insufficientAmount() external {
@@ -645,7 +678,7 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
         vm.expectRevert(IMExtension.EarningIsDisabled.selector);
 
         vm.prank(alice);
-        swapFacility.swapInM(address(mEarnerManager), amount, alice);
+        swapFacility.swap(address(mToken), address(mEarnerManager), amount, alice);
     }
 
     function test_wrap() external {
@@ -743,6 +776,23 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
 
         vm.prank(address(swapFacility));
         mEarnerManager.unwrap(alice, 0);
+    }
+
+    function test_unwrap_paused() public {
+        vm.expectEmit();
+        emit IMEarnerManager.AccountInfoSet(alice, true, 1_000);
+
+        vm.prank(earnerManager);
+        mEarnerManager.setAccountInfo(alice, true, 1_000);
+
+        vm.prank(pauser);
+        mEarnerManager.pause();
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(alice));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mEarnerManager.unwrap(alice, 1);
     }
 
     function test_unwrap_insufficientBalance() external {
@@ -862,6 +912,20 @@ contract MEarnerManagerUnitTests is BaseUnitTest {
 
         vm.prank(alice);
         mEarnerManager.transfer(bob, amount + 1);
+    }
+
+    function test_transfer_paused() public {
+        uint256 amount = 1_000e6;
+
+        mEarnerManager.setAccountOf(alice, amount, _getPrincipal(amount, startIndex), true, 1_000);
+        mEarnerManager.setAccountOf(bob, 0, 0, true, 1_000);
+
+        vm.prank(pauser);
+        mEarnerManager.pause();
+
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        vm.prank(alice);
+        mEarnerManager.transfer(bob, 1);
     }
 
     function test_transfer_notWhitelistedSender() external {

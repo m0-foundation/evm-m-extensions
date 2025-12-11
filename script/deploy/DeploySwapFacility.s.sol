@@ -8,6 +8,7 @@ import { console } from "forge-std/console.sol";
 contract DeploySwapFacility is DeployBase {
     function run() public {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
+        address pauser = vm.envAddress("PAUSER");
 
         vm.startBroadcast(deployer);
 
@@ -15,7 +16,7 @@ contract DeploySwapFacility is DeployBase {
             address swapFacilityImplementation,
             address swapFacilityProxy,
             address swapFacilityProxyAdmin
-        ) = _deploySwapFacility(deployer);
+        ) = _deploySwapFacility(deployer, pauser);
 
         vm.stopBroadcast();
 
