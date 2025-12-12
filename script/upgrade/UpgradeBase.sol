@@ -20,6 +20,22 @@ contract UpgradeBase is ScriptBase {
         );
     }
 
+    function _upgradeOldSwapFacility(address swapFacility) internal {
+
+        // Old m (MONEY) and registrar addresses used in earlier SwapFacility deployment
+        address oldMToken = 0x0c941AD94Ca4A52EDAeAbF203b61bdd1807CeEC0;
+        address oldRegistrar = 0x975Bf5f212367D09CB7f69D3dc4BA8C9B440aD3A;
+
+        SwapFacility implementation = new SwapFacility(oldMToken, oldRegistrar);
+
+        UnsafeUpgrades.upgradeProxy(
+            swapFacility,
+            address(implementation),
+            // initializeV2 has been called before, so no need to pass data here
+            ""
+        );
+    }
+
     function _upgradeJMIExtension(address jmiExtension) internal {
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
