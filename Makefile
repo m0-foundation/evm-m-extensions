@@ -217,11 +217,11 @@ upgrade-swap-facility-sepolia: upgrade-swap-facility
 
 # This upgrade is strictly specific to Sepolia as it caters to an old SwapFacility deployment
 upgrade-old-swap-facility:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY)
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/upgrade/UpgradeOldSwapFacility.s.sol:UpgradeOldSwapFacility \
 	--rpc-url $(SEPOLIA_RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive --broadcast --verify 
 
 upgrade-jmi-extension:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \

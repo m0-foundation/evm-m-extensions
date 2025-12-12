@@ -8,7 +8,7 @@ contract UpgradeOldSwapFacility is UpgradeBase {
     function run() external {
 
         if (block.chainid != SEPOLIA_CHAIN_ID) {
-            revert("This upgrade script is only for Sepolia!");
+            revert("This upgrade script is only for Sepolia");
         }
 
         address deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
