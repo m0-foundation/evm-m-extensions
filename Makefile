@@ -216,8 +216,8 @@ upgrade-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 upgrade-swap-facility-sepolia: upgrade-swap-facility
 
 upgrade-jmi-extension:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
-	forge script script/upgrade/jmi/UpgradeJMIExtension.s.sol:UpgradeJMIExtension \
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \
+	forge script script/upgrade/UpgradeJMIExtension.s.sol:UpgradeJMIExtension \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive --broadcast --verify
