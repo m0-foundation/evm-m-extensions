@@ -15,7 +15,7 @@ import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
 import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
-import { UpgradeSwapFacilityBase } from "../../script/upgrade/UpgradeSwapFacilityBase.sol";
+import { UpgradeBase } from "../../script/upgrade/UpgradeBase.sol";
 
 import { IFreezable } from "../../src/components/freezable/IFreezable.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
@@ -29,7 +29,7 @@ import { JMIExtensionHarness } from "../harness/JMIExtensionHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
-contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeSwapFacilityBase {
+contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeBase {
     using SafeERC20 for IERC20;
 
     // Holds USDC, USDT and wM
