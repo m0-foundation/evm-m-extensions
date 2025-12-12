@@ -14,8 +14,8 @@ lcov.info
 # Docs
 docs/
 
-# Dotenv files
-.env**
+# Dotenv file
+.env
 
 # Mac OS files
 .DS_Store
