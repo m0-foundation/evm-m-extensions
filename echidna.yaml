@@ -16,6 +16,8 @@ shrinkLimit: 1000
 
 seqLen: 100
 
+allowFFI: true
+
 propMaxGas: 1000000000
 testMaxGas: 1000000000
 
@@ -91,6 +93,18 @@ filterFunctions:
 "Fuzz.fuzz_disableEarning_MYieldFee(uint256)",
 "Fuzz.fuzz_enableEarning_MYieldFee(uint256)",
 "Fuzz.fuzz_enableEarning_MEarnerManager(uint256)",
-"Fuzz.fuzz_disableEarning_MEarnerManager(uint256)"
+"Fuzz.fuzz_disableEarning_MEarnerManager(uint256)",
+"Fuzz.fuzz_JMI_setAssetCap(uint256,uint256)",
+"Fuzz.fuzz_JMI_pause(uint256)",
+"Fuzz.fuzz_JMI_unpause(uint256)",
+"Fuzz.fuzz_JMI_freeze(uint256,uint256)",
+"Fuzz.fuzz_JMI_unfreeze(uint256,uint256)",
+"Fuzz.fuzz_SF_swap(uint256,uint256,uint256,uint256)",
+"Fuzz.fuzz_SF_replaceAssetWithM(uint256,uint256,uint256,uint256,uint256)",
+"Fuzz.fuzz_SF_setPermissionedExtension(uint256,uint256)",
+"Fuzz.fuzz_SF_setPermissionedMSwapper(uint256,uint256,uint256)",
+"Fuzz.fuzz_SF_setAdminApprovedExtension(uint256,uint256)",
+"Fuzz.fuzz_SF_pause(uint256)",
+"Fuzz.fuzz_SF_unpause(uint256)"
 
   ]

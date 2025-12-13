@@ -46,7 +46,7 @@ abstract contract Properties_ERR is RevertHandler {
     //     .selector;
 
     function _getAllowedCustomErrors() internal pure virtual override returns (bytes4[] memory) {
-        bytes4[] memory allowedErrors = new bytes4[](67);
+        bytes4[] memory allowedErrors = new bytes4[](79);
 
         // IMSpokeYieldFee errors
         allowedErrors[0] = IMSpokeYieldFee.ZeroRateOracle.selector;

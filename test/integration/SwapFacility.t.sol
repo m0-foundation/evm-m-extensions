@@ -357,6 +357,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeBase {
         );
 
         vm.prank(alice);
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
         swapFacility.swapWithPermit(address(mToken), address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
@@ -381,14 +382,8 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeBase {
         );
 
         vm.prank(alice);
-        swapFacility.swapWithPermit(
-            address(mToken),
-            address(mYieldToOne),
-            amount,
-            alice,
-            block.timestamp,
-            abi.encodePacked(r, s, v)
-        );
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
+        swapFacility.swapWithPermit(address(mToken), address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
@@ -487,6 +482,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeBase {
         );
 
         // Swap mYieldToOne to M
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
         swapFacility.swapWithPermit(address(mYieldToOne), address(mToken), amount, alice, block.timestamp, v, r, s);
 
         assertEq(IERC20(address(mToken)).balanceOf(alice), amount);

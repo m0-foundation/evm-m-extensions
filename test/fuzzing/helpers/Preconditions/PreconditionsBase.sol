@@ -104,17 +104,18 @@ contract PreconditionsBase is BeforeAfter {
         int24 tickUpper,
         address pool
     ) public {
-        vm.startPrank(user);
-
         // Calculate liquidity
         uint128 liquidity = minter.getLiquidityForAmounts(amount0Desired, amount1Desired, tickLower, tickUpper);
         require(liquidity > 0, "Invalid liquidity");
         console.log("liquidity check done", liquidity);
         // Approve tokens to the minter
+        vm.prank(user);
         USDC.approve(address(minter), amount0Desired);
+        vm.prank(user);
         wMToken.approve(address(minter), amount1Desired);
 
         // Mint liquidity
+        vm.prank(user);
         (uint256 amount0, uint256 amount1) = minter.mintLiquidity(
             to, // Recipient of the position
             tickLower,
@@ -132,8 +133,6 @@ contract PreconditionsBase is BeforeAfter {
         // Verify position in the pool
         bytes32 positionKey = bytes32(keccak256(abi.encodePacked(user, tickLower, tickUpper)));
         IUniswapV3Pool(pool).positions(positionKey);
-
-        vm.stopPrank();
     }
 
     /**
@@ -143,8 +142,8 @@ contract PreconditionsBase is BeforeAfter {
      */
     function swap_t0_for_t1(address actor, uint256 amountIn) internal returns (uint256 amountOut) {
         console.log("Swapping token0 (USDC) for token1 (wMToken)");
-        vm.startPrank(actor);
         // Approve the router to spend token0 (USDC)
+        vm.prank(actor);
         USDC.approve(address(v3SwapRouter), type(uint256).max);
 
         // Prepare exact input parameters (swapping exact amount of USDC for wMToken)
@@ -159,13 +158,13 @@ contract PreconditionsBase is BeforeAfter {
         });
 
         // Execute the swap
+        vm.prank(actor);
         amountOut = v3SwapRouter.exactInputSingle(params);
 
         // Log the results
         console.log("Swap completed:");
         console.log("USDC spent:", amountIn);
         console.log("wMToken received:", amountOut);
-        vm.stopPrank();
         return amountOut;
     }
 
@@ -176,8 +175,8 @@ contract PreconditionsBase is BeforeAfter {
      */
     function swap_t1_for_t0(address actor, uint256 amountIn) internal returns (uint256 amountOut) {
         console.log("Swapping token1 (wMToken) for token0 (USDC)");
-        vm.startPrank(actor);
         // Approve the router to spend token1 (wMToken)
+        vm.prank(actor);
         wMToken.approve(address(v3SwapRouter), type(uint256).max);
 
         // Prepare exact input parameters (swapping exact amount of wMToken for USDC)
@@ -192,13 +191,13 @@ contract PreconditionsBase is BeforeAfter {
         });
 
         // Execute the swap
+        vm.prank(actor);
         amountOut = v3SwapRouter.exactInputSingle(params);
 
         // Log the results
         console.log("Swap completed:");
         console.log("wMToken spent:", amountIn);
         console.log("USDC received:", amountOut);
-        vm.stopPrank();
         return amountOut;
     }
 }

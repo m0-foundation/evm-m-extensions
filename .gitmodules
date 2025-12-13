@@ -22,4 +22,4 @@
 [submodule "lib/wrapped-m-token"]
 	path = lib/wrapped-m-token
 	url = https://github.com/m0-foundation/wrapped-m-token
-	branch = feat/swap-facility-support 
+	branch = v2
