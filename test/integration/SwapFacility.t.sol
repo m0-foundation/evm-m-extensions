@@ -186,7 +186,7 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         uint256 amount = 1_000_000;
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(USER);
+        mYieldToOne.freeze(USER);
 
         vm.startPrank(USER);
         IERC20(WRAPPED_M).approve(address(swapFacility), amount);
@@ -291,7 +291,8 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         );
 
         vm.prank(alice);
-        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
+        swapFacility.swapWithPermit(address(mToken), address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
@@ -315,7 +316,8 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         );
 
         vm.prank(alice);
-        swapFacility.swapInMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
+        swapFacility.swapWithPermit(address(mToken), address(mYieldToOne), amount, alice, block.timestamp, abi.encodePacked(r, s, v));
 
         assertEq(mYieldToOne.balanceOf(alice), amount);
     }
@@ -412,7 +414,8 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest {
         );
 
         // Swap mYieldToOne to M
-        swapFacility.swapOutMWithPermit(address(mYieldToOne), amount, alice, block.timestamp, v, r, s);
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
+        swapFacility.swapWithPermit(address(mYieldToOne), address(mToken), amount, alice, block.timestamp, v, r, s);
 
         assertEq(IERC20(address(mToken)).balanceOf(alice), amount);
         assertEq(mYieldToOne.balanceOf(alice), 0);

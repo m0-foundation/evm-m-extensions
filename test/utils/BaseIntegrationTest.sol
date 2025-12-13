@@ -168,7 +168,8 @@ contract BaseIntegrationTest is Helpers, Test {
         );
 
         vm.prank(account);
-        swapFacility.swapInMWithPermit(mExtension_, amount, recipient, deadline, v_, r_, s_);
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
+        swapFacility.swapWithPermit(address(mToken), mExtension_, amount, recipient, deadline, v_, r_, s_);
     }
 
     function _swapInMWithPermitSignature(
@@ -190,7 +191,8 @@ contract BaseIntegrationTest is Helpers, Test {
         );
 
         vm.prank(account);
-        swapFacility.swapInMWithPermit(mExtension_, amount, recipient, deadline, abi.encodePacked(r_, s_, v_));
+        // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
+        swapFacility.swapWithPermit(address(mToken), mExtension_, amount, recipient, deadline, abi.encodePacked(r_, s_, v_));
     }
 
     function _swapMOut(address mExtension_, address account, address recipient, uint256 amount) internal {

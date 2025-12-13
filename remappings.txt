@@ -1,4 +1,4 @@
-@openzeppelin/contracts/=node_modules/@openzeppelin/contracts-v4/
+@openzeppelin/contracts/=lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/
 @openzeppelin/contracts-v4/=node_modules/@openzeppelin/contracts-v4/
 @perimetersec/=lib/
 v3-core/=uniswapv3/v3-core/
