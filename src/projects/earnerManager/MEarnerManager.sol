@@ -4,9 +4,7 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
-import {
-    AccessControlUpgradeable
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import { AccessControlUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IndexingMath } from "../../libs/IndexingMath.sol";
 import { UIntMath } from "../../../lib/common/src/libs/UIntMath.sol";
@@ -42,10 +40,9 @@ abstract contract MEarnerManagerStorageLayout {
         uint256 totalSupply;
         // Slot 3
         uint112 totalPrincipal;
-        // Slot 4
         bool wasEarningEnabled;
         uint128 disableIndex;
-        // Slot 5
+        // Slot 4
         mapping(address account => Account) accounts;
     }
 
@@ -482,7 +479,7 @@ contract MEarnerManager is IMEarnerManager, AccessControlUpgradeable, MEarnerMan
     }
 
     /**
-     * @dev   Internal ERC20 transfer function that needs to be implemented by the inheriting contract.
+     * @dev   Internal balance update function called on transfer.
      * @param sender    The sender's address.
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.

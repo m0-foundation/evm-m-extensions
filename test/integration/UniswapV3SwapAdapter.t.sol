@@ -143,7 +143,7 @@ contract UniswapV3SwapAdapterIntegrationTest is BaseIntegrationTest {
         uint256 minAmountOut = 997_000;
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(USER);
+        mYieldToOne.freeze(USER);
 
         vm.startPrank(USER);
         IERC20(USDC).approve(address(swapAdapter), amountIn);

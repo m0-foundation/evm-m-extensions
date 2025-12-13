@@ -16,13 +16,15 @@ contract MockRegistrar {
     mapping(bytes32 listName => mapping(address account => bool contains)) public listContainsMap;
 
     function listContains(bytes32 listName, address account) external view returns (bool contains) {
-        return true; //mock approved minter
+        // For earners list, use the actual map (set via setEarner)
+        // For other lists (minters, etc.), return true to allow operations
+        if (listName == EARNERS_LIST_NAME) {
+            return listContainsMap[listName][account];
+        }
+        return true;
     }
 
     function get(bytes32 key) external view returns (bytes32 value) {
-        if (key == EARNERS_LIST_IGNORED) {
-            return bytes32(uint256(1));
-        }
         return _values[key];
     }
 

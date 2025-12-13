@@ -17,4 +17,5 @@ contract FoundryPlayground is FuzzGuided {
         fuzz_randomizeConfigs(1, 0, 0, 0, 0, 0); //1 for default config
         fuzz_mint(2e6);
     }
+
 }

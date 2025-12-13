@@ -22,6 +22,9 @@ contract PropertiesDescriptions {
     string constant MEARN_01 =
         "MEARN_01: MEarnerManager extension mToken Balance must be greater or equal than projectedTotalSupply";
 
+    string constant GLOB_01 = "GLOB_01: JMI.totalAssets <= JMI.totalSupply";
+    string constant GLOB_02 = "GLOB_02: JMI.totalSupply <= JMI.totalAssets + M.balanceOf(JMI)";
+
     // ==============================================================
     // Invariant Properties (INV)
     // These properties define invariants that must hold true as a sample

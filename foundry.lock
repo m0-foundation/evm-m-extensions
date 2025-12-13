@@ -1,0 +1,32 @@
+{
+  "lib/common": {
+    "branch": {
+      "name": "feat/upgradeable-contracts",
+      "rev": "ad4e51105af61eb4c1cb89585d59c02931193478"
+    }
+  },
+  "lib/forge-std": {
+    "branch": {
+      "name": "v1",
+      "rev": "77041d2ce690e692d6e03cc812b57d1ddaa4d505"
+    }
+  },
+  "lib/fuzzlib": {
+    "rev": "8116ad7ed50c41d0a40d2475c93c98f3653fa8fd"
+  },
+  "lib/openzeppelin-contracts": {
+    "rev": "441b1c1c5b909498ca6206a84445ee516067e7fc"
+  },
+  "lib/openzeppelin-foundry-upgrades": {
+    "rev": "78048ebe3be1fa256182d9c8c4f9a64587c0d6b3"
+  },
+  "lib/uniswap-v4-periphery": {
+    "rev": "ad04c9f24a170accf5ea1b2836bbafd514537ca6"
+  },
+  "lib/wrapped-m-token": {
+    "branch": {
+      "name": "feat/swap-facility-support",
+      "rev": "cbe9abbb1e7df283000b86da6655a802e45fd9ec"
+    }
+  }
+}

@@ -7,8 +7,11 @@ import "./FuzzMYieldFee.sol";
 import "./FuzzSwapFacility.sol";
 import "./FuzzMToken.sol";
 import "./FuzzUni.sol";
+import "./FuzzJMIExtension.sol";
 
-contract FuzzGuided is FuzzUni, FuzzMYieldToOne, FuzzMEarnerManager, FuzzMYieldFee, FuzzSwapFacility, FuzzMToken {
+contract FuzzGuided is FuzzUni, FuzzMYieldToOne, FuzzMEarnerManager, FuzzMYieldFee, FuzzSwapFacility, FuzzMToken, FuzzJMIExtension {
+// , FuzzMYieldToOne, FuzzMEarnerManager, FuzzMYieldFee, FuzzSwapFacility, FuzzMToken, FuzzJMIExtension {
+
     function fuzz_randomizeConfigs(
         uint256 baseEarnerRateSeed,
         uint256 baseMinterRateSeed,

@@ -136,7 +136,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     function test_approve_blacklistedAccount() public {
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        mYieldToOne.freeze(alice);
 
         vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
 
@@ -146,7 +146,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     function test_approve_blacklistedSpender() public {
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
+        mYieldToOne.freeze(bob);
 
         vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
 
@@ -161,7 +161,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mToken.setBalanceOf(alice, amount);
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        mYieldToOne.freeze(alice);
 
         vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
 
@@ -176,7 +176,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mToken.setBalanceOf(alice, amount);
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
+        mYieldToOne.freeze(bob);
 
         vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
 
@@ -212,7 +212,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.setBalanceOf(alice, amount);
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        mYieldToOne.freeze(alice);
 
         vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
 
@@ -275,7 +275,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.approve(carol, amount);
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(carol);
+        mYieldToOne.freeze(carol);
 
         // Reverts cause Carol is blacklisted and cannot transfer tokens on Alice's behalf
         vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, carol));
@@ -289,7 +289,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.setBalanceOf(alice, amount);
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(alice);
+        mYieldToOne.freeze(alice);
 
         vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, alice));
 
@@ -302,7 +302,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.setBalanceOf(alice, amount);
 
         vm.prank(blacklistManager);
-        mYieldToOne.blacklist(bob);
+        mYieldToOne.freeze(bob);
 
         vm.expectRevert(abi.encodeWithSelector(IBlacklistable.AccountBlacklisted.selector, bob));
 

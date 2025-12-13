@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import {
-    AccessControlUpgradeable
-} from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
+import { AccessControlUpgradeable } from "../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/access/AccessControlUpgradeable.sol";
 
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
 
@@ -20,8 +18,6 @@ import { IMYieldFee } from "./interfaces/IMYieldFee.sol";
 import { IContinuousIndexing } from "./interfaces/IContinuousIndexing.sol";
 
 import { MExtension } from "../../MExtension.sol";
-
-import "forge-std/console.sol";
 
 abstract contract MYieldFeeStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldFee
@@ -114,10 +110,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
         __MExtension_init(name, symbol);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        console.log("feeManager", feeManager);
         _grantRole(FEE_MANAGER_ROLE, feeManager);
-        console.log("feeManager hasRole", hasRole(FEE_MANAGER_ROLE, feeManager));
-
         _grantRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager);
 
         _setFeeRate(feeRate_);
@@ -236,7 +229,6 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
 
     /// @inheritdoc IMYieldFee
     function setFeeRecipient(address feeRecipient_) external onlyRole(FEE_MANAGER_ROLE) {
-        console.log("Role check passed");
         // Claim fee for the previous fee recipient.
         claimFee();
 
@@ -450,7 +442,7 @@ contract MYieldFee is IContinuousIndexing, IMYieldFee, AccessControlUpgradeable,
     }
 
     /**
-     * @dev   Internal ERC20 transfer function that needs to be implemented by the inheriting contract.
+     * @dev   Internal balance update function called on transfer.
      * @param sender    The sender's address.
      * @param recipient The recipient's address.
      * @param amount    The amount to be transferred.

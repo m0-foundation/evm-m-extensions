@@ -14,6 +14,7 @@ import { MockERC20 } from "test/fuzzing/mocks/MockERC20.sol";
 import { Helpers } from "test/utils/Helpers.sol";
 
 import { MYieldToOne } from "src/projects/yieldToOne/MYieldToOne.sol";
+import { JMIExtension } from "src/projects/jmi/JMIExtension.sol";
 import { MEarnerManagerHarness } from "test/harness/MEarnerManagerHarness.sol";
 import { MYieldFeeHarness } from "test/harness/MYieldFeeHarness.sol";
 
@@ -65,9 +66,12 @@ contract FuzzStorageVariables is FuzzActors {
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant FREEZE_MANAGER_ROLE = keccak256("FREEZE_MANAGER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
+    bytes32 public constant ASSET_CAP_MANAGER_ROLE = keccak256("ASSET_CAP_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
 
     uint16 public constant ONE_HUNDRED_PERCENT = 10_000;
@@ -124,10 +128,15 @@ contract FuzzStorageVariables is FuzzActors {
     MYieldFeeHarness internal mYieldFee3;
     MEarnerManagerHarness internal mEarnerManager3;
 
+    JMIExtension internal jmiExtension;
+    JMIExtension internal jmiExtension2; // Second JMI extension for Extension → Extension swaps
+
+    MockERC20 internal DAI; // Asset token for JMI Extension
+
     address[3] internal mYieldToOneArray;
     address[3] internal mYieldFeeArray;
     address[3] internal mEarnerManagerArray;
-    address[9] internal allExtensions;
+    address[] internal allExtensions;
 
     EarnerRateModel internal earnerRateModel;
     MinterRateModel internal minterRateModel;
