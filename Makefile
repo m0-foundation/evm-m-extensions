@@ -221,7 +221,7 @@ upgrade-old-swap-facility:
 	forge script script/upgrade/UpgradeOldSwapFacility.s.sol:UpgradeOldSwapFacility \
 	--rpc-url $(SEPOLIA_RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify 
+	--skip test --slow --non-interactive --broadcast --verify
 
 upgrade-jmi-extension:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \
