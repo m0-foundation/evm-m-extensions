@@ -8,7 +8,7 @@ import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol
 
 import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 import { IndexingMath } from "../../lib/common/src/libs/IndexingMath.sol";
-import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
+import { UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
@@ -25,12 +25,15 @@ contract BaseUnitTest is Helpers, Test {
     uint56 public constant EXP_SCALED_ONE = 1e12;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant ASSET_CAP_MANAGER_ROLE = keccak256("ASSET_CAP_MANAGER_ROLE");
+    bytes32 public constant FREEZE_MANAGER_ROLE = keccak256("FREEZE_MANAGER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
+    bytes32 public constant FORCED_TRANSFER_MANAGER_ROLE = keccak256("FORCED_TRANSFER_MANAGER_ROLE");
 
     MockM public mToken;
     MockRateOracle public rateOracle;
@@ -42,10 +45,13 @@ contract BaseUnitTest is Helpers, Test {
     uint32 public mYiedFeeEarnerRate;
 
     address public admin = makeAddr("admin");
-    address public blacklistManager = makeAddr("blacklistManager");
+    address public assetCapManager = makeAddr("assetCapManager");
+    address public freezeManager = makeAddr("freezeManager");
+    address public pauser = makeAddr("pauser");
     address public earnerManager = makeAddr("earnerManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
+    address public forcedTransferManager = makeAddr("forcedTransferManager");
 
     address public feeRecipient = makeAddr("feeRecipient");
     address public feeManager = makeAddr("feeManager");
@@ -75,7 +81,7 @@ contract BaseUnitTest is Helpers, Test {
             UnsafeUpgrades.deployTransparentProxy(
                 address(new SwapFacility(address(mToken), address(registrar))),
                 admin,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin, pauser)
             )
         );
 

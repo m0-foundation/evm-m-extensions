@@ -66,8 +66,8 @@ contract FuzzSetup is FunctionCalls {
         address token0 = address(USDC) < address(wMToken) ? address(USDC) : address(wMToken);
         address token1 = address(USDC) < address(wMToken) ? address(wMToken) : address(USDC);
         require(token0 < token1, "token0 must be less than token1");
-        // Create pool with 0.01% fee (100 basis points)
 
+        // Create pool with 0.01% fee (100 basis points)
         address poolAddress = uniV3Factory.createPool(token0, token1, UNISWAP_V3_FEE);
 
         assert(poolAddress == address(v3SwapRouter.getPool(token0, token1, UNISWAP_V3_FEE)));
@@ -125,7 +125,7 @@ contract FuzzSetup is FunctionCalls {
         swapFacility = SwapFacility(
             UnsafeUpgrades.deployUUPSProxy(
                 address(new SwapFacility(address(mToken), address(registrar))),
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin, pauser)
             )
         );
 
@@ -199,7 +199,9 @@ contract FuzzSetup is FunctionCalls {
                 feeRecipient,
                 admin,
                 yieldFeeManager,
-                claimRecipientManager
+                claimRecipientManager,
+                freezeManager,
+                pauser
             )
         );
         mYieldFee1 = MYieldFeeHarness(address(mYieldFee1Proxy));
@@ -215,7 +217,9 @@ contract FuzzSetup is FunctionCalls {
                 feeRecipient,
                 admin,
                 yieldFeeManager,
-                claimRecipientManager
+                claimRecipientManager,
+                freezeManager,
+                pauser
             )
         );
         mYieldFee2 = MYieldFeeHarness(address(mYieldFee2Proxy));
@@ -231,7 +235,9 @@ contract FuzzSetup is FunctionCalls {
                 feeRecipient,
                 admin,
                 yieldFeeManager,
-                claimRecipientManager
+                claimRecipientManager,
+                freezeManager,
+                pauser
             )
         );
         mYieldFee3 = MYieldFeeHarness(address(mYieldFee3Proxy));

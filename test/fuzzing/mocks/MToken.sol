@@ -253,7 +253,7 @@ contract MToken is IMToken, ContinuousIndexing, ERC20Extended {
                 // NOTE: Round the principal up for worst case.
                 uint256(principalOfTotalEarningSupply) +
                     _getPrincipalAmountRoundedUp(totalNonEarningSupply + safeAmount_) >=
-                type(uint112).max
+                    type(uint112).max
             ) {
                 revert OverflowsPrincipalOfTotalSupply();
             }
@@ -383,7 +383,8 @@ contract MToken is IMToken, ContinuousIndexing, ERC20Extended {
         if (senderIsEarning_ == _balances[recipient_].isEarning) {
             // NOTE: When subtracting a present amount from an earner, round the principal up in favor of the protocol.
             return
-                _transferAmountInKind( // perform an in-kind transfer with...
+                _transferAmountInKind(
+                    // perform an in-kind transfer with...
                     sender_,
                     recipient_,
                     senderIsEarning_ ? _getPrincipalAmountRoundedUp(safeAmount_) : safeAmount_ // the appropriate amount

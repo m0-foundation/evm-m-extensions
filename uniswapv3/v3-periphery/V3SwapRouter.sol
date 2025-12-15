@@ -36,7 +36,7 @@ abstract contract V3SwapRouter is IV3SwapRouter, PeripheryPaymentsWithFeeExtende
     /// @dev Returns the pool for the given token pair and fee. The pool contract may or may not exist.
     function getPool(address tokenA, address tokenB, uint24 fee) public view returns (IUniswapV3Pool) {
         console.log("factory", factory);
-        return IUniswapV3Pool(PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, fee)));
+        return IUniswapV3Pool(IUniswapV3Factory(factory).getPool(tokenA, tokenB, fee));
     }
 
     struct SwapCallbackData {

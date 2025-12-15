@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "./RevertHandler.sol";
 import "../../../src/projects/yieldToAllWithFee/interfaces/IMSpokeYieldFee.sol";
 import "../../../src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
-import "../../../src/projects/yieldToOne/IMYieldToOne.sol";
+import "../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
 import "../../../src/projects/earnerManager/IMEarnerManager.sol";
 import { IERC712 } from "test/fuzzing/mocks/WrappedMToken.f.sol";
 import { IERC3009 } from "test/fuzzing/mocks/WrappedMToken.f.sol";
@@ -15,9 +15,7 @@ import { IStatefulERC712 } from "test/fuzzing/mocks/WrappedMToken.f.sol";
 import { IERC20Extended } from "test/fuzzing/mocks/WrappedMToken.f.sol";
 import { IUniswapV3SwapAdapter } from "src/swap/interfaces/IUniswapV3SwapAdapter.sol";
 import { IMExtension } from "src/interfaces/IMExtension.sol";
-import {
-    IAccessControl
-} from "lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 import { V3SwapRouter } from "uniswapv3/v3-periphery/V3SwapRouter.sol";
 
 abstract contract Properties_ERR is RevertHandler {

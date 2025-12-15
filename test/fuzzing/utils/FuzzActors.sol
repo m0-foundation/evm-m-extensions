@@ -9,6 +9,8 @@ contract FuzzActors is FuzzBase, Test {
 
     address internal admin = address(this);
     address internal blacklistManager = address(this);
+    address internal freezeManager = address(this);
+    address internal pauser = address(this);
     address internal yieldRecipient = address(this);
     address internal yieldRecipientManager = address(this);
 

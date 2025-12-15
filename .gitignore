@@ -17,6 +17,14 @@ docs/
 # Dotenv file
 .env
 
+# Echidna
+echidna
+/echidna-corpus
+/echidna-corpusOLD
+
+# Gas report
+gasreport.ansi
+
 # Mac OS files
 .DS_Store
 
@@ -25,6 +33,3 @@ node_modules
 
 # Soljson
 soljson-latest.js
-echidna
-/echidna-corpus
-/echidna-corpusOLD

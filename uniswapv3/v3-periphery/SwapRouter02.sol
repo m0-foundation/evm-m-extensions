@@ -8,7 +8,8 @@ import "./base/PeripheryImmutableState.sol";
 import "./interfaces/ISwapRouter02.sol";
 import "./V2SwapRouter.sol";
 import "./V3SwapRouter.sol";
-import "uniswapv3/v3-periphery/base/ApproveAndCall.sol";
+import { ApproveAndCall } from "uniswapv3/v3-periphery/base/ApproveAndCall.sol";
+import { ImmutableState } from "uniswapv3/v3-periphery/base/ImmutableState.sol";
 import "uniswapv3/v3-periphery/base/MulticallExtended.sol";
 
 /// @title Uniswap V2 and V3 Swap Router

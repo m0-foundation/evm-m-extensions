@@ -1,0 +1,29 @@
+{
+  "lib/common": {
+    "branch": {
+      "name": "main",
+      "rev": "e54273e79cbd8a38b2d2b41ca4123f4e671fcc07"
+    }
+  },
+  "lib/forge-std": {
+    "branch": {
+      "name": "v1",
+      "rev": "7117c90c8cf6c68e5acce4f09a6b24715cea4de6"
+    }
+  },
+  "lib/fuzzlib": {
+    "rev": "8116ad7ed50c41d0a40d2475c93c98f3653fa8fd"
+  },
+  "lib/openzeppelin-foundry-upgrades": {
+    "rev": "78048ebe3be1fa256182d9c8c4f9a64587c0d6b3"
+  },
+  "lib/uniswap-v4-periphery": {
+    "rev": "ad04c9f24a170accf5ea1b2836bbafd514537ca6"
+  },
+  "lib/wrapped-m-token": {
+    "branch": {
+      "name": "feat/swap-facility-support",
+      "rev": "49b88215911d52a47b0da94177fb6f647d90301a"
+    }
+  }
+}

@@ -6,7 +6,7 @@ import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.s
 
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 
-import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
+import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
 
 import { BaseIntegrationTest } from "../utils/BaseIntegrationTest.sol";
 
@@ -20,19 +20,21 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
 
         _fundAccounts();
 
-        mYieldFee = MYieldFee(
+        mYieldFee = MYieldFeeHarness(
             Upgrades.deployTransparentProxy(
-                "MYieldFee.sol:MYieldFee",
+                "MYieldFeeHarness.sol:MYieldFeeHarness",
                 admin,
                 abi.encodeWithSelector(
-                    MYieldFee.initialize.selector,
+                    MYieldFeeHarness.initialize.selector,
                     NAME,
                     SYMBOL,
                     YIELD_FEE_RATE,
                     feeRecipient,
                     admin,
                     feeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -50,6 +52,9 @@ contract MYieldFeeIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, feeManager));
+        assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
+        assertTrue(mYieldFee.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldFee.hasRole(PAUSER_ROLE, pauser));
     }
 
     /* ============ index ============ */

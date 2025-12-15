@@ -2,11 +2,11 @@
 pragma solidity 0.8.26;
 
 import "../FuzzSetup.sol";
-import { IMYieldToOne } from "src/projects/yieldToOne/IMYieldToOne.sol";
-import { IMYieldFee } from "src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
-import { IMEarnerManager } from "src/projects/earnerManager/IMEarnerManager.sol";
+import { IMYieldToOne } from "../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
+import { IMYieldFee } from "../../../src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
+import { IMEarnerManager } from "../../../src/projects/earnerManager/IMEarnerManager.sol";
 import { IERC20 } from "@openzeppelin/contracts-v4/token/ERC20/IERC20.sol";
-import { IMTokenLike } from "src/interfaces/IMTokenLike.sol";
+import { IMTokenLike } from "../../../src/interfaces/IMTokenLike.sol";
 
 contract BeforeAfter is FuzzSetup {
     // MYieldToOne parameter structs

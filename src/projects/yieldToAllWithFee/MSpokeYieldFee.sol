@@ -49,7 +49,8 @@ contract MSpokeYieldFee is IMSpokeYieldFee, MYieldFee {
      * @param admin                 The address administrating the M extension. Can grant and revoke roles.
      * @param feeManager            The address managing the fee rate and recipient.
      * @param claimRecipientManager The address managing claim recipients for accounts.
-
+     * @param freezeManager         The address of a freeze manager.
+     * @param pauser                The address of a pauser.
      */
     function initialize(
         string memory name,
@@ -58,9 +59,21 @@ contract MSpokeYieldFee is IMSpokeYieldFee, MYieldFee {
         address feeRecipient,
         address admin,
         address feeManager,
-        address claimRecipientManager
+        address claimRecipientManager,
+        address freezeManager,
+        address pauser
     ) public virtual override initializer {
-        super.initialize(name, symbol, feeRate, feeRecipient, admin, feeManager, claimRecipientManager);
+        super.initialize(
+            name,
+            symbol,
+            feeRate,
+            feeRecipient,
+            admin,
+            feeManager,
+            claimRecipientManager,
+            freezeManager,
+            pauser
+        );
     }
 
     /* ============ Internal View/Pure Functions ============ */

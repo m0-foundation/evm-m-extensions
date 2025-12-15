@@ -9,6 +9,7 @@ import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousInde
 import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
 import { Upgrades, UnsafeUpgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
+import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 import { IMExtension } from "../../src/interfaces/IMExtension.sol";
 import { IMTokenLike } from "../../src/interfaces/IMTokenLike.sol";
 import { IRegistrarLike } from "../../src/swap/interfaces/IRegistrarLike.sol";
@@ -20,18 +21,32 @@ import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
 import { MExtensionHarness } from "../harness/MExtensionHarness.sol";
 import { MYieldToOneHarness } from "../harness/MYieldToOneHarness.sol";
+import { MYieldFeeHarness } from "../harness/MYieldFeeHarness.sol";
+import { JMIExtensionHarness } from "../harness/JMIExtensionHarness.sol";
 
 import { Helpers } from "./Helpers.sol";
 
+interface IMinterGateway {
+    function minterRate() external view returns (uint32);
+    function totalOwedM() external view returns (uint240);
+    function updateIndex() external returns (uint128);
+}
+
 contract BaseIntegrationTest is Helpers, Test {
+    address public constant deployer = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
+    address public constant proxyAdmin = 0xdcf79C332cB3Fe9d39A830a5f8de7cE6b1BD6fD1;
+
     address public constant standardGovernor = 0xB024aC5a7c6bC92fbACc8C3387E628a07e1Da016;
     address public constant registrar = 0x119FbeeDD4F4f4298Fb59B720d5654442b81ae2c;
 
+    IMinterGateway public constant minterGateway = IMinterGateway(0xf7f9638cb444D65e5A40bF5ff98ebE4ff319F04E);
+
     IMTokenLike public constant mToken = IMTokenLike(0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b);
+    IERC20 public constant wrappedM = IERC20(0x437cc33344a0B27A429f795ff6B469C72698B291);
 
     uint16 public constant YIELD_FEE_RATE = 2000; // 20%
 
-    bytes32 internal constant EARNERS_LIST = "earners";
+    bytes32 public constant EARNERS_LIST = "earners";
     uint32 public constant M_EARNER_RATE = ContinuousIndexingMath.BPS_SCALED_ONE / 10; // 10% APY
 
     uint56 public constant EXP_SCALED_ONE = 1e12;
@@ -40,19 +55,23 @@ contract BaseIntegrationTest is Helpers, Test {
     address public constant mSource = 0x3f0376da3Ae4313E7a5F1dA184BAFC716252d759;
 
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 public constant BLACKLIST_MANAGER_ROLE = keccak256("BLACKLIST_MANAGER_ROLE");
+    bytes32 public constant FREEZE_MANAGER_ROLE = keccak256("FREEZE_MANAGER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant YIELD_RECIPIENT_MANAGER_ROLE = keccak256("YIELD_RECIPIENT_MANAGER_ROLE");
     bytes32 public constant EARNER_MANAGER_ROLE = keccak256("EARNER_MANAGER_ROLE");
     bytes32 public constant M_SWAPPER_ROLE = keccak256("M_SWAPPER_ROLE");
+    bytes32 public constant CLAIM_RECIPIENT_MANAGER_ROLE = keccak256("CLAIM_RECIPIENT_MANAGER_ROLE");
 
-    address constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
-    address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+    address public constant WRAPPED_M = 0x437cc33344a0B27A429f795ff6B469C72698B291;
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
 
     address public admin = makeAddr("admin");
-    address public blacklistManager = makeAddr("blacklistManager");
+    address public assetCapManager = makeAddr("assetCapManager");
+    address public pauser = makeAddr("pauser");
+    address public freezeManager = makeAddr("freezeManager");
     address public yieldRecipient = makeAddr("yieldRecipient");
     address public yieldRecipientManager = makeAddr("yieldRecipientManager");
     address public feeManager = makeAddr("feeManager");
@@ -72,7 +91,8 @@ contract BaseIntegrationTest is Helpers, Test {
 
     MExtensionHarness public mExtension;
     MYieldToOneHarness public mYieldToOne;
-    MYieldFee public mYieldFee;
+    MYieldFeeHarness public mYieldFee;
+    JMIExtensionHarness public jmiExtension;
     MEarnerManager public mEarnerManager;
     SwapFacility public swapFacility;
     UniswapV3SwapAdapter public swapAdapter;
@@ -90,7 +110,7 @@ contract BaseIntegrationTest is Helpers, Test {
             UnsafeUpgrades.deployTransparentProxy(
                 address(new SwapFacility(address(mToken), address(registrar))),
                 admin,
-                abi.encodeWithSelector(SwapFacility.initialize.selector, admin)
+                abi.encodeWithSelector(SwapFacility.initialize.selector, admin, pauser)
             )
         );
 
@@ -102,7 +122,7 @@ contract BaseIntegrationTest is Helpers, Test {
         swapAdapter = new UniswapV3SwapAdapter(
             WRAPPED_M,
             address(swapFacility),
-            UNISWAP_V3_ROUTER,
+            0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45, // Uniswap V3 Router
             admin,
             whitelistedTokens
         );
@@ -143,7 +163,7 @@ contract BaseIntegrationTest is Helpers, Test {
         mToken.approve(address(swapFacility), amount);
 
         vm.prank(account);
-        swapFacility.swapInM(mExtension_, amount, recipient);
+        swapFacility.swap(address(mToken), mExtension_, amount, recipient);
     }
 
     function _swapInMWithPermitVRS(
@@ -165,7 +185,7 @@ contract BaseIntegrationTest is Helpers, Test {
         );
 
         vm.prank(account);
-        swapFacility.swapInMWithPermit(mExtension_, amount, recipient, deadline, v_, r_, s_);
+        swapFacility.swapWithPermit(address(mToken), mExtension_, amount, recipient, deadline, v_, r_, s_);
     }
 
     function _swapInMWithPermitSignature(
@@ -187,7 +207,7 @@ contract BaseIntegrationTest is Helpers, Test {
         );
 
         vm.prank(account);
-        swapFacility.swapInMWithPermit(mExtension_, amount, recipient, deadline, abi.encodePacked(r_, s_, v_));
+        swapFacility.swapWithPermit(address(mToken), mExtension_, amount, recipient, deadline, v_, r_, s_);
     }
 
     function _swapMOut(address mExtension_, address account, address recipient, uint256 amount) internal {
@@ -195,7 +215,53 @@ contract BaseIntegrationTest is Helpers, Test {
         IMExtension(mExtension_).approve(address(swapFacility), amount);
 
         vm.prank(account);
-        swapFacility.swapOutM(mExtension_, amount, recipient);
+        swapFacility.swap(mExtension_, address(mToken), amount, recipient);
+    }
+
+    function _swapOutMWithPermitVRS(
+        address mExtension_,
+        address account,
+        uint256 signerPrivateKey,
+        address recipient,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal {
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getExtensionPermit(
+            mExtension_,
+            address(swapFacility),
+            account,
+            signerPrivateKey,
+            amount,
+            nonce,
+            deadline
+        );
+
+        vm.prank(account);
+        swapFacility.swapWithPermit(mExtension_, address(mToken), amount, recipient, deadline, v_, r_, s_);
+    }
+
+    function _swapOutMWithPermitSignature(
+        address mExtension_,
+        address account,
+        uint256 signerPrivateKey,
+        address recipient,
+        uint256 amount,
+        uint256 nonce,
+        uint256 deadline
+    ) internal {
+        (uint8 v_, bytes32 r_, bytes32 s_) = _getExtensionPermit(
+            mExtension_,
+            address(swapFacility),
+            account,
+            signerPrivateKey,
+            amount,
+            nonce,
+            deadline
+        );
+
+        vm.prank(account);
+        swapFacility.swapWithPermit(mExtension_, address(mToken), amount, recipient, deadline, v_, r_, s_);
     }
 
     function _set(bytes32 key, bytes32 value) internal {

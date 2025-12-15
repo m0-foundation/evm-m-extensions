@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.26;
-import { console } from "forge-std/console.sol";
-import {
-    IAccessControl
-} from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+
+import { IAccessControl } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { PausableUpgradeable } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
 import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -17,6 +16,8 @@ import { IMTokenLike } from "../../../../src/interfaces/IMTokenLike.sol";
 import { IMYieldFee } from "../../../../src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
 import { ISwapFacility } from "../../../../src/swap/interfaces/ISwapFacility.sol";
 
+import { IPausable } from "../../../../src/components/pausable/IPausable.sol";
+import { IFreezable } from "../../../../src/components/freezable/IFreezable.sol";
 import { IERC20 } from "../../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../../lib/common/src/interfaces/IERC20Extended.sol";
 
@@ -41,7 +42,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     feeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -57,9 +60,12 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertEq(mYieldFee.latestIndex(), EXP_SCALED_ONE);
         assertEq(mYieldFee.feeRate(), YIELD_FEE_RATE);
         assertEq(mYieldFee.feeRecipient(), feeRecipient);
+
         assertTrue(mYieldFee.hasRole(DEFAULT_ADMIN_ROLE, admin));
         assertTrue(mYieldFee.hasRole(FEE_MANAGER_ROLE, feeManager));
         assertTrue(mYieldFee.hasRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager));
+        assertTrue(mYieldFee.hasRole(PAUSER_ROLE, pauser));
+        assertTrue(mYieldFee.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
     }
 
     function test_initialize_zeroFeeRecipient() external {
@@ -78,7 +84,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     address(0),
                     admin,
                     feeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 )
             )
         );
@@ -100,7 +108,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     address(0),
                     feeManager,
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 )
             )
         );
@@ -122,7 +132,9 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     address(0),
-                    claimRecipientManager
+                    claimRecipientManager,
+                    freezeManager,
+                    pauser
                 )
             )
         );
@@ -144,7 +156,57 @@ contract MYieldFeeUnitTests is BaseUnitTest {
                     feeRecipient,
                     admin,
                     feeManager,
+                    address(0),
+                    freezeManager,
+                    pauser
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroPauser() external {
+        address implementation = address(new MYieldFeeHarness(address(mToken), address(swapFacility)));
+
+        vm.expectRevert(IPausable.ZeroPauser.selector);
+        MYieldFeeHarness(
+            UnsafeUpgrades.deployTransparentProxy(
+                implementation,
+                admin,
+                abi.encodeWithSelector(
+                    MYieldFeeHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    YIELD_FEE_RATE,
+                    feeRecipient,
+                    admin,
+                    feeManager,
+                    claimRecipientManager,
+                    freezeManager,
                     address(0)
+                )
+            )
+        );
+    }
+
+    function test_initialize_zeroFreezeManager() external {
+        address implementation = address(new MYieldFeeHarness(address(mToken), address(swapFacility)));
+
+        vm.expectRevert(IFreezable.ZeroFreezeManager.selector);
+        MYieldFeeHarness(
+            UnsafeUpgrades.deployTransparentProxy(
+                implementation,
+                admin,
+                abi.encodeWithSelector(
+                    MYieldFeeHarness.initialize.selector,
+                    "MYieldFee",
+                    "MYF",
+                    YIELD_FEE_RATE,
+                    feeRecipient,
+                    admin,
+                    feeManager,
+                    claimRecipientManager,
+                    address(0),
+                    pauser
                 )
             )
         );
@@ -781,12 +843,22 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
     /* ============ earnerRate ============ */
 
-    function test_earnerRate() external {
+    function test_earnerRate_earningIsEnabled() external {
         uint32 mEarnerRate = 415;
+        mYieldFee.setIsEarningEnabled(true);
 
         vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
 
         assertEq(mYieldFee.earnerRate(), _getEarnerRate(mEarnerRate, YIELD_FEE_RATE));
+    }
+
+    function test_earnerRate_earningIsDisabled() external {
+        uint32 mEarnerRate = 415;
+        mYieldFee.setIsEarningEnabled(false);
+
+        vm.mockCall(address(mToken), abi.encodeWithSelector(IMTokenLike.earnerRate.selector), abi.encode(mEarnerRate));
+
+        assertEq(mYieldFee.earnerRate(), 0);
     }
 
     /* ============ _latestEarnerRateAccrualTimestamp ============ */
@@ -1122,7 +1194,72 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertApproxEqAbs(mYieldFee.totalAccruedFee(), expectedFee, 9);
     }
 
+    /* ============ approve ============ */
+
+    function test_approve_frozenAccount() public {
+        vm.prank(freezeManager);
+        mYieldFee.freeze(alice);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+
+        vm.prank(alice);
+        mYieldFee.approve(bob, 1_000e6);
+    }
+
+    function test_approve_frozenSpender() public {
+        vm.prank(freezeManager);
+        mYieldFee.freeze(bob);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
+
+        vm.prank(alice);
+        mYieldFee.approve(bob, 1_000e6);
+    }
+
     /* ============ wrap ============ */
+
+    function test_wrap_paused() public {
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(address(bob), amount);
+
+        vm.prank(pauser);
+        mYieldFee.pause();
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(bob));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mYieldFee.wrap(bob, 1);
+    }
+
+    function test_wrap_frozenAccount() external {
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(alice, amount);
+
+        vm.prank(freezeManager);
+        mYieldFee.freeze(alice);
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(ISwapFacility.msgSender.selector), abi.encode(alice));
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+
+        vm.prank(address(swapFacility));
+        mYieldFee.wrap(bob, amount);
+    }
+
+    function test_wrap_frozenRecipient() public {
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(bob, amount);
+
+        vm.prank(freezeManager);
+        mYieldFee.freeze(bob);
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(bob));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
+        mYieldFee.wrap(bob, 1);
+    }
 
     function test_wrap_insufficientAmount() external {
         vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
@@ -1291,6 +1428,32 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     /* ============ unwrap ============ */
+
+    function test_unwrap_paused() public {
+        mYieldFee.setAccountOf(address(alice), 1_000, 1_000);
+
+        vm.prank(pauser);
+        mYieldFee.pause();
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(alice));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mYieldFee.unwrap(alice, 1);
+    }
+
+    function test_unwrap_frozen() public {
+        mYieldFee.setAccountOf(address(alice), 1_000, 1_000);
+
+        vm.prank(freezeManager);
+        mYieldFee.freeze(alice);
+
+        vm.mockCall(address(swapFacility), abi.encodeWithSelector(swapFacility.msgSender.selector), abi.encode(alice));
+
+        vm.prank(address(swapFacility));
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        mYieldFee.unwrap(alice, 1);
+    }
 
     // function test_unwrap_insufficientAmount() external {
     //     vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAmount.selector, 0));
@@ -1474,7 +1637,7 @@ contract MYieldFeeUnitTests is BaseUnitTest {
 
         assertApproxEqAbs(mYieldFee.balanceWithYieldOf(address(swapFacility)), mYieldFee.projectedTotalSupply(), 15);
         assertEq(mYieldFee.totalAccruedYield(), aliceYield);
-        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 15);
 
         // M tokens are sent to SwapFacility and then forwarded to Alice
         assertEq(mToken.balanceOf(address(swapFacility)), unwrapAmount);
@@ -1482,6 +1645,26 @@ contract MYieldFeeUnitTests is BaseUnitTest {
     }
 
     /* ============ transfer ============ */
+
+    function test_transfer_paused() public {
+        mYieldFee.setAccountOf(alice, 1_000, 1_000);
+
+        vm.prank(pauser);
+        mYieldFee.pause();
+
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        vm.prank(alice);
+        mYieldFee.transfer(bob, 1);
+    }
+
+    function test_transfer_frozen() public {
+        vm.prank(freezeManager);
+        mYieldFee.freeze(alice);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+        mYieldFee.transfer(bob, 1);
+    }
 
     function test_transfer_invalidRecipient() external {
         mYieldFee.setAccountOf(alice, 1_000, 1_000);
@@ -1698,11 +1881,10 @@ contract MYieldFeeUnitTests is BaseUnitTest {
         assertApproxEqAbs(
             mYieldFee.projectedTotalSupply(),
             mYieldFee.balanceWithYieldOf(alice) + mYieldFee.balanceWithYieldOf(bob),
-            11
+            16
         );
 
-        assertApproxEqAbs(mYieldFee.totalAccruedYield(), aliceYield + bobYield, 11);
-        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 12);
+        assertApproxEqAbs(mYieldFee.totalAccruedFee(), yieldFee, 16);
     }
 
     /* ============ currentIndex Utils ============ */

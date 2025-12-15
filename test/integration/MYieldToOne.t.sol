@@ -4,9 +4,7 @@ pragma solidity 0.8.26;
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
 
-import {
-    IAccessControl
-} from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { IAccessControl } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
@@ -36,8 +34,9 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
                     SYMBOL,
                     yieldRecipient,
                     admin,
-                    blacklistManager,
-                    yieldRecipientManager
+                    freezeManager,
+                    yieldRecipientManager,
+                    pauser
                 ),
                 mExtensionDeployOptions
             )
@@ -55,9 +54,11 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.swapFacility(), address(swapFacility));
         assertEq(mYieldToOne.yieldRecipient(), yieldRecipient);
 
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(DEFAULT_ADMIN_ROLE, admin));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(BLACKLIST_MANAGER_ROLE, blacklistManager));
-        assertTrue(IAccessControl(address(mYieldToOne)).hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(PAUSER_ROLE, pauser));
+        assertTrue(mYieldToOne.hasRole(DEFAULT_ADMIN_ROLE, admin));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
+        assertTrue(mYieldToOne.hasRole(YIELD_RECIPIENT_MANAGER_ROLE, yieldRecipientManager));
+        assertTrue(mYieldToOne.hasRole(FREEZE_MANAGER_ROLE, freezeManager));
     }
 
     function test_yieldAccumulationAndClaim() external {
@@ -219,7 +220,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.balanceOf(alice), 5e6);
         assertEq(mToken.balanceOf(alice), 5e6);
 
-        _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+        _swapInMWithPermitSignature(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
         assertEq(mYieldToOne.balanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);
@@ -266,7 +267,27 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.totalSupply(), 0);
     }
 
-    // TODO: add tests to unwrap with permits
+    function test_unwrapWithPermits() external {
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
+
+        mYieldToOne.setBalanceOf(alice, 11e6);
+        mYieldToOne.setTotalSupply(11e6);
+        _giveM(address(mYieldToOne), 11e6);
+
+        assertEq(mToken.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.balanceOf(alice), 11e6);
+
+        _swapOutMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+
+        assertEq(mYieldToOne.balanceOf(alice), 6e6);
+        assertEq(mToken.balanceOf(alice), 15e6);
+
+        _swapOutMWithPermitSignature(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+
+        assertEq(mYieldToOne.balanceOf(alice), 1e6);
+        assertEq(mToken.balanceOf(alice), 20e6);
+    }
 
     /* ============ claimYield ============ */
 
