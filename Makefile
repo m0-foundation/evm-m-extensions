@@ -205,6 +205,11 @@ deploy-swap-facility-soneium: VERIFIER="blockscout"
 deploy-swap-facility-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
 deploy-swap-facility-soneium: deploy-swap-facility
 
+deploy-swap-facility-plasma: RPC_URL=$(PLASMA_RPC_URL)
+deploy-swap-facility-plasma: VERIFIER="custom"
+deploy-swap-facility-plasma: VERIFIER_URL=${PLASMA_VERIFIER_URL}
+deploy-swap-facility-plasma: deploy-swap-facility
+
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
