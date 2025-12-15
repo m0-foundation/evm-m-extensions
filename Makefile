@@ -6,14 +6,26 @@
 update:; forge update
 
 # Deployment helpers
-deploy-local :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url localhost --broadcast -v
-deploy-sepolia :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url sepolia --broadcast -vvv
+deploy-local :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url localhost $(BROADCAST_ONLY_FLAGS) -v
+deploy-sepolia :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url sepolia $(BROADCAST_ONLY_FLAGS) -vvv
 
 # Run slither
 slither :; FOUNDRY_PROFILE=production forge build --build-info --skip '*/test/**' --skip '*/script/**' --force && slither --compile-force-framework foundry --ignore-compile --sarif results.sarif --config-file slither.config.json .
 
 # Common tasks
 profile ?=default
+
+# Default to actual deployment (not simulation)
+DRY_RUN ?= false
+
+# Conditionally set broadcast and verify flags
+ifeq ($(DRY_RUN),true)
+	BROADCAST_FLAGS =
+	BROADCAST_ONLY_FLAGS =
+else
+	BROADCAST_FLAGS = --broadcast --verify
+	BROADCAST_ONLY_FLAGS = --broadcast
+endif
 
 build:
 	@./build.sh -p production
@@ -42,13 +54,18 @@ sizes:
 clean:
 	forge clean && rm -rf ./abi && rm -rf ./bytecode && rm -rf ./types
 
+#
+#
+# DEPLOY
+#
+#
 
 deploy-yield-to-one:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
 	forge script script/deploy/DeployYieldToOne.s.sol:DeployYieldToOne \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 deploy-yield-to-one-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-sepolia: deploy-yield-to-one
@@ -58,7 +75,7 @@ deploy-yield-to-all:
 	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYieldToAllWithFee \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 deploy-yield-to-all-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-all-sepolia: deploy-yield-to-all
@@ -68,7 +85,7 @@ deploy-m-earner-manager:
 	forge script script/deploy/DeployMEarnerManager.s.sol:DeployMEarnerManager \
 	--private-key $(PRIVATE_KEY) \
 	--rpc-url $(RPC_URL) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 deploy-m-earner-manager-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-m-earner-manager-sepolia: deploy-m-earner-manager
@@ -78,7 +95,7 @@ deploy-jmi-extension:
 	forge script script/deploy/DeployJMIExtension.s.sol:DeployJMIExtension \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 deploy-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-jmi-extension-sepolia: deploy-jmi-extension 
@@ -89,7 +106,7 @@ deploy-swap-adapter:
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive \
-	--broadcast --verify --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+	$(BROADCAST_FLAGS) --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
 
 deploy-swap-adapter-local: RPC_URL=$(LOCALHOST_RPC_URL)
 deploy-swap-adapter-local: deploy-swap-adapter
@@ -120,7 +137,7 @@ deploy-swap-facility:
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive -v \
-	--broadcast --verify --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+	$(BROADCAST_FLAGS) --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
 
 deploy-swap-facility-local: RPC_URL=$(LOCALHOST_RPC_URL)
 deploy-swap-facility-local: deploy-swap-facility
@@ -210,12 +227,18 @@ deploy-swap-facility-plasma: VERIFIER="custom"
 deploy-swap-facility-plasma: VERIFIER_URL=${PLASMA_VERIFIER_URL}
 deploy-swap-facility-plasma: deploy-swap-facility
 
+#
+#
+# UPGRADE
+#
+#
+
 upgrade-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 upgrade-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 upgrade-swap-facility-sepolia: upgrade-swap-facility
@@ -226,24 +249,30 @@ upgrade-old-swap-facility:
 	forge script script/upgrade/UpgradeOldSwapFacility.s.sol:UpgradeOldSwapFacility \
 	--rpc-url $(SEPOLIA_RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 upgrade-jmi-extension:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \
 	forge script script/upgrade/UpgradeJMIExtension.s.sol:UpgradeJMIExtension \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast --verify
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 upgrade-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 upgrade-jmi-extension-sepolia: upgrade-jmi-extension
+
+#
+#
+# PROPOSE (via Multisig)
+#
+#
 
 propose-transfer-swap-facility-owner:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
 	forge script script/ProposeTransferSwapFacilityOwner.s.sol:ProposeTransferSwapFacilityOwner \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
 
 propose-transfer-swap-facility-owner-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 propose-transfer-swap-facility-owner-sepolia: propose-transfer-swap-facility-owner
