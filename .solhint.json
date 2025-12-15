@@ -1,8 +1,6 @@
 {
   "extends": ["solhint:recommended"],
-  "plugins": ["prettier"],
   "rules": {
-    "prettier/prettier": "error",
     "code-complexity": ["warn", 10],
     "compiler-version": ["warn", "0.8.26"],
     "comprehensive-interface": "off",

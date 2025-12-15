@@ -3,14 +3,10 @@
 pragma solidity 0.8.26;
 
 import { console } from "../lib/forge-std/src/console.sol";
-import {
-    AccessControl
-} from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { AccessControl } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { ScriptBase } from "./ScriptBase.s.sol";
 import { MultiSigBatchBase } from "../lib/common/script/MultiSigBatchBase.sol";
-import {
-    Ownable
-} from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import { Ownable } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 /**
  * @title ProposeTransferSwapFacilityOwner
@@ -31,6 +27,7 @@ contract ProposeTransferSwapFacilityOwner is MultiSigBatchBase {
         bytes32 DEFAULT_ADMIN_ROLE = AccessControl(_SWAP_FACILITY).DEFAULT_ADMIN_ROLE();
 
         require(_MAINNET_TIMELOCK != address(0), "New owner cannot be zero address");
+        /* solhint-disable no-console */
         console.log("Current chain ID:", block.chainid);
         console.log("ProxyAdmin address:", _PROXY_ADMIN);
         console.log("Multisig address:", _SAFE_MULTISIG);
