@@ -20,6 +20,14 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install npm packages
+        run: npm ci --force
+
       - name: Run Forge build
         run: make sizes
         id: build
