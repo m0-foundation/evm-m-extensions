@@ -19,31 +19,10 @@ contract DeployJMIExtension is DeployBase {
         extensionConfig.pauser = vm.envAddress("PAUSER");
         extensionConfig.yieldRecipientManager = vm.envAddress("YIELD_RECIPIENT_MANAGER");
 
-        // Check for predicted address (optional)
-        address predictedAddress = vm.envOr("PREDICTED_ADDRESS", address(0));
-
-        // If predicted address is set, simulate first to verify
-        if (predictedAddress != address(0)) {
-            console.log("PREDICTED_ADDRESS is set, running simulation to verify...");
-
-            // Simulate deployment to get the actual address
+        // Simulate deployment to verify predicted address (if PREDICTED_ADDRESS env var is set)
+        if (_shouldVerifyPredictedAddress()) {
             (, address simulatedProxy, ) = _deployJMIExtension(deployer, extensionConfig);
-
-            console.log("Predicted address:", predictedAddress);
-            console.log("Simulated address:", simulatedProxy);
-
-            // Compare addresses
-            require(
-                simulatedProxy == predictedAddress,
-                string.concat(
-                    "Address mismatch! Predicted: ",
-                    vm.toString(predictedAddress),
-                    ", but simulation resulted in: ",
-                    vm.toString(simulatedProxy)
-                )
-            );
-
-            console.log("Address verification passed! Proceeding with deployment...");
+            _verifyPredictedAddress(simulatedProxy, "JMIExtension");
         }
 
         vm.startBroadcast(deployer);

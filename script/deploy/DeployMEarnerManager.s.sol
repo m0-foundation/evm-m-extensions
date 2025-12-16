@@ -17,6 +17,12 @@ contract DeployMEarnerManager is DeployBase {
         extensionConfig.feeRecipient = vm.envAddress("FEE_RECIPIENT");
         extensionConfig.pauser = vm.envAddress("PAUSER");
 
+        // Simulate deployment to verify predicted address (if PREDICTED_ADDRESS env var is set)
+        if (_shouldVerifyPredictedAddress()) {
+            (, address simulatedProxy, ) = _deployMEarnerManager(deployer, extensionConfig);
+            _verifyPredictedAddress(simulatedProxy, "MEarnerManager");
+        }
+
         vm.startBroadcast(deployer);
 
         (

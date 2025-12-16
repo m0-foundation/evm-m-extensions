@@ -9,6 +9,12 @@ contract DeploySwapAdapter is DeployBase {
     function run() public {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
 
+        // Simulate deployment to verify predicted address (if PREDICTED_ADDRESS env var is set)
+        if (_shouldVerifyPredictedAddress()) {
+            address simulatedAdapter = _deploySwapAdapter(deployer);
+            _verifyPredictedAddress(simulatedAdapter, "SwapAdapter");
+        }
+
         vm.startBroadcast(deployer);
 
         address swapAdater = _deploySwapAdapter(deployer);
