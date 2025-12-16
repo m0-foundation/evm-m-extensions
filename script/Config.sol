@@ -64,6 +64,7 @@ contract Config {
     uint256 public constant MANTRA_CHAIN_ID = 5888;
     uint256 public constant BASE_CHAIN_ID = 8453;
     uint256 public constant SONEIUM_CHAIN_ID = 1868;
+    uint256 public constant PLASMA_CHAIN_ID = 9745;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -107,6 +108,7 @@ contract Config {
         if (chainId_ == BSC_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == MANTRA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BASE_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == PLASMA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == SONEIUM_CHAIN_ID) {
             config = _getDefaultDeployConfig();
             config.uniswapV3Router = UNISWAP_V3_ROUTER;
