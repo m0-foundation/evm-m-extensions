@@ -2,7 +2,7 @@
   "*.{json,md,sol,yml}": [
     "npm run prettier"
   ],
-  "*.sol": [
+  "{src,test}/**/*.sol": [
     "npm run solhint"
   ]
 }

@@ -27,7 +27,6 @@ contract ProposeTransferSwapFacilityOwner is MultiSigBatchBase {
         bytes32 DEFAULT_ADMIN_ROLE = AccessControl(_SWAP_FACILITY).DEFAULT_ADMIN_ROLE();
 
         require(_MAINNET_TIMELOCK != address(0), "New owner cannot be zero address");
-        /* solhint-disable no-console */
         console.log("Current chain ID:", block.chainid);
         console.log("ProxyAdmin address:", _PROXY_ADMIN);
         console.log("Multisig address:", _SAFE_MULTISIG);

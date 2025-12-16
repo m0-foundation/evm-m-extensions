@@ -5,16 +5,6 @@
 # dapp deps
 update:; forge update
 
-# Deployment helpers
-deploy-local :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url localhost $(BROADCAST_ONLY_FLAGS) -v
-deploy-sepolia :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url sepolia $(BROADCAST_ONLY_FLAGS) -vvv
-
-# Run slither
-slither :; FOUNDRY_PROFILE=production forge build --build-info --skip '*/test/**' --skip '*/script/**' --force && slither --compile-force-framework foundry --ignore-compile --sarif results.sarif --config-file slither.config.json .
-
-# Common tasks
-profile ?=default
-
 # Default to actual deployment (not simulation)
 DRY_RUN ?= false
 
@@ -26,6 +16,16 @@ else
 	BROADCAST_FLAGS = --broadcast --verify
 	BROADCAST_ONLY_FLAGS = --broadcast
 endif
+
+# Deployment helpers
+deploy-local :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url localhost $(BROADCAST_ONLY_FLAGS) -v
+deploy-sepolia :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --rpc-url sepolia $(BROADCAST_ONLY_FLAGS) -vvv
+
+# Run slither
+slither :; FOUNDRY_PROFILE=production forge build --build-info --skip '*/test/**' --skip '*/script/**' --force && slither --compile-force-framework foundry --ignore-compile --sarif results.sarif --config-file slither.config.json .
+
+# Common tasks
+profile ?=default
 
 build:
 	@./build.sh -p production
