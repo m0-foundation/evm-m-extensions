@@ -3,14 +3,10 @@
 pragma solidity 0.8.26;
 
 import { console } from "../lib/forge-std/src/console.sol";
-import {
-    AccessControl
-} from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
+import { AccessControl } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 import { ScriptBase } from "./ScriptBase.s.sol";
 import { MultiSigBatchBase } from "../lib/common/script/MultiSigBatchBase.sol";
-import {
-    Ownable
-} from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import { Ownable } from "../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 /**
  * @title ProposeTransferSwapFacilityOwner
