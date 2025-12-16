@@ -2,8 +2,8 @@
 gas_reports = ["*"]
 gas_reports_ignore = []
 ignored_error_codes = []
-optimizer = false
-optimizer_runs = 0
+optimizer = true
+optimizer_runs = 18999
 solc = "0.8.26"
 # evm_version = "paris"
 verbosity = 4
