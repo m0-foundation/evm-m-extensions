@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsMYieldFee.sol";
-import "./helpers/postconditions/PostconditionsMYieldFee.sol";
+import "./helpers/Preconditions/PreconditionsMYieldFee.sol";
+import "./helpers/Postconditions/PostconditionsMYieldFee.sol";
 
 contract FuzzMYieldFee is PreconditionsMYieldFee, PostconditionsMYieldFee {
     function fuzz_claimYieldFor_MYieldFee(uint256 seed) public setCurrentActor {

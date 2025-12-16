@@ -6,8 +6,8 @@ import { IERC20Minimal } from "uniswapv3/v3-core/interfaces/IERC20Minimal.sol";
 
 import { IUniswapV3MintCallback } from "uniswapv3/v3-core/interfaces/callback/IUniswapV3MintCallback.sol";
 
-import "uniswapv3/v3-periphery/libraries/LiquidityAmounts.sol";
-import "uniswapv3/v3-core/libraries/TickMath.sol";
+import { LiquidityAmounts } from "uniswapv3/v3-periphery/libraries/LiquidityAmounts.sol";
+import { TickMath } from "uniswapv3/v3-core/libraries/TickMath.sol";
 import { console } from "forge-std/console.sol";
 
 contract DirectPoolMinter is IUniswapV3MintCallback {

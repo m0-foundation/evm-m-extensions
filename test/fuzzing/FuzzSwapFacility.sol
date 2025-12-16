@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsSwapFacility.sol";
-import "./helpers/postconditions/PostconditionsSwapFacility.sol";
+import { PreconditionsSwapFacility } from "./helpers/Preconditions/PreconditionsSwapFacility.sol";
+import { PostconditionsSwapFacility } from "./helpers/Postconditions/PostconditionsSwapFacility.sol";
 
 contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacility {
     function fuzz_swap(uint256 seed) public setCurrentActor {

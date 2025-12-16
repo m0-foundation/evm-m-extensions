@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsMYieldToOne.sol";
-import "./helpers/postconditions/PostconditionsMYieldToOne.sol";
+import "./helpers/Preconditions/PreconditionsMYieldToOne.sol";
+import "./helpers/Postconditions/PostconditionsMYieldToOne.sol";
 
 contract FuzzMYieldToOne is PreconditionsMYieldToOne, PostconditionsMYieldToOne {
     function fuzz_claimYield_MYieldToOne(uint256 seed) public setCurrentActor {

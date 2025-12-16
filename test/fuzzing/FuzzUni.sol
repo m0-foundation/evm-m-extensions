@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsUni.sol";
-import "./helpers/postconditions/PostconditionsUni.sol";
+import { PreconditionsUni } from "./helpers/Preconditions/PreconditionsUni.sol";
+import { PostconditionsUni } from "./helpers/Postconditions/PostconditionsUni.sol";
 
 contract FuzzUni is PreconditionsUni, PostconditionsUni {
     function fuzz_allLiquidityUni(

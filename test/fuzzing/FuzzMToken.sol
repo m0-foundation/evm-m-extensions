@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsMToken.sol";
-import "./helpers/postconditions/PostconditionsMToken.sol";
+import "./helpers/Preconditions/PreconditionsMToken.sol";
+import "./helpers/Postconditions/PostconditionsMToken.sol";
 
 contract FuzzMToken is PreconditionsMToken, PostconditionsMToken {
     function fuzz_mint(uint256 seed) public setCurrentActor {

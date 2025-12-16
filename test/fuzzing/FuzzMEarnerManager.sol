@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsMEarnerManager.sol";
-import "./helpers/postconditions/PostconditionsMEarnerManager.sol";
+import "./helpers/Preconditions/PreconditionsMEarnerManager.sol";
+import "./helpers/Postconditions/PostconditionsMEarnerManager.sol";
 
 contract FuzzMEarnerManager is PreconditionsMEarnerManager, PostconditionsMEarnerManager {
     function fuzz_setAccountInfo_MEarnerManager(uint256 seed, bool statusSeed) public setCurrentActor {
