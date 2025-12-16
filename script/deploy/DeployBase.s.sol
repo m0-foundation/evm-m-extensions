@@ -17,8 +17,45 @@ import { JMIExtension } from "../../src/projects/jmi/JMIExtension.sol";
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
 
+import { console } from "forge-std/console.sol";
+
 contract DeployBase is DeployHelpers, ScriptBase {
     Options public deployOptions;
+
+    /**
+     * @notice Checks if PREDICTED_ADDRESS env var is set
+     * @return True if PREDICTED_ADDRESS is set, false otherwise
+     */
+    function _shouldVerifyPredictedAddress() internal view returns (bool) {
+        return vm.envOr("PREDICTED_ADDRESS", address(0)) != address(0);
+    }
+
+    /**
+     * @notice Verifies predicted address against simulated deployment
+     * @dev Compares PREDICTED_ADDRESS env var with the simulated proxy address
+     * @param simulatedProxy The proxy address from simulation
+     * @param contractName Name of the contract being deployed (for error messages)
+     */
+    function _verifyPredictedAddress(address simulatedProxy, string memory contractName) internal view {
+        address predictedAddress = vm.envAddress("PREDICTED_ADDRESS");
+
+        console.log(string.concat("Verifying PREDICTED_ADDRESS for ", contractName, "..."));
+        console.log("Predicted address:", predictedAddress);
+        console.log("Simulated address:", simulatedProxy);
+
+        require(
+            simulatedProxy == predictedAddress,
+            string.concat(
+                contractName,
+                " address mismatch! Predicted: ",
+                vm.toString(predictedAddress),
+                ", but simulation resulted in: ",
+                vm.toString(simulatedProxy)
+            )
+        );
+
+        console.log(string.concat("Address verification passed for ", contractName, "!"));
+    }
 
     function _deploySwapFacility(
         address deployer,

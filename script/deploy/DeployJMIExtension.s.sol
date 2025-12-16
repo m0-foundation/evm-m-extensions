@@ -19,6 +19,12 @@ contract DeployJMIExtension is DeployBase {
         extensionConfig.pauser = vm.envAddress("PAUSER");
         extensionConfig.yieldRecipientManager = vm.envAddress("YIELD_RECIPIENT_MANAGER");
 
+        // Simulate deployment to verify predicted address (if PREDICTED_ADDRESS env var is set)
+        if (_shouldVerifyPredictedAddress()) {
+            (, address simulatedProxy, ) = _deployJMIExtension(deployer, extensionConfig);
+            _verifyPredictedAddress(simulatedProxy, "JMIExtension");
+        }
+
         vm.startBroadcast(deployer);
 
         (
