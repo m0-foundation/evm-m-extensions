@@ -97,6 +97,11 @@ deploy-jmi-extension:
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
+deploy-grid: RPC_URL=$(PLASMA_RPC_URL)
+deploy-grid: VERIFIER="custom"
+deploy-grid: VERIFIER_URL=${PLASMA_VERIFIER_URL}
+deploy-grid: deploy-jmi-extension
+
 deploy-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-jmi-extension-sepolia: deploy-jmi-extension 
 
