@@ -121,7 +121,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             _computeSalt(deployer, extensionConfig.contractName)
         );
 
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
 
         return (implementation, proxy, proxyAdmin);
     }
@@ -150,7 +150,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             _computeSalt(deployer, extensionConfig.contractName)
         );
 
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
     }
 
     function _deployJMIExtension(
@@ -178,7 +178,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             _computeSalt(deployer, extensionConfig.contractName)
         );
 
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
     }
 
     function _deployYieldToAllWithFee(
@@ -191,7 +191,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         // delegate to helper function to avoid stack too deep
         proxy = _deployYieldToAllWithFeeProxy(deployer, implementation, extensionConfig);
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
 
         return (implementation, proxy, proxyAdmin);
     }
