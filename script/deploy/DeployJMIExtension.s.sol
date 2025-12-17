@@ -10,6 +10,7 @@ contract DeployJMIExtension is DeployBase {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         JMIExtensionConfig memory extensionConfig;
 
+        extensionConfig.contractName = vm.envString("CONTRACT_NAME");
         extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.yieldRecipient = vm.envAddress("YIELD_RECIPIENT");
@@ -21,7 +22,7 @@ contract DeployJMIExtension is DeployBase {
 
         // Verify predicted address (if PREDICTED_ADDRESS env var is set)
         if (_shouldVerifyPredictedAddress()) {
-            _verifyPredictedAddress(deployer, "JMIExtension");
+            _verifyPredictedAddress(deployer, extensionConfig.contractName);
         }
 
         vm.startBroadcast(deployer);

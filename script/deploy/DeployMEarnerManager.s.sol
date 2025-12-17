@@ -10,6 +10,7 @@ contract DeployMEarnerManager is DeployBase {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         MEarnerManagerConfig memory extensionConfig;
 
+        extensionConfig.contractName = vm.envString("CONTRACT_NAME");
         extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.admin = vm.envAddress("ADMIN");
@@ -19,7 +20,7 @@ contract DeployMEarnerManager is DeployBase {
 
         // Verify predicted address (if PREDICTED_ADDRESS env var is set)
         if (_shouldVerifyPredictedAddress()) {
-            _verifyPredictedAddress(deployer, "MEarnerManager");
+            _verifyPredictedAddress(deployer, extensionConfig.contractName);
         }
 
         vm.startBroadcast(deployer);

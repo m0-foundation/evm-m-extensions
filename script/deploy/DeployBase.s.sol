@@ -118,7 +118,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.feeRecipient,
                 extensionConfig.pauser
             ),
-            _computeSalt(deployer, "MEarnerManager")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
 
         proxyAdmin = extensionConfig.admin;
@@ -147,7 +147,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.yieldRecipientManager,
                 extensionConfig.pauser
             ),
-            _computeSalt(deployer, "MYieldToOne")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
 
         proxyAdmin = extensionConfig.admin;
@@ -175,7 +175,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.pauser,
                 extensionConfig.yieldRecipientManager
             ),
-            _computeSalt(deployer, "JMIExtension")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
 
         proxyAdmin = extensionConfig.admin;
@@ -217,7 +217,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.freezeManager,
                 extensionConfig.pauser
             ),
-            _computeSalt(deployer, "MYieldFee")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
     }
 }
