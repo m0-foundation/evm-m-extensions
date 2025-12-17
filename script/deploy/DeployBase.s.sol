@@ -16,6 +16,7 @@ import { JMIExtension } from "../../src/projects/jmi/JMIExtension.sol";
 
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 import { UniswapV3SwapAdapter } from "../../src/swap/UniswapV3SwapAdapter.sol";
+import { IProxyAdmin } from "../../lib/openzeppelin-foundry-upgrades/src/internal/interfaces/IProxyAdmin.sol";
 
 import { console } from "forge-std/console.sol";
 
@@ -121,7 +122,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             _computeSalt(deployer, extensionConfig.contractName)
         );
 
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = address(IProxyAdmin(Upgrades.getAdminAddress(proxy)));
 
         return (implementation, proxy, proxyAdmin);
     }
@@ -150,7 +151,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             _computeSalt(deployer, extensionConfig.contractName)
         );
 
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = address(IProxyAdmin(Upgrades.getAdminAddress(proxy)));
     }
 
     function _deployJMIExtension(
@@ -178,7 +179,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             _computeSalt(deployer, extensionConfig.contractName)
         );
 
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = address(IProxyAdmin(Upgrades.getAdminAddress(proxy)));
     }
 
     function _deployYieldToAllWithFee(
@@ -191,7 +192,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         // delegate to helper function to avoid stack too deep
         proxy = _deployYieldToAllWithFeeProxy(deployer, implementation, extensionConfig);
-        proxyAdmin = extensionConfig.admin;
+        proxyAdmin = address(IProxyAdmin(Upgrades.getAdminAddress(proxy)));
 
         return (implementation, proxy, proxyAdmin);
     }
