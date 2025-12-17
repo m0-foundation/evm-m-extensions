@@ -10,7 +10,7 @@ contract DeployJMIExtension is DeployBase {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         JMIExtensionConfig memory extensionConfig;
 
-        extensionConfig.name = vm.envString("EXTENSION_NAME");
+        extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.yieldRecipient = vm.envAddress("YIELD_RECIPIENT");
         extensionConfig.admin = vm.envAddress("ADMIN");

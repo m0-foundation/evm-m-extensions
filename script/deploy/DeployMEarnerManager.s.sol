@@ -10,7 +10,7 @@ contract DeployMEarnerManager is DeployBase {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         MEarnerManagerConfig memory extensionConfig;
 
-        extensionConfig.name = vm.envString("EXTENSION_NAME");
+        extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.admin = vm.envAddress("ADMIN");
         extensionConfig.earnerManager = vm.envAddress("EARNER_MANAGER");

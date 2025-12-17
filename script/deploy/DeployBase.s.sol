@@ -111,7 +111,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 MEarnerManager.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.admin,
                 extensionConfig.earnerManager,
@@ -139,7 +139,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldToOne.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
                 extensionConfig.admin,
@@ -166,7 +166,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 JMIExtension.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
                 extensionConfig.admin,
@@ -207,7 +207,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldFee.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.feeRate,
                 extensionConfig.feeRecipient,

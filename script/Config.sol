@@ -13,7 +13,8 @@ contract Config {
     }
 
     struct MEarnerManagerConfig {
-        string name;
+        string contractName; // used for computing Salt
+        string extensionName; // ERC20 name
         string symbol;
         address admin;
         address earnerManager;
@@ -22,7 +23,8 @@ contract Config {
     }
 
     struct YieldToOneConfig {
-        string name;
+        string contractName; // used for computing Salt
+        string extensionName; // ERC20 name
         string symbol;
         address yieldRecipient;
         address admin;
@@ -32,7 +34,8 @@ contract Config {
     }
 
     struct JMIExtensionConfig {
-        string name;
+        string contractName; // used for computing Salt
+        string extensionName; // ERC20 name
         string symbol;
         address yieldRecipient;
         address admin;
@@ -43,7 +46,8 @@ contract Config {
     }
 
     struct YieldToAllWithFeeConfig {
-        string name;
+        string contractName; // used for computing Salt
+        string extensionName; // ERC20 name
         string symbol;
         uint16 feeRate;
         address feeRecipient;
