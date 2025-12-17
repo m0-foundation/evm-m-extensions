@@ -10,7 +10,8 @@ contract DeployYieldToOne is DeployBase {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         YieldToOneConfig memory extensionConfig;
 
-        extensionConfig.name = vm.envString("EXTENSION_NAME");
+        extensionConfig.contractName = vm.envString("CONTRACT_NAME");
+        extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.yieldRecipient = vm.envAddress("YIELD_RECIPIENT");
         extensionConfig.admin = vm.envAddress("ADMIN");
@@ -20,7 +21,7 @@ contract DeployYieldToOne is DeployBase {
 
         // Verify predicted address (if PREDICTED_ADDRESS env var is set)
         if (_shouldVerifyPredictedAddress()) {
-            _verifyPredictedAddress(deployer, "MYieldToOne");
+            _verifyPredictedAddress(deployer, extensionConfig.contractName);
         }
 
         vm.startBroadcast(deployer);

@@ -111,14 +111,14 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 MEarnerManager.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.admin,
                 extensionConfig.earnerManager,
                 extensionConfig.feeRecipient,
                 extensionConfig.pauser
             ),
-            _computeSalt(deployer, "MEarnerManager")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
 
         proxyAdmin = extensionConfig.admin;
@@ -139,7 +139,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldToOne.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
                 extensionConfig.admin,
@@ -147,7 +147,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.yieldRecipientManager,
                 extensionConfig.pauser
             ),
-            _computeSalt(deployer, "MYieldToOne")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
 
         proxyAdmin = extensionConfig.admin;
@@ -166,7 +166,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 JMIExtension.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.yieldRecipient,
                 extensionConfig.admin,
@@ -175,7 +175,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.pauser,
                 extensionConfig.yieldRecipientManager
             ),
-            _computeSalt(deployer, "JMIExtension")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
 
         proxyAdmin = extensionConfig.admin;
@@ -207,7 +207,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
             extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldFee.initialize.selector,
-                extensionConfig.name,
+                extensionConfig.extensionName,
                 extensionConfig.symbol,
                 extensionConfig.feeRate,
                 extensionConfig.feeRecipient,
@@ -217,7 +217,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.freezeManager,
                 extensionConfig.pauser
             ),
-            _computeSalt(deployer, "MYieldFee")
+            _computeSalt(deployer, extensionConfig.contractName)
         );
     }
 }

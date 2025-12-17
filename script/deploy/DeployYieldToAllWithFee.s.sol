@@ -10,7 +10,8 @@ contract DeployYieldToAllWithFee is DeployBase {
         address deployer = vm.addr(vm.envUint("PRIVATE_KEY"));
         YieldToAllWithFeeConfig memory extensionConfig;
 
-        extensionConfig.name = vm.envString("EXTENSION_NAME");
+        extensionConfig.contractName = vm.envString("CONTRACT_NAME");
+        extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.feeRate = uint16(vm.envUint("FEE_RATE"));
         extensionConfig.feeRecipient = vm.envAddress("FEE_RECIPIENT");
@@ -22,7 +23,7 @@ contract DeployYieldToAllWithFee is DeployBase {
 
         // Verify predicted address (if PREDICTED_ADDRESS env var is set)
         if (_shouldVerifyPredictedAddress()) {
-            _verifyPredictedAddress(deployer, "MYieldFee");
+            _verifyPredictedAddress(deployer, extensionConfig.contractName);
         }
 
         vm.startBroadcast(deployer);
