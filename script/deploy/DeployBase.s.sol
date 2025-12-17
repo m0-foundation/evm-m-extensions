@@ -31,30 +31,35 @@ contract DeployBase is DeployHelpers, ScriptBase {
     }
 
     /**
-     * @notice Verifies predicted address against simulated deployment
-     * @dev Compares PREDICTED_ADDRESS env var with the simulated proxy address
-     * @param simulatedProxy The proxy address from simulation
-     * @param contractName Name of the contract being deployed (for error messages)
+     * @notice Verifies predicted address against computed CREATE3 address
+     * @dev Computes expected address and compares with PREDICTED_ADDRESS env var
+     * @param deployer The deployer address
+     * @param contractName Contract Name used for salt computation
      */
-    function _verifyPredictedAddress(address simulatedProxy, string memory contractName) internal view {
+    function _verifyPredictedAddress(address deployer, string memory contractName) internal view {
         address predictedAddress = vm.envAddress("PREDICTED_ADDRESS");
+        address computedAddress = _getCreate3Address(deployer, _computeSalt(deployer, contractName));
 
-        console.log(string.concat("Verifying PREDICTED_ADDRESS for ", contractName, "..."));
-        console.log("Predicted address:", predictedAddress);
-        console.log("Simulated address:", simulatedProxy);
+        console.log("================================================================================");
+        console.log(string.concat("PREDICTED_ADDRESS verification for ", contractName));
+        console.log("================================================================================");
+        console.log("Predicted address: ", predictedAddress);
+        console.log("Computed address:  ", computedAddress);
 
         require(
-            simulatedProxy == predictedAddress,
+            computedAddress == predictedAddress,
             string.concat(
                 contractName,
                 " address mismatch! Predicted: ",
                 vm.toString(predictedAddress),
-                ", but simulation resulted in: ",
-                vm.toString(simulatedProxy)
+                ", but computed: ",
+                vm.toString(computedAddress)
             )
         );
 
-        console.log(string.concat("Address verification passed for ", contractName, "!"));
+        console.log("--------------------------------------------------------------------------------");
+        console.log(string.concat("SUCCESS: Address verification passed for ", contractName, "!"));
+        console.log("================================================================================");
     }
 
     function _deploySwapFacility(

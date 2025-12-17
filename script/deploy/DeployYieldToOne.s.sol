@@ -18,10 +18,9 @@ contract DeployYieldToOne is DeployBase {
         extensionConfig.yieldRecipientManager = vm.envAddress("YIELD_RECIPIENT_MANAGER");
         extensionConfig.pauser = vm.envAddress("PAUSER");
 
-        // Simulate deployment to verify predicted address (if PREDICTED_ADDRESS env var is set)
+        // Verify predicted address (if PREDICTED_ADDRESS env var is set)
         if (_shouldVerifyPredictedAddress()) {
-            (, address simulatedProxy, ) = _deployYieldToOne(deployer, extensionConfig);
-            _verifyPredictedAddress(simulatedProxy, "MYieldToOne");
+            _verifyPredictedAddress(deployer, "MYieldToOne");
         }
 
         vm.startBroadcast(deployer);
