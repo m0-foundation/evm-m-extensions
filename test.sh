@@ -41,3 +41,4 @@ if [ -z "$test" ]; then
 else
 	forge test --match-test "$test" $gasReport $verbosity --force
 fi
+

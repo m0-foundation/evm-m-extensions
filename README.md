@@ -1,109 +1,135 @@
-## $M Extensions Framework
+# Overview
 
-**M Extension Framework** is a modular templates of ERC-20 **stablecoin extensions** that wrap the yield-bearing `$M` token into non-rebasing variants for improved composability within DeFi. Each extension manages yield distribution differently and integrates with a central **SwapFacility** contract that acts as the exclusive entry point for wrapping and unwrapping.
+Guardian Audits conducted an in-depth security review of M-extensions by M^0 labs from June 23th to June 27rd, 2025. The comprehensive evaluation included developing a specialized fuzzing suite to uncover complex logical errors across various protocol states. This suite was created during the review period and successfully delivered upon the audit's completion.
 
-All contracts are deployed behind transparent upgradeable proxies (by default).
+# Contents
 
----
+This fuzzing suite was developed for M^0 and updated with remediations at July 20th. The suite primarily targets core functionality found in `MEarnerManager.sol` and `MYieldFee.sol`, `MYieldToOne.sol` and `SwapFacility.sol`.
 
-### 🧩 M Extensions
+This suite implements a minimalistic, instant-on approach to fuzzing. It employs Echidna's stateful fuzzing mechanism to simulate the project lifecycle and and minimizes mocking with M0 token, MinterGateway, wrapped M token and Uniswap V3 local deployments.
 
-Each extension inherits from the abstract `MExtension` base contract, which defines shared wrapping logic. Only the `SwapFacility` is authorized to call `wrap()` and `unwrap()`. Yield is accrued based on the locked `$M` balance within each extension and minted via dedicated yield claim functions.
+All tested properties can be found below in this README.
 
-#### In-Scope Extensions
+## Setup
 
-- **`MYieldToOne`**
-  - All yield goes to a single configurable `yieldRecipient`
-  - Includes a blacklist enforced on all user actions
-  - Handles loss of `$M` earner status gracefully
+1. Install dependencies
 
-- **`MEarnerManager`**
-  - Redistributes yield to all holders minus per-address `feeRate`
-  - Enforces a whitelist; non-whitelisted users are frozen and yield is redirected as fee
-  - Yield is claimed via `claimFor(address)`
-  - **Does not handle loss of `$M` earner status**, leading to potential insolvency if not upgraded
+`npm i`
 
-- **`MYieldFee`**
-  - All users receive the same yield rate, discounted by a global `feeRate`
-  - Yield can be redirected via `claimRecipient` per user
-  - Includes `updateIndex()` to resync with new `$M` rates
-  - Can handle loss and regain of `$M` earning status via `disableEarning()` and `enableEarning()`
+`forge install`
 
-- **`MSpokeYieldFee`**
-  - Optimized for EVM sidechains (e.g., Arbitrum, Optimism)
-  - Index updates occur via bridging, not time-based growth
-  - Uses an external `rateOracle` for fee calculation
-  - Inherits most behavior from `MYieldFee`
+## Usage
 
-- **`JMIExtension`**
-  - Wraps `$M` token into a non-rebasing equivalent with a "Just Mint It" (JMI) backing model
-  - Allows minting by depositing `$M` or other approved collateral assets, assuming a 1:1 peg
-  - All yield is consolidated and claimable by a single, designated `yieldRecipient`
-  - Includes pausing functionality, asset freezes, and caps on non-`$M` collateral
-  - Inherits core `MExtension` functionality and yield direction from `MYieldToOne`
+2. Run Echidna fuzzing with Foundry compilation tool
+   `forge clean && forge build test/fuzzing/Fuzz.sol && echidna . --contract Fuzz --config echidna.yaml`
 
----
+3. Run Foundry reproducers
+   `forge test --mt test_coverage_mint`
 
-### 🔁 SwapFacility
+# Scope
 
-The `SwapFacility` contract acts as the **exclusive router** for all wrapping and swapping operations involving `$M` and its extensions.
+Repo: https://github.com/GuardianOrg/m-extensions-m0-m-extensions-fuzz
 
-#### Key Functions
+Branch: `main`
 
-- `swap()` – Switch between extensions by unwrapping and re-wrapping
-- `swapInM()`, `swapInMWithPermit()` – Accept `$M` and wrap into the selected extension
-- `swapOutM()` – Unwrap to `$M` (restricted to whitelisted addresses only)
+Commit: `ba39e694aa7bfffd5138a0ead9f9cb7438c7929a`
 
-> All actions are subject to the rules defined by each extension (e.g., blacklists, whitelists)
+Here's the fuzzing directory structure with its contents:
 
----
+```
+test/fuzzing
+├── FoundryPlayground.sol
+├── Fuzz.sol
+├── FuzzGuided.sol
+├── FuzzMEarnerManager.sol
+├── FuzzMToken.sol
+├── FuzzMYieldFee.sol
+├── FuzzMYieldToOne.sol
+├── FuzzSetup.sol
+├── FuzzSwapFacility.sol
+├── FuzzUni.sol
+├── helpers
+│   ├── BeforeAfter.sol
+│   ├── FuzzStorageVariables.sol
+│   ├── Postconditions
+│   │   ├── PostconditionsBase.sol
+│   │   ├── PostconditionsMEarnerManager.sol
+│   │   ├── PostconditionsMToken.sol
+│   │   ├── PostconditionsMYieldFee.sol
+│   │   ├── PostconditionsMYieldToOne.sol
+│   │   ├── PostconditionsSwapFacility.sol
+│   │   └── PostconditionsUni.sol
+│   └── Preconditions
+│       ├── PreconditionsBase.sol
+│       ├── PreconditionsMEarnerManager.sol
+│       ├── PreconditionsMToken.sol
+│       ├── PreconditionsMYieldFee.sol
+│       ├── PreconditionsMYieldToOne.sol
+│       ├── PreconditionsSwapFacility.sol
+│       └── PreconditionsUni.sol
+├── lifeSupport
+│   ├── IContinuousIndexing.sol
+│   └── Lock.sol
+├── logicalCoverage
+│   ├── logicalBase.sol
+│   ├── logicalMEarnerManager.sol
+│   ├── logicalMYieldFee.sol
+│   └── logicalMYieldToOne.sol
+├── logs
+├── mocks
+│   ├── DirectPoolMinter.sol
+│   ├── MToken.sol
+│   ├── MinterGateway.f.sol
+│   ├── MockERC20.sol
+│   ├── MockMToken.sol
+│   ├── MockRegistar.sol
+│   ├── WrappedMToken.f.sol
+│   ├── abstract
+│   │   └── ContinuousIndexing.sol
+│   ├── interfaces
+│   │   ├── IContinuousIndexing.sol
+│   │   ├── IMToken.sol
+│   │   └── IRateModel.sol
+│   ├── libs
+│   │   └── ContinuousIndexingMath.sol
+│   └── rateModels
+│       ├── EarnerRateModel.sol
+│       ├── MinterRateModel.sol
+│       ├── interfaces
+│       │   ├── IEarnerRateModel.sol
+│       │   ├── IMinterRateModel.sol
+│       │   └── IRateModel.sol
+│       └── solmate
+│           └── src
+│               └── utils
+│                   └── SignedWadMath.sol
+├── properties
+│   ├── Properties.sol
+│   ├── PropertiesBase.sol
+│   ├── PropertiesDescriptions.sol
+│   ├── Properties_ERR.sol
+│   ├── Properties_MEARN.sol
+│   ├── Properties_MYF.sol
+│   ├── Properties_SWAP.sol
+│   └── RevertHandler.sol
+└── utils
+    ├── FunctionCalls.sol
+    ├── FuzzActors.sol
+    └── FuzzConstants.sol
+```
 
-### 💱 UniswapV3SwapAdapter
+# Protocol Invariants Status Table
 
-A helper contract that enables token swaps via Uniswap V3.
-
-- Immutable and admin-controlled
-- Uses Uniswap's `SwapRouter02`
-- Functions:
-  - `swapIn(path, ...)`
-  - `swapOut(path, ...)`
-- Supports multi-hop paths or single-hop with default 0.01% fee
-- Token whitelist is controlled via `DEFAULT_ADMIN_ROLE`
-
----
-
-## Deployment Addresses
-
-### SwapFacility
-
-#### Mainnet
-
-| Chain    | Proxy                                                                                                                             | Implementation                                                                                                                    | ProxyAdmin                                                                                                                        |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Ethereum | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://etherscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)             | [0xB4B738E41A0A79F09194e2f459b86F2406917Ef0](https://etherscan.io/address/0xb4b738e41a0a79f09194e2f459b86f2406917ef0)             | [0x0f38d8a5583f9316084e9c40737244870c565924](https://etherscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924)             |
-| Arbitrum | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://arbiscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)              | [0xdBB20434e95afc9667C014FD69eda765Aa785eF9](https://arbiscan.io/address/0xdbb20434e95afc9667c014fd69eda765aa785ef9)              | [0x0f38d8a5583f9316084e9c40737244870c565924](https://arbiscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924)              |
-| Optimism | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://optimistic.etherscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)  | [0x07dd9E3B00002F9cB178670159d4e6fe0D8Cd146](https://optimistic.etherscan.io/address/0x07dd9e3b00002f9cb178670159d4e6fe0d8cd146)  | [0x0f38d8a5583f9316084e9c40737244870c565924](https://optimistic.etherscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924)  |
-| Base     | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://basescan.org/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)             | [0x23d8162e084aA33D8EF6FCC0Ab33f4028A53Ee79](https://basescan.org/address/0x23d8162e084aa33d8ef6fcc0ab33f4028a53ee79)             | [0x0f38d8a5583f9316084e9c40737244870c565924](https://basescan.org/address/0x0f38D8A5583f9316084E9c40737244870c565924)             |
-| BSC      | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://bscscan.com/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)              | [0xBC1E1838889a9458acD7Bb3378B489CE5e1d2C1a](https://bscscan.com/address/0xbc1e1838889a9458acd7bb3378b489ce5e1d2c1a)              | [0x0f38d8a5583f9316084e9c40737244870c565924](https://bscscan.com/address/0x0f38d8a5583f9316084e9c40737244870c565924)              |
-| Linea    | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://lineascan.build/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)          | [0x9E0fDb26954BC8998158C0C921C8254Bd6DfE5eC](https://lineascan.build/address/0x9e0fdb26954bc8998158c0c921c8254bd6dfe5ec)          | [0x0f38d8a5583f9316084e9c40737244870c565924](https://lineascan.build/address/0x0f38d8a5583f9316084e9c40737244870c565924)          |
-| HyperEVM | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://hyperevmscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)          | [0x23E07a9353236d0367Ea9C5d6481c39920c6984C](https://hyperevmscan.io/address/0x23e07a9353236d0367ea9c5d6481c39920c6984c)          | [0x0f38d8a5583f9316084e9c40737244870c565924](https://hyperevmscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924)          |
-| Plume    | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://explorer.plume.org/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)       | [0xF3Ef8f66955FFe4637768A2C7937f731CD67d890](https://explorer.plume.org/address/0xF3Ef8f66955FFe4637768A2C7937f731CD67d890)       | [0x0f38d8a5583f9316084e9c40737244870c565924](https://explorer.plume.org/address/0x0f38d8a5583f9316084e9c40737244870c565924)       |
-| Mantra   | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://blockscout.mantrascan.io/address/0xb6807116b3b1b321a390594e31ecd6e0076f6278) | [0x23d8162e084aA33D8EF6FCC0Ab33f4028A53Ee79](https://blockscout.mantrascan.io/address/0x23d8162e084aA33D8EF6FCC0Ab33f4028A53Ee79) | [0x0f38d8a5583f9316084e9c40737244870c565924](https://blockscout.mantrascan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924) |
-| Plasma   | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://plasmascan.to/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278) | [0x83B73B2cc04578455f0194aD99af6752f4a117DD](https://plasmascan.to/address/0x83B73B2cc04578455f0194aD99af6752f4a117DD) | [0x0f38d8a5583f9316084e9c40737244870c565924](https://plasmascan.to/address/0x0f38d8a5583f9316084e9c40737244870c565924) |
-
-#### Testnet
-
-| Chain            | Proxy                                                                                                                                  | Implementation                                                                                                                         | ProxyAdmin                                                                                                                             |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Sepolia          | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://sepolia.etherscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)          | [0x431b9048C6Ff6Ef9D5d3e326675242134aFa3DC3](https://sepolia.etherscan.io/address/0x431b9048c6ff6ef9d5d3e326675242134afa3dc3)          | [0x0f38d8a5583f9316084e9c40737244870c565924](https://sepolia.etherscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924)          |
-| Arbitrum Sepolia | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://sepolia.arbiscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)           | [0x248Af94D8F8F7f37b9b2355c8ca46B19E7c7c6C2](https://sepolia.arbiscan.io/address/0x248af94d8f8f7f37b9b2355c8ca46b19e7c7c6c2)           | [0x0f38d8a5583f9316084e9c40737244870c565924](https://sepolia.arbiscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924)           |
-| Optimism Sepolia | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://sepolia-optimism.etherscan.io/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278) | [0x248Af94D8F8F7f37b9b2355c8ca46B19E7c7c6C2](https://sepolia-optimism.etherscan.io/address/0x248af94d8f8f7f37b9b2355c8ca46b19e7c7c6c2) | [0x0f38d8a5583f9316084e9c40737244870c565924](https://sepolia-optimism.etherscan.io/address/0x0f38d8a5583f9316084e9c40737244870c565924) |
-| Base Sepolia     | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://sepolia.basescan.org/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278)          | [0x23d8162e084aA33D8EF6FCC0Ab33f4028A53Ee79](https://sepolia.basescan.org/address/0x23d8162e084aa33d8ef6fcc0ab33f4028a53ee79)          | [0x0f38d8a5583f9316084e9c40737244870c565924](https://sepolia.basescan.org/address/0x0f38d8a5583f9316084e9c40737244870c565924)          |
-| Soneium Minato   | [0xB6807116b3B1B321a390594e31ECD6e0076f6278](https://soneium-minato.blockscout.com/address/0xB6807116b3B1B321a390594e31ECD6e0076f6278) | [0x23d8162e084aA33D8EF6FCC0Ab33f4028A53Ee79](https://soneium-minato.blockscout.com/address/0x23d8162e084aA33D8EF6FCC0Ab33f4028A53Ee79) | [0x0f38d8a5583f9316084e9c40737244870c565924](https://soneium-minato.blockscout.com/address/0x0f38d8a5583f9316084e9c40737244870c565924) |
-
-### UniswapV3SwapAdapter
-
-| Chain    | Address                                                                                                               |
-| -------- | --------------------------------------------------------------------------------------------------------------------- |
-| Ethereum | [0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b](https://etherscan.io/address/0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b) |
-| Arbitrum | [0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b](https://arbiscan.io/address/0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b)  |
+| Invariant ID | Invariant Description                                                                      | Passed | Remediations | Run Count |
+| ------------ | ------------------------------------------------------------------------------------------ | ------ | ------------ | --------- |
+| MYF-01       | MYieldFee extension mToken Balance must be greater or equal than projectedSupply           | ❌     | ❌           | 10M+      |
+| MYF-02       | MYieldFee extension mToken Balance must be greater or equal than projectedSupply + fee     | ❌     | ❌           | 10M+      |
+| SWAP-01-00   | YTO_TO_YTO: MYieldToOne yield must not change after swaps                                  | ✅     | ✅           | 10M+      |
+| SWAP-01-01   | YFEE_TO_YFEE: MYieldFee yield must not change after swaps                                  | ✅     | ✅           | 10M+      |
+| SWAP-01-02   | MEARN_TO_MEARN: MEarnerManager yield must not change after swaps                           | ✅     | ✅           | 10M+      |
+| SWAP-02      | Swap facility M0 balance must be 0 after swap out                                          | ✅     | ✅           | 10M+      |
+| SWAP-03      | Total M0 balance of all users must not change after swap                                   | ✅     | ✅           | 10M+      |
+| SWAP-04      | Received amount of M0 must be greater or equal than slippage                               | ✅     | ✅           | 10M+      |
+| SWAP-05      | Received amount of USDC must be greater or equal than slippage                             | ✅     | ✅           | 10M+      |
+| MEARN-01     | MEarnerManager extension mToken Balance must be greater or equal than projectedTotalSupply | ❌     | ✅           | 10M+      |
+| ERR-01       | Unexpected Error                                                                           | ✅     | ✅           | 10M+      |

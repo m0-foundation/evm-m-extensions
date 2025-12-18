@@ -46,5 +46,9 @@
   "files": [
     "src/**",
     "out/**"
-  ]
+  ],
+  "dependencies": {
+    "@openzeppelin/contracts-v4": "npm:@openzeppelin/contracts@^4.9.6",
+    "@uniswap/v3-periphery": "^1.4.4"
+  }
 }

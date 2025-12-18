@@ -5,14 +5,21 @@
 [submodule "lib/common"]
 	path = lib/common
 	url = https://github.com/m0-foundation/common
-	branch = release-v1.4.0
+	branch = main
 [submodule "lib/openzeppelin-foundry-upgrades"]
 	path = lib/openzeppelin-foundry-upgrades
 	url = https://github.com/OpenZeppelin/openzeppelin-foundry-upgrades
+[submodule "lib/universal-router"]
+	path = lib/universal-router
+	url = https://github.com/Uniswap/universal-router
+	branch = main
+[submodule "lib/fuzzlib"]
+	path = lib/fuzzlib
+	url = https://github.com/perimetersec/fuzzlib
 [submodule "lib/uniswap-v4-periphery"]
 	path = lib/uniswap-v4-periphery
-	url = https://github.com/Uniswap/v4-periphery.git
+	url = https://github.com/Uniswap/v4-periphery
 [submodule "lib/wrapped-m-token"]
 	path = lib/wrapped-m-token
-	url = https://github.com/m0-foundation/wrapped-m-token.git
-	branch = feat/swap-facility-support
+	url = https://github.com/m0-foundation/wrapped-m-token
+	branch = v2
