@@ -22,8 +22,6 @@ import { Pausable } from "../../../src/components/pausable/Pausable.sol";
 
 import { MExtension } from "../../MExtension.sol";
 
-import "forge-std/console.sol";
-
 abstract contract MYieldFeeStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldFee
     struct MYieldFeeStorageStruct {
@@ -127,10 +125,7 @@ contract MYieldFee is
         __MExtension_init(name, symbol);
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        console.log("feeManager", feeManager);
         _grantRole(FEE_MANAGER_ROLE, feeManager);
-        console.log("feeManager hasRole", hasRole(FEE_MANAGER_ROLE, feeManager));
-
         _grantRole(CLAIM_RECIPIENT_MANAGER_ROLE, claimRecipientManager);
 
         __Freezable_init(freezeManager);
@@ -252,7 +247,6 @@ contract MYieldFee is
 
     /// @inheritdoc IMYieldFee
     function setFeeRecipient(address feeRecipient_) external onlyRole(FEE_MANAGER_ROLE) {
-        console.log("Role check passed");
         // Claim fee for the previous fee recipient.
         claimFee();
 

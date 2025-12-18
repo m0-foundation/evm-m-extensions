@@ -44,7 +44,8 @@ contract PostconditionsUni is PostconditionsBase {
             _after(actorsToUpdate);
 
             // Verify swap occurred
-            assertTrue(amountOut > 0, "UNI-03: Swap should return non-zero output amount");
+            // assertTrue(amountOut > 0, "UNI-03: Swap should return non-zero output amount");
+            fl.gt(amountOut, 0, "UNI-03: Swap should return non-zero output amount");
 
             console.log("Swap successful - USDC in:", amountIn, "WETH out:", amountOut);
         } else {

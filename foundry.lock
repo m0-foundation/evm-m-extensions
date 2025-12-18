@@ -22,8 +22,8 @@
   },
   "lib/wrapped-m-token": {
     "branch": {
-      "name": "feat/swap-facility-support",
-      "rev": "49b88215911d52a47b0da94177fb6f647d90301a"
+      "name": "v2",
+      "rev": "9a9f0ea991d7d8be925ad9ad94f71abbc83d0b9e"
     }
   }
 }

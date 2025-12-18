@@ -21,6 +21,7 @@ contract FuzzSetup is FunctionCalls {
         initializeM0();
         deployPool();
         setUsers();
+        wrapInitialAssets();
         labelAll();
     }
 
@@ -34,10 +35,12 @@ contract FuzzSetup is FunctionCalls {
         wMToken = new WrappedMToken(address(mToken), admin);
         weth = new WETH();
         USDC = new MockERC20("USDC", "USDC", 6);
+        DAI = new MockERC20("DAI", "DAI", 18); // 18 decimals for JMI Extension testing
         whitelistedTokens = [address(USDC), address(weth)];
 
         // Mint tokens for liquidity provision
         USDC.mint(address(this), 2_000_000_000_000 * 1e6); // 2T USDC
+        DAI.mint(address(this), 2_000_000_000_000 * 1e18); // 2T DAI
 
         minterGateway.activateMinter(address(this));
         // mintMToken(address(this), 2000000 * 1e6); // mintMToken(address(this), 2000000 * 1e6); // 2M MToken
@@ -144,11 +147,9 @@ contract FuzzSetup is FunctionCalls {
                 MYieldToOne.initialize.selector,
                 "NAME1",
                 "SYMBOL1",
-                address(mToken),
-                address(swapFacility),
                 yieldRecipient,
                 admin,
-                blacklistManager,
+                freezeManager,
                 yieldRecipientManager
             )
         );
@@ -161,11 +162,9 @@ contract FuzzSetup is FunctionCalls {
                 MYieldToOne.initialize.selector,
                 "NAME2",
                 "SYMBOL2",
-                address(mToken),
-                address(swapFacility),
                 yieldRecipient,
                 admin,
-                blacklistManager,
+                freezeManager,
                 yieldRecipientManager
             )
         );
@@ -178,11 +177,9 @@ contract FuzzSetup is FunctionCalls {
                 MYieldToOne.initialize.selector,
                 "NAME3",
                 "SYMBOL3",
-                address(mToken),
-                address(swapFacility),
                 yieldRecipient,
                 admin,
-                blacklistManager,
+                freezeManager,
                 yieldRecipientManager
             )
         );
@@ -286,20 +283,47 @@ contract FuzzSetup is FunctionCalls {
         );
         mEarnerManager3 = MEarnerManagerHarness(address(mEarnerManager3Proxy));
 
+        // Deploy JMI Extension
+        JMIExtension jmiExtensionImpl = new JMIExtension(address(mToken), address(swapFacility));
+        ERC1967Proxy jmiExtensionProxy = new ERC1967Proxy(
+            address(jmiExtensionImpl),
+            abi.encodeWithSelector(
+                JMIExtension.initialize.selector,
+                "JMI",
+                "JMI",
+                yieldRecipient,
+                admin,
+                assetCapManager,
+                freezeManager,
+                pauser,
+                yieldRecipientManager
+            )
+        );
+        jmiExtension = JMIExtension(address(jmiExtensionProxy));
+
+        // Deploy second JMIExtension for Extension → Extension swaps
+        JMIExtension jmiExtension2Impl = new JMIExtension(address(mToken), address(swapFacility));
+        ERC1967Proxy jmiExtension2Proxy = new ERC1967Proxy(
+            address(jmiExtension2Impl),
+            abi.encodeWithSelector(
+                JMIExtension.initialize.selector,
+                "JMI2",
+                "JMI2",
+                yieldRecipient,
+                admin,
+                assetCapManager,
+                freezeManager,
+                pauser,
+                yieldRecipientManager
+            )
+        );
+        jmiExtension2 = JMIExtension(address(jmiExtension2Proxy));
+
         mYieldToOneArray = [address(mYieldToOne1), address(mYieldToOne2), address(mYieldToOne3)];
         mYieldFeeArray = [address(mYieldFee1), address(mYieldFee2), address(mYieldFee3)];
         mEarnerManagerArray = [address(mEarnerManager1), address(mEarnerManager2), address(mEarnerManager3)];
-        allExtensions = [
-            address(mYieldToOne1),
-            address(mYieldFee1),
-            address(mEarnerManager1),
-            address(mYieldToOne2),
-            address(mYieldFee2),
-            address(mEarnerManager2),
-            address(mYieldToOne3),
-            address(mYieldFee3),
-            address(mEarnerManager3)
-        ];
+        allExtensions.push(address(jmiExtension));
+        allExtensions.push(address(jmiExtension2));
 
         earnerRateModel = new EarnerRateModel(address(minterGateway), address(registrar), address(mToken));
         minterRateModel = new MinterRateModel(address(registrar));
@@ -319,6 +343,8 @@ contract FuzzSetup is FunctionCalls {
         registrar.setEarner(address(mYieldFee1), true);
         registrar.setEarner(address(mYieldFee2), true);
         registrar.setEarner(address(mYieldFee3), true);
+        registrar.setEarner(address(jmiExtension), true);
+        registrar.setEarner(address(jmiExtension2), true);
 
         registrar.set(bytes32("minter_rate_model"), bytes32(uint256(uint160(address(minterRateModel)))));
         registrar.set(bytes32("earner_rate_model"), bytes32(uint256(uint160(address(earnerRateModel)))));
@@ -355,6 +381,47 @@ contract FuzzSetup is FunctionCalls {
         mYieldToOne1.enableEarning();
         mYieldToOne2.enableEarning();
         mYieldToOne3.enableEarning();
+
+        jmiExtension.enableEarning();
+        jmiExtension2.enableEarning();
+
+        // Set asset caps for DAI on JMI extension
+        jmiExtension.setAssetCap(address(DAI), 1_000_000_000_000 * 1e18);
+
+        // Set asset caps for USDC on JMI extension
+        jmiExtension.setAssetCap(address(USDC), 1_000_000_000_000 * 1e6);
+
+        // SwapFacility approves tokens to JMI extension (needed for Asset -> JMI swaps)
+        vm.prank(address(swapFacility));
+        DAI.approve(address(jmiExtension), type(uint256).max);
+        vm.prank(address(swapFacility));
+        USDC.approve(address(jmiExtension), type(uint256).max);
+        vm.prank(address(swapFacility));
+        mToken.approve(address(jmiExtension), type(uint256).max);
+
+        // Set JMI extension as admin-approved and permissioned on SwapFacility
+        vm.prank(admin);
+        swapFacility.setAdminApprovedExtension(address(jmiExtension), true);
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(jmiExtension), true);
+
+        // Set permissioned M swappers for all USERS on JMI extension
+        for (uint256 i = 0; i < USERS.length; i++) {
+            vm.prank(admin);
+            swapFacility.setPermissionedMSwapper(address(jmiExtension), USERS[i], true);
+        }
+
+        // Set mYieldToOne1 extension as admin-approved and permissioned on SwapFacility
+        vm.prank(admin);
+        swapFacility.setAdminApprovedExtension(address(mYieldToOne1), true);
+        vm.prank(admin);
+        swapFacility.setPermissionedExtension(address(mYieldToOne1), true);
+
+        // Set permissioned M swappers for all USERS on mYieldToOne1 extension
+        for (uint256 i = 0; i < USERS.length; i++) {
+            vm.prank(admin);
+            swapFacility.setPermissionedMSwapper(address(mYieldToOne1), USERS[i], true);
+        }
     }
 
     function setUsers() internal {
@@ -368,12 +435,16 @@ contract FuzzSetup is FunctionCalls {
             wMToken.wrap(USERS[i], ((1e9 * 1e6) / 2));
 
             USDC.mint(USERS[i], 1e9 * 1e6);
+            DAI.mint(USERS[i], 1e9 * 1e18); // Mint DAI for JMI Extension testing
             vm.deal(USERS[i], 1e9 * 1e18);
             vm.prank(USERS[i]);
             weth.deposit{ value: 1e9 * 1e18 }();
 
             vm.prank(USERS[i]);
             mToken.approve(address(swapFacility), type(uint256).max);
+
+            vm.prank(USERS[i]);
+            DAI.approve(address(swapFacility), type(uint256).max);
 
             vm.prank(USERS[i]);
             wMToken.approve(address(swapFacility), type(uint256).max);
@@ -409,6 +480,33 @@ contract FuzzSetup is FunctionCalls {
         }
     }
 
+    /**
+     * @notice Wrap initial assets into JMI tokens for users
+     * @dev Users need JMI tokens to perform swaps using JMI as tokenIn
+     *      Also wraps M tokens to create M backing for unwrap operations
+     */
+    function wrapInitialAssets() internal {
+        uint256 wrapAmountUSDC = 100_000e6; // 100k USDC
+        uint256 wrapAmountDAI = 100_000e18; // 100k DAI
+        uint256 wrapAmountM = 50_000e6; // 50k M tokens
+
+        for (uint256 i = 0; i < USERS.length; i++) {
+            vm.startPrank(USERS[i]);
+
+            // Wrap USDC into JMI through SwapFacility
+            swapFacility.swap(address(USDC), address(jmiExtension), wrapAmountUSDC, USERS[i]);
+
+            // Wrap DAI into JMI through SwapFacility
+            swapFacility.swap(address(DAI), address(jmiExtension), wrapAmountDAI, USERS[i]);
+
+            // Wrap M tokens into JMI to create M backing
+            // Note: M token swaps require M_SWAPPER_ROLE, which all users have
+            swapFacility.swap(address(mToken), address(jmiExtension), wrapAmountM, USERS[i]);
+
+            vm.stopPrank();
+        }
+    }
+
     //DO LABELING
     function labelAll() internal {
         //CONTRACTS
@@ -425,6 +523,7 @@ contract FuzzSetup is FunctionCalls {
         vm.label(address(mEarnerManager1), "MEarnerManager1");
         vm.label(address(mEarnerManager2), "MEarnerManager2");
         vm.label(address(mEarnerManager3), "MEarnerManager3");
+        vm.label(address(jmiExtension), "JMIExtension");
 
         //UNISWAP V3
         vm.label(address(uniV3Factory), "UniV3Factory");
@@ -434,6 +533,7 @@ contract FuzzSetup is FunctionCalls {
 
         //TOKENS
         vm.label(address(USDC), "USDC");
+        vm.label(address(DAI), "DAI");
         vm.label(address(weth), "WETH");
         vm.label(address(mToken), "MToken");
 

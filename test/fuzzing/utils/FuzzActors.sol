@@ -18,6 +18,7 @@ contract FuzzActors is FuzzBase, Test {
     address internal yieldFeeManager = address(this);
     address internal claimRecipientManager = address(this);
     address internal earnerManager = address(this);
+    address internal assetCapManager = address(this);
 
     address internal constant USER1 = address(0x10000);
     address internal constant USER2 = address(0x20000);

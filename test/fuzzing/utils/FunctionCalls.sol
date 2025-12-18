@@ -11,6 +11,9 @@ import { MExtension } from "src/MExtension.sol";
 import { MToken } from "test/fuzzing/mocks/MToken.sol";
 import { IUniswapV3SwapAdapter } from "src/swap/UniswapV3SwapAdapter.sol";
 import { IMExtension } from "src/interfaces/IMExtension.sol";
+import { JMIExtension } from "src/projects/jmi/JMIExtension.sol";
+import { Pausable } from "src/components/pausable/Pausable.sol";
+import { Freezable } from "src/components/freezable/Freezable.sol";
 
 contract FunctionCalls is FuzzBase, FuzzStorageVariables {
     // MToken function calls
@@ -84,6 +87,19 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
 
     // MToken function calls
     event MintCall(address account, uint256 amount);
+
+    // JMI Extension function calls
+    event WrapAssetCall(address instance, address asset, address recipient, uint256 amount);
+    event ReplaceAssetWithMCall(address instance, address asset, address recipient, uint256 amount);
+    event SetAssetCapCall(address instance, address asset, uint256 cap);
+
+    // Pausable function calls
+    event PauseCall(address instance);
+    event UnpauseCall(address instance);
+
+    // Freezable function calls
+    event FreezeCall(address instance, address account);
+    event UnfreezeCall(address instance, address account);
 
     // MYieldToOne function implementations
     function _claimYieldCall(address instance) internal returns (bool success, bytes memory returnData) {
@@ -418,5 +434,70 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
         emit DisableEarningCall(instance);
         // vm.prank(currentActor);
         (success, returnData) = address(instance).call(abi.encodeWithSelector(IMExtension.disableEarning.selector));
+    }
+
+    // JMI Extension function implementations
+    function _wrapAssetCall(
+        address instance,
+        address asset,
+        address recipient,
+        uint256 amount
+    ) internal returns (bool success, bytes memory returnData) {
+        emit WrapAssetCall(instance, asset, recipient, amount);
+        vm.prank(address(swapFacility));
+        (success, returnData) = address(instance).call(
+            abi.encodeWithSelector(JMIExtension.wrap.selector, asset, recipient, amount)
+        );
+    }
+
+    function _replaceAssetWithMCall(
+        address instance,
+        address asset,
+        address recipient,
+        uint256 amount
+    ) internal returns (bool success, bytes memory returnData) {
+        emit ReplaceAssetWithMCall(instance, asset, recipient, amount);
+        vm.prank(address(swapFacility));
+        (success, returnData) = address(instance).call(
+            abi.encodeWithSelector(JMIExtension.replaceAssetWithM.selector, asset, recipient, amount)
+        );
+    }
+
+    function _setAssetCapCall(
+        address instance,
+        address asset,
+        uint256 cap
+    ) internal returns (bool success, bytes memory returnData) {
+        emit SetAssetCapCall(instance, asset, cap);
+        vm.prank(assetCapManager);
+        (success, returnData) = address(instance).call(
+            abi.encodeWithSelector(JMIExtension.setAssetCap.selector, asset, cap)
+        );
+    }
+
+    // Pausable function implementations
+    function _pauseCall(address instance) internal returns (bool success, bytes memory returnData) {
+        emit PauseCall(instance);
+        vm.prank(pauser);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(Pausable.pause.selector));
+    }
+
+    function _unpauseCall(address instance) internal returns (bool success, bytes memory returnData) {
+        emit UnpauseCall(instance);
+        vm.prank(pauser);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(Pausable.unpause.selector));
+    }
+
+    // Freezable function implementations
+    function _freezeCall(address instance, address account) internal returns (bool success, bytes memory returnData) {
+        emit FreezeCall(instance, account);
+        vm.prank(freezeManager);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(Freezable.freeze.selector, account));
+    }
+
+    function _unfreezeCall(address instance, address account) internal returns (bool success, bytes memory returnData) {
+        emit UnfreezeCall(instance, account);
+        vm.prank(freezeManager);
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(Freezable.unfreeze.selector, account));
     }
 }

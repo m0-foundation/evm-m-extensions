@@ -2,9 +2,9 @@
 pragma solidity 0.8.26;
 
 import "../FuzzSetup.sol";
+
 import { IMYieldToOne } from "../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
 import { IMYieldFee } from "../../../src/projects/yieldToAllWithFee/interfaces/IMYieldFee.sol";
-import { IMEarnerManager } from "../../../src/projects/earnerManager/IMEarnerManager.sol";
 import { IERC20 } from "@openzeppelin/contracts-v4/token/ERC20/IERC20.sol";
 import { IMTokenLike } from "../../../src/interfaces/IMTokenLike.sol";
 
@@ -164,6 +164,36 @@ contract BeforeAfter is FuzzSetup {
         bytes path;
     }
 
+    // JMI Extension parameter structs
+    struct WrapAssetParams {
+        address instance;
+        address asset;
+        address recipient;
+        uint256 amount;
+    }
+
+    struct ReplaceAssetWithMParams {
+        address instance;
+        address asset;
+        address recipient;
+        uint256 amount;
+    }
+
+    struct SetAssetCapParams {
+        address instance;
+        address asset;
+        uint256 cap;
+    }
+
+    struct PauseParams {
+        address instance;
+    }
+
+    struct FreezeParams {
+        address instance;
+        address account;
+    }
+
     enum SwapType {
         NA,
         YTO_TO_YTO,
@@ -211,6 +241,10 @@ contract BeforeAfter is FuzzSetup {
         mapping(address => mYieldFeeStruct) mYieldFee; // YFEE
         mapping(address => mEarnerManagerStruct) mEarnerManager; // MEARN
         uint256 swapFacilityBalanceOfM0;
+        // JMI state
+        uint256 jmiTotalAssets;
+        uint256 jmiTotalSupply;
+        uint256 jmiMTokenBalance;
     }
 
     struct ActorStates {
@@ -262,6 +296,7 @@ contract BeforeAfter is FuzzSetup {
         _updateYieldToOneState(callNum);
         _updateYieldFeeState(callNum);
         _updateEarnerManagerState(callNum);
+        _updateJMIExtensionState(callNum);
         _updateSwapFacilityState(callNum);
         _checkPoolState(callNum);
     }
@@ -311,6 +346,12 @@ contract BeforeAfter is FuzzSetup {
                 states[callNum].mEarnerManager[extAddress].accruedYieldAndFeeOf[user] = yieldWithFee;
             }
         }
+    }
+
+    function _updateJMIExtensionState(uint8 callNum) private {
+        states[callNum].jmiTotalAssets = jmiExtension.totalAssets();
+        states[callNum].jmiTotalSupply = IERC20(address(jmiExtension)).totalSupply();
+        states[callNum].jmiMTokenBalance = mToken.balanceOf(address(jmiExtension));
     }
 
     function _updateSwapFacilityState(uint8 callNum) private {
