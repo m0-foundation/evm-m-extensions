@@ -10,11 +10,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
      * @dev Validates swap completed successfully and balances updated
      *      Returns early for expected errors (EnforcedPause, InsufficientBalance, AccountFrozen, etc.)
      */
-    function sf_swapPostconditions(
-        bool success,
-        bytes memory returnData,
-        SF_SwapParams memory params
-    ) internal {
+    function sf_swapPostconditions(bool success, bytes memory returnData, SF_SwapParams memory params) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);
@@ -113,10 +109,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
      * @dev Validates contract is paused on success
      *      Returns early if EnforcedPause error (already paused)
      */
-    function sf_pausePostconditions(
-        bool success,
-        bytes memory returnData
-    ) internal {
+    function sf_pausePostconditions(bool success, bytes memory returnData) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);
@@ -138,10 +131,7 @@ contract PostconditionsSwapFacility is PostconditionsBase {
      * @dev Validates contract is unpaused on success
      *      Returns early if ExpectedPause error (not paused)
      */
-    function sf_unpausePostconditions(
-        bool success,
-        bytes memory returnData
-    ) internal {
+    function sf_unpausePostconditions(bool success, bytes memory returnData) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);

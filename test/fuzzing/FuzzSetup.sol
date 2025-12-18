@@ -494,29 +494,14 @@ contract FuzzSetup is FunctionCalls {
             vm.startPrank(USERS[i]);
 
             // Wrap USDC into JMI through SwapFacility
-            swapFacility.swap(
-                address(USDC),
-                address(jmiExtension),
-                wrapAmountUSDC,
-                USERS[i]
-            );
+            swapFacility.swap(address(USDC), address(jmiExtension), wrapAmountUSDC, USERS[i]);
 
             // Wrap DAI into JMI through SwapFacility
-            swapFacility.swap(
-                address(DAI),
-                address(jmiExtension),
-                wrapAmountDAI,
-                USERS[i]
-            );
+            swapFacility.swap(address(DAI), address(jmiExtension), wrapAmountDAI, USERS[i]);
 
             // Wrap M tokens into JMI to create M backing
             // Note: M token swaps require M_SWAPPER_ROLE, which all users have
-            swapFacility.swap(
-                address(mToken),
-                address(jmiExtension),
-                wrapAmountM,
-                USERS[i]
-            );
+            swapFacility.swap(address(mToken), address(jmiExtension), wrapAmountM, USERS[i]);
 
             vm.stopPrank();
         }

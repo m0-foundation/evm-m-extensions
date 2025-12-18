@@ -209,7 +209,14 @@ contract BaseIntegrationTest is Helpers, Test {
 
         vm.prank(account);
         // NOTE: Updated signature for compilation - these integration tests are not a focus of the fuzz suite
-        swapFacility.swapWithPermit(address(mToken), mExtension_, amount, recipient, deadline, abi.encodePacked(r_, s_, v_));
+        swapFacility.swapWithPermit(
+            address(mToken),
+            mExtension_,
+            amount,
+            recipient,
+            deadline,
+            abi.encodePacked(r_, s_, v_)
+        );
     }
 
     function _swapMOut(address mExtension_, address account, address recipient, uint256 amount) internal {

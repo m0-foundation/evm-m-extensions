@@ -1,16 +1,28 @@
 // SPDX-License-Identifier: UNTITLED
 pragma solidity ^0.8.0;
 
-import "./FuzzMYieldToOne.sol";
-import "./FuzzMEarnerManager.sol";
-import "./FuzzMYieldFee.sol";
-import "./FuzzSwapFacility.sol";
-import "./FuzzMToken.sol";
-import "./FuzzUni.sol";
-import "./FuzzJMIExtension.sol";
+import { ContinuousIndexingMath } from "../../lib/common/src/libs/ContinuousIndexingMath.sol";
 
-contract FuzzGuided is FuzzUni, FuzzMYieldToOne, FuzzMEarnerManager, FuzzMYieldFee, FuzzSwapFacility, FuzzMToken, FuzzJMIExtension {
-// , FuzzMYieldToOne, FuzzMEarnerManager, FuzzMYieldFee, FuzzSwapFacility, FuzzMToken, FuzzJMIExtension {
+import { TTGRegistrarReader } from "../../src/libs/TTGRegistrarReader.sol";
+
+import { FuzzMYieldToOne } from "./FuzzMYieldToOne.sol";
+import { FuzzMEarnerManager } from "./FuzzMEarnerManager.sol";
+import { FuzzMYieldFee } from "./FuzzMYieldFee.sol";
+import { FuzzSwapFacility } from "./FuzzSwapFacility.sol";
+import { FuzzMToken } from "./FuzzMToken.sol";
+import { FuzzUni } from "./FuzzUni.sol";
+import { FuzzJMIExtension } from "./FuzzJMIExtension.sol";
+
+contract FuzzGuided is
+    FuzzUni,
+    FuzzMYieldToOne,
+    FuzzMEarnerManager,
+    FuzzMYieldFee,
+    FuzzSwapFacility,
+    FuzzMToken,
+    FuzzJMIExtension
+{
+    // , FuzzMYieldToOne, FuzzMEarnerManager, FuzzMYieldFee, FuzzSwapFacility, FuzzMToken, FuzzJMIExtension {
 
     function fuzz_randomizeConfigs(
         uint256 baseEarnerRateSeed,

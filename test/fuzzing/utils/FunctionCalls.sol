@@ -489,25 +489,15 @@ contract FunctionCalls is FuzzBase, FuzzStorageVariables {
     }
 
     // Freezable function implementations
-    function _freezeCall(
-        address instance,
-        address account
-    ) internal returns (bool success, bytes memory returnData) {
+    function _freezeCall(address instance, address account) internal returns (bool success, bytes memory returnData) {
         emit FreezeCall(instance, account);
         vm.prank(freezeManager);
-        (success, returnData) = address(instance).call(
-            abi.encodeWithSelector(Freezable.freeze.selector, account)
-        );
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(Freezable.freeze.selector, account));
     }
 
-    function _unfreezeCall(
-        address instance,
-        address account
-    ) internal returns (bool success, bytes memory returnData) {
+    function _unfreezeCall(address instance, address account) internal returns (bool success, bytes memory returnData) {
         emit UnfreezeCall(instance, account);
         vm.prank(freezeManager);
-        (success, returnData) = address(instance).call(
-            abi.encodeWithSelector(Freezable.unfreeze.selector, account)
-        );
+        (success, returnData) = address(instance).call(abi.encodeWithSelector(Freezable.unfreeze.selector, account));
     }
 }

@@ -30,18 +30,14 @@ contract PreconditionsJMIExtension is PreconditionsBase {
     /**
      * @notice Preconditions for JMIExtension.pause
      */
-    function jmi_pausePreconditions(
-        uint256 instanceSeed
-    ) internal returns (JMI_PauseParams memory params) {
+    function jmi_pausePreconditions(uint256 instanceSeed) internal returns (JMI_PauseParams memory params) {
         params.instance = address(jmiExtension);
     }
 
     /**
      * @notice Preconditions for JMIExtension.unpause
      */
-    function jmi_unpausePreconditions(
-        uint256 instanceSeed
-    ) internal returns (JMI_PauseParams memory params) {
+    function jmi_unpausePreconditions(uint256 instanceSeed) internal returns (JMI_PauseParams memory params) {
         params.instance = address(jmiExtension);
     }
 

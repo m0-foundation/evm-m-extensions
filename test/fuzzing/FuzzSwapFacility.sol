@@ -1,8 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { IERC20 } from "../../lib/forge-std/src/interfaces/IERC20.sol";
+
+import { SwapFacility } from "../../src/swap/SwapFacility.sol";
+
 import { PreconditionsSwapFacility } from "./helpers/Preconditions/PreconditionsSwapFacility.sol";
 import { PostconditionsSwapFacility } from "./helpers/Postconditions/PostconditionsSwapFacility.sol";
+
+import {
+    SF_SwapParams,
+    SF_ReplaceAssetWithMParams,
+    SF_SetPermissionedExtensionParams,
+    SF_SetAdminApprovedExtensionParams,
+    SF_SetPermissionedMSwapperParams
+} from "./helpers/Structs/StructsSwapFacility.sol";
+
+import { MockERC20 } from "./mocks/MockERC20.sol";
 
 contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacility {
     /**
@@ -15,12 +29,7 @@ contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacili
         uint256 amountSeed,
         uint256 recipientSeed
     ) public setCurrentActor {
-        SF_SwapParams memory params = sf_swapPreconditions(
-            tokenInSeed,
-            tokenOutSeed,
-            amountSeed,
-            recipientSeed
-        );
+        SF_SwapParams memory params = sf_swapPreconditions(tokenInSeed, tokenOutSeed, amountSeed, recipientSeed);
 
         // Return early if preconditions returned empty params (contracts paused)
         if (params.tokenIn == address(0)) {
@@ -135,10 +144,7 @@ contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacili
      * @notice Fuzz handler for SwapFacility.setPermissionedExtension
      * @dev Admin function to set whether an extension is permissioned
      */
-    function fuzz_SF_setPermissionedExtension(
-        uint256 extensionSeed,
-        uint256 permissionedSeed
-    ) public setCurrentActor {
+    function fuzz_SF_setPermissionedExtension(uint256 extensionSeed, uint256 permissionedSeed) public setCurrentActor {
         SF_SetPermissionedExtensionParams memory params = sf_setPermissionedExtensionPreconditions(
             extensionSeed,
             permissionedSeed
@@ -192,10 +198,7 @@ contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacili
      * @notice Fuzz handler for SwapFacility.setAdminApprovedExtension
      * @dev Admin function to set whether an extension is admin-approved
      */
-    function fuzz_SF_setAdminApprovedExtension(
-        uint256 extensionSeed,
-        uint256 approvedSeed
-    ) public setCurrentActor {
+    function fuzz_SF_setAdminApprovedExtension(uint256 extensionSeed, uint256 approvedSeed) public setCurrentActor {
         SF_SetAdminApprovedExtensionParams memory params = sf_setAdminApprovedExtensionPreconditions(
             extensionSeed,
             approvedSeed
@@ -223,9 +226,7 @@ contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacili
         _before();
 
         vm.prank(currentActor);
-        (bool success, bytes memory returnData) = address(swapFacility).call(
-            abi.encodeWithSignature("pause()")
-        );
+        (bool success, bytes memory returnData) = address(swapFacility).call(abi.encodeWithSignature("pause()"));
 
         sf_pausePostconditions(success, returnData);
     }
@@ -238,9 +239,7 @@ contract FuzzSwapFacility is PreconditionsSwapFacility, PostconditionsSwapFacili
         _before();
 
         vm.prank(currentActor);
-        (bool success, bytes memory returnData) = address(swapFacility).call(
-            abi.encodeWithSignature("unpause()")
-        );
+        (bool success, bytes memory returnData) = address(swapFacility).call(abi.encodeWithSignature("unpause()"));
 
         sf_unpausePostconditions(success, returnData);
     }

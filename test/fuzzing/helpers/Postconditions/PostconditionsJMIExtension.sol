@@ -27,10 +27,7 @@ contract PostconditionsJMIExtension is PostconditionsBase {
      * @dev Validates contract is paused on success
      *      Returns early if EnforcedPause error (already paused)
      */
-    function jmi_pausePostconditions(
-        bool success,
-        bytes memory returnData
-    ) internal {
+    function jmi_pausePostconditions(bool success, bytes memory returnData) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);
@@ -52,10 +49,7 @@ contract PostconditionsJMIExtension is PostconditionsBase {
      * @dev Validates contract is unpaused on success
      *      Returns early if ExpectedPause error (not paused)
      */
-    function jmi_unpausePostconditions(
-        bool success,
-        bytes memory returnData
-    ) internal {
+    function jmi_unpausePostconditions(bool success, bytes memory returnData) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);
@@ -76,11 +70,7 @@ contract PostconditionsJMIExtension is PostconditionsBase {
      * @notice Postconditions for JMIExtension.freeze
      * @dev Validates account is frozen on success
      */
-    function jmi_freezePostconditions(
-        bool success,
-        bytes memory returnData,
-        JMI_FreezeParams memory params
-    ) internal {
+    function jmi_freezePostconditions(bool success, bytes memory returnData, JMI_FreezeParams memory params) internal {
         if (success) {
             _after();
             onSuccessInvariantsGeneral(returnData);

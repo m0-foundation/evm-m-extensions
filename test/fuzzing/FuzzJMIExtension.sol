@@ -1,32 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./helpers/preconditions/PreconditionsJMIExtension.sol";
-import "./helpers/postconditions/PostconditionsJMIExtension.sol";
+import "./helpers/Preconditions/PreconditionsJMIExtension.sol";
+import "./helpers/Postconditions/PostconditionsJMIExtension.sol";
 
 contract FuzzJMIExtension is PreconditionsJMIExtension, PostconditionsJMIExtension {
     /**
      * @notice Fuzz handler for JMIExtension.setAssetCap
      * @dev Admin function to set asset cap for a given asset
      */
-    function fuzz_JMI_setAssetCap(
-        uint256 assetSeed,
-        uint256 capSeed
-    ) public setCurrentActor {
-        JMI_SetAssetCapParams memory params = jmi_setAssetCapPreconditions(
-            assetSeed,
-            capSeed
-        );
+    function fuzz_JMI_setAssetCap(uint256 assetSeed, uint256 capSeed) public setCurrentActor {
+        JMI_SetAssetCapParams memory params = jmi_setAssetCapPreconditions(assetSeed, capSeed);
 
         _before();
 
         vm.prank(currentActor);
         (bool success, bytes memory returnData) = address(params.instance).call(
-            abi.encodeWithSelector(
-                JMIExtension.setAssetCap.selector,
-                params.asset,
-                params.cap
-            )
+            abi.encodeWithSelector(JMIExtension.setAssetCap.selector, params.asset, params.cap)
         );
 
         jmi_setAssetCapPostconditions(success, returnData, params);
@@ -42,9 +32,7 @@ contract FuzzJMIExtension is PreconditionsJMIExtension, PostconditionsJMIExtensi
         _before();
 
         vm.prank(currentActor);
-        (bool success, bytes memory returnData) = address(params.instance).call(
-            abi.encodeWithSignature("pause()")
-        );
+        (bool success, bytes memory returnData) = address(params.instance).call(abi.encodeWithSignature("pause()"));
 
         jmi_pausePostconditions(success, returnData);
     }
@@ -59,9 +47,7 @@ contract FuzzJMIExtension is PreconditionsJMIExtension, PostconditionsJMIExtensi
         _before();
 
         vm.prank(currentActor);
-        (bool success, bytes memory returnData) = address(params.instance).call(
-            abi.encodeWithSignature("unpause()")
-        );
+        (bool success, bytes memory returnData) = address(params.instance).call(abi.encodeWithSignature("unpause()"));
 
         jmi_unpausePostconditions(success, returnData);
     }
