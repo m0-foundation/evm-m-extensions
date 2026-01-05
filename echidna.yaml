@@ -1,0 +1,110 @@
+contractAddr: "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496" ## From cryticToFoundry.toml
+cryticArgs: ["--foundry-compile-all", "--ignore-compile"]
+
+# cryticArgs: ["--solc-remaps", "@synthetixio/=node_modules/@synthetixio/ @openzeppelin/=node_modules/@openzeppelin/ lib/=lib/ @perimetersec/=node_modules/@perimetersec/"]
+workers: 3
+
+testMode: assertion
+disableSlither: true
+corpusDir: echidna-corpus
+
+testLimit: 100000000000
+# testLimit: 1000000
+codeSize: 0xffffff
+
+shrinkLimit: 1000
+
+seqLen: 100
+
+allowFFI: true
+
+propMaxGas: 1000000000
+testMaxGas: 1000000000
+
+deployer: "0xfffff"
+sender: ["0x10000", "0x20000", "0x30000"]
+# Initial Ether balance of contractAddr
+balanceContract: 0xffffffffffffffffffffffffffffffffffffffffffffffff
+# maximum value to send to payable functions
+maxValue: 100000000000000000000000000000 # 100000000000 eth
+
+# maxTimeDelay: 6
+format: text
+# filterBlacklist: true
+# filterFunctions:
+#   [
+#     "Fuzz.targetArtifactSelectors()",
+#     "Fuzz.targetArtifacts()",
+#     "Fuzz.targetSelectors()",
+#     "Fuzz.excludeSelectors()",
+#     "Fuzz.excludeArtifacts()",
+#     "Fuzz.failed()",
+#     "Fuzz.excludeContracts()",
+#     "Fuzz.IS_TEST()",
+#     "Fuzz.excludeSenders()",
+#     "Fuzz.targetInterfaces()",
+#     "Fuzz.targetSenders()",
+#     "Fuzz.targetContracts()",
+#   ]
+
+filterBlacklist: false
+filterFunctions:
+  [
+    "Fuzz.fuzz_randomizeConfigs(uint256,uint256,uint256,uint256,uint256,uint256)",
+"Fuzz.fuzz_mint(uint256)",
+"Fuzz.fuzz_unwrap_MYieldFee(uint256)",
+"Fuzz.fuzz_swap(uint256)",
+"Fuzz.fuzz_swapInM(uint256)",
+"Fuzz.fuzz_swapOutM(uint256)",
+"Fuzz.fuzz_swapInToken(uint256)",
+"Fuzz.fuzz_swapOutToken(uint256)",
+"Fuzz.fuzz_unwrap_MEarnerManager(uint256)",
+"Fuzz.fuzz_approve_MEarnerManager(uint256)",
+"Fuzz.fuzz_wrap_MEarnerManager(uint256)",
+"Fuzz.fuzz_setFeeRecipient_MEarnerManager(uint256)",
+"Fuzz.fuzz_claimFor_MEarnerManager(uint256)",
+"Fuzz.fuzz_setAccountInfo_MEarnerManager(uint256,bool)",
+"Fuzz.fuzz_setYieldRecipient_MYieldToOne(uint256)",
+"Fuzz.fuzz_transferFrom_MEarnerManager(uint256)",
+"Fuzz.fuzz_approve_MYieldToOne(uint256)",
+"Fuzz.fuzz_unwrap_MYieldToOne(uint256)",
+"Fuzz.fuzz_transferFrom_MYieldFee(uint256)",
+"Fuzz.fuzz_transfer_MYieldToOne(uint256)",
+"Fuzz.fuzz_transfer_MYieldFee(uint256)",
+"Fuzz.fuzz_transferFrom_MYieldToOne(uint256)",
+"Fuzz.fuzz_setFeeRate_MYieldFee(uint256)",
+"Fuzz.fuzz_setFeeRecipient_MYieldFee(uint256)",
+"Fuzz.fuzz_approve_MYieldFee(uint256)",
+"Fuzz.fuzz_transfer_MEarnerManager(uint256)",
+"Fuzz.fuzz_claimYieldFor_MYieldFee(uint256)",
+"Fuzz.fuzz_wrap_MYieldFee(uint256)",
+"Fuzz.fuzz_claimFee_MYieldFee(uint256)",
+"Fuzz.fuzz_setClaimRecipient_MYieldFee(uint256)",
+"Fuzz.fuzz_wrap_MYieldToOne(uint256)",
+"Fuzz.fuzz_updateIndex_MYieldFee(uint256)",
+"Fuzz.fuzz_claimYield_MYieldToOne(uint256)",
+"Fuzz.fuzz_warpWeeks(uint256)",
+"Fuzz.fuzz_warpDays(uint256)",
+"Fuzz.fuzz_allLiquidityUni(uint256,uint256,int24,int24,uint256)",
+"Fuzz.fuzz_swapZeroToOne(uint256)",
+"Fuzz.fuzz_swapOneToZero(uint256)",
+"Fuzz.fuzz_disableEarning_MYieldToOne(uint256)",
+"Fuzz.fuzz_enableEarning_MYieldToOne(uint256)",
+"Fuzz.fuzz_disableEarning_MYieldFee(uint256)",
+"Fuzz.fuzz_enableEarning_MYieldFee(uint256)",
+"Fuzz.fuzz_enableEarning_MEarnerManager(uint256)",
+"Fuzz.fuzz_disableEarning_MEarnerManager(uint256)",
+"Fuzz.fuzz_JMI_setAssetCap(uint256,uint256)",
+"Fuzz.fuzz_JMI_pause(uint256)",
+"Fuzz.fuzz_JMI_unpause(uint256)",
+"Fuzz.fuzz_JMI_freeze(uint256,uint256)",
+"Fuzz.fuzz_JMI_unfreeze(uint256,uint256)",
+"Fuzz.fuzz_SF_swap(uint256,uint256,uint256,uint256)",
+"Fuzz.fuzz_SF_replaceAssetWithM(uint256,uint256,uint256,uint256,uint256)",
+"Fuzz.fuzz_SF_setPermissionedExtension(uint256,uint256)",
+"Fuzz.fuzz_SF_setPermissionedMSwapper(uint256,uint256,uint256)",
+"Fuzz.fuzz_SF_setAdminApprovedExtension(uint256,uint256)",
+"Fuzz.fuzz_SF_pause(uint256)",
+"Fuzz.fuzz_SF_unpause(uint256)"
+
+  ]

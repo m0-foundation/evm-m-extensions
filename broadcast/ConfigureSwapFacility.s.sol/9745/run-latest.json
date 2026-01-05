@@ -28,10 +28,7 @@
       "contractName": null,
       "contractAddress": "0xb6807116b3b1b321a390594e31ecd6e0076f6278",
       "function": "setTrustedRouter(address,bool)",
-      "arguments": [
-        "0x36f586A30502AE3afb555b8aA4dCc05d233c2ecE",
-        "true"
-      ],
+      "arguments": ["0x36f586A30502AE3afb555b8aA4dCc05d233c2ecE", "true"],
       "transaction": {
         "from": "0xf2f1acbe0ba726fee8d75f3e32900526874740bb",
         "to": "0xb6807116b3b1b321a390594e31ecd6e0076f6278",

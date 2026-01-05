@@ -16,6 +16,7 @@
     "immutable-vars-naming": "off",
     "imports-on-top": "error",
     "max-line-length": ["warn", 120],
+    "no-console": "warn",
     "no-empty-blocks": "off",
     "no-inline-assembly": "off",
     "not-rely-on-time": "off",
