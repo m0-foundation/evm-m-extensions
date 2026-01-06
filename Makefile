@@ -177,6 +177,11 @@ deploy-swap-facility-mantra: VERIFIER="blockscout"
 deploy-swap-facility-mantra: VERIFIER_URL=${MANTRA_VERIFIER_URL}
 deploy-swap-facility-mantra: deploy-swap-facility
 
+deploy-swap-facility-moca: RPC_URL=$(MOCA_RPC_URL)
+deploy-swap-facility-moca: VERIFIER="custom"
+deploy-swap-facility-moca: VERIFIER_URL=${MOCA_VERIFIER_URL}
+deploy-swap-facility-moca: deploy-swap-facility
+
 deploy-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-facility-sepolia: VERIFIER="etherscan"
 deploy-swap-facility-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}

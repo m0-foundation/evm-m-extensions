@@ -66,6 +66,7 @@ contract Config {
     uint256 public constant PLUME_CHAIN_ID = 98866;
     uint256 public constant BSC_CHAIN_ID = 56;
     uint256 public constant MANTRA_CHAIN_ID = 5888;
+    uint256 public constant MOCA_CHAIN_ID = 2288;
     uint256 public constant BASE_CHAIN_ID = 8453;
     uint256 public constant SONEIUM_CHAIN_ID = 1868;
     uint256 public constant PLASMA_CHAIN_ID = 9745;
@@ -111,6 +112,7 @@ contract Config {
         if (chainId_ == PLUME_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BSC_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == MANTRA_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == MOCA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BASE_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == PLASMA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == SONEIUM_CHAIN_ID) {
