@@ -70,6 +70,27 @@ deploy-yield-to-one:
 deploy-yield-to-one-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-sepolia: deploy-yield-to-one
 
+deploy-yield-to-one-forced-transfer:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
+	forge script script/deploy/DeployYieldToOneForcedTransfer.s.sol:DeployYieldToOneForcedTransfer \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS) \
+	--verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+
+deploy-yield-to-one-forced-transfer-local: RPC_URL=$(LOCALHOST_RPC_URL)
+deploy-yield-to-one-forced-transfer-local: deploy-yield-to-one-forced-transfer
+
+deploy-yield-to-one-forced-transfer-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+deploy-yield-to-one-forced-transfer-mainnet: VERIFIER="etherscan"
+deploy-yield-to-one-forced-transfer-mainnet: VERIFIER_URL=${MAINNET_VERIFIER_URL}
+deploy-yield-to-one-forced-transfer-mainnet: deploy-yield-to-one-forced-transfer
+
+deploy-yield-to-one-forced-transfer-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+deploy-yield-to-one-forced-transfer-sepolia: VERIFIER="etherscan"
+deploy-yield-to-one-forced-transfer-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
+deploy-yield-to-one-forced-transfer-sepolia: deploy-yield-to-one-forced-transfer
+
 deploy-yield-to-all:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
 	forge script script/deploy/DeployYieldToAllWithFee.s.sol:DeployYieldToAllWithFee \

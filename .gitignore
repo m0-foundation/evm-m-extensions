@@ -17,6 +17,9 @@ docs/
 # Dotenv file
 .env
 
+# OnePassword env
+.env.op
+
 # Mac OS files
 .DS_Store
 
