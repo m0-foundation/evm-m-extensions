@@ -33,6 +33,18 @@ contract Config {
         address pauser;
     }
 
+    struct YieldToOneForcedTransferConfig {
+        string contractName; // used for computing Salt
+        string extensionName; // ERC20 name
+        string symbol;
+        address yieldRecipient;
+        address admin;
+        address freezeManager;
+        address yieldRecipientManager;
+        address pauser;
+        address forcedTransferManager;
+    }
+
     struct JMIExtensionConfig {
         string contractName; // used for computing Salt
         string extensionName; // ERC20 name

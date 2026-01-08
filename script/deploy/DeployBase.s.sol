@@ -11,6 +11,7 @@ import { ScriptBase } from "../ScriptBase.s.sol";
 
 import { MEarnerManager } from "../../src/projects/earnerManager/MEarnerManager.sol";
 import { MYieldToOne } from "../../src/projects/yieldToOne/MYieldToOne.sol";
+import { MYieldToOneForcedTransfer } from "../../src/projects/yieldToOne/MYieldToOneForcedTransfer.sol";
 import { MYieldFee } from "../../src/projects/yieldToAllWithFee/MYieldFee.sol";
 import { JMIExtension } from "../../src/projects/jmi/JMIExtension.sol";
 
@@ -146,6 +147,34 @@ contract DeployBase is DeployHelpers, ScriptBase {
                 extensionConfig.freezeManager,
                 extensionConfig.yieldRecipientManager,
                 extensionConfig.pauser
+            ),
+            _computeSalt(deployer, extensionConfig.contractName)
+        );
+
+        proxyAdmin = Upgrades.getAdminAddress(proxy);
+    }
+
+    function _deployYieldToOneForcedTransfer(
+        address deployer,
+        YieldToOneForcedTransferConfig memory extensionConfig
+    ) internal returns (address implementation, address proxy, address proxyAdmin) {
+        DeployConfig memory config = _getDeployConfig(block.chainid);
+
+        implementation = address(new MYieldToOneForcedTransfer(config.mToken, _getSwapFacility()));
+
+        proxy = _deployCreate3TransparentProxy(
+            implementation,
+            extensionConfig.admin,
+            abi.encodeWithSelector(
+                MYieldToOneForcedTransfer.initialize.selector,
+                extensionConfig.extensionName,
+                extensionConfig.symbol,
+                extensionConfig.yieldRecipient,
+                extensionConfig.admin,
+                extensionConfig.freezeManager,
+                extensionConfig.yieldRecipientManager,
+                extensionConfig.pauser,
+                extensionConfig.forcedTransferManager
             ),
             _computeSalt(deployer, extensionConfig.contractName)
         );
