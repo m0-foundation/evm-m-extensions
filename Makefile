@@ -248,6 +248,11 @@ deploy-swap-facility-plasma: VERIFIER="custom"
 deploy-swap-facility-plasma: VERIFIER_URL=${PLASMA_VERIFIER_URL}
 deploy-swap-facility-plasma: deploy-swap-facility
 
+deploy-swap-facility-citrea: RPC_URL=$(CITREA_RPC_URL)
+deploy-swap-facility-citrea: VERIFIER="custom"
+deploy-swap-facility-citrea: VERIFIER_URL=${CITREA_VERIFIER_URL}
+deploy-swap-facility-citrea: deploy-swap-facility
+
 #
 #
 # UPGRADE

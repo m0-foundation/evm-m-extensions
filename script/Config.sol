@@ -81,6 +81,7 @@ contract Config {
     uint256 public constant BASE_CHAIN_ID = 8453;
     uint256 public constant SONEIUM_CHAIN_ID = 1868;
     uint256 public constant PLASMA_CHAIN_ID = 9745;
+    uint256 public constant CITREA_CHAIN_ID = 4114;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -130,6 +131,7 @@ contract Config {
             config.uniswapV3Router = UNISWAP_V3_ROUTER;
             return config;
         }
+        if (chainId_ == CITREA_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs
         if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
