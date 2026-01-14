@@ -316,3 +316,16 @@ propose-transfer-swap-facility-owner-bsc: propose-transfer-swap-facility-owner
 
 propose-transfer-swap-facility-owner-linea: RPC_URL=$(LINEA_RPC_URL)
 propose-transfer-swap-facility-owner-linea: propose-transfer-swap-facility-owner
+
+propose-swap-facility-upgrade:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SAFE_ADDRESS=$(SAFE_ADDRESS) PAUSER=$(PAUSER) \
+	forge script script/upgrade/ProposeSwapFacilityUpgrade.s.sol:ProposeSwapFacilityUpgrade \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
+
+propose-swap-facility-upgrade-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+propose-swap-facility-upgrade-sepolia: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+propose-swap-facility-upgrade-mainnet: propose-swap-facility-upgrade
