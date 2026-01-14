@@ -101,7 +101,9 @@ contract Config {
 
     // Same address across all supported chains
     address public constant UNISWAP_V3_ROUTER = 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45;
+
     address public constant UNISWAP_ROUTER_SEPOLIA = 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E;
+    address public constant UNISWAP_ROUTER_ARBITRUM_SEPOLIA = 0x101F443B4d1b059569D643917553c771E1b9663E;
 
     function _getDeployConfig(uint256 chainId_) internal pure returns (DeployConfig memory) {
         DeployConfig memory config;
@@ -140,7 +142,13 @@ contract Config {
             config.uniswapV3Router = UNISWAP_ROUTER_SEPOLIA;
             return config;
         }
-        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
+
+        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) {
+            config = _getDefaultDeployConfig();
+            config.uniswapV3Router = UNISWAP_ROUTER_ARBITRUM_SEPOLIA;
+            return config;
+        }
+
         if (chainId_ == OPTIMISM_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == APECHAIN_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BSC_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
@@ -179,15 +187,20 @@ contract Config {
             whitelistedTokens[0] = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831; // USDC
         }
 
+        if (chainId_ == SONEIUM_CHAIN_ID) {
+            whitelistedTokens = new address[](1);
+            whitelistedTokens[0] = 0xbA9986D2381edf1DA03B0B9c1f8b00dc4AacC369; // USDC.E (bridged)
+        }
+
         if (chainId_ == SEPOLIA_CHAIN_ID) {
             whitelistedTokens = new address[](2);
             whitelistedTokens[0] = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // USDC
             whitelistedTokens[1] = 0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0; // USDT
         }
 
-        if (chainId_ == SONEIUM_CHAIN_ID) {
+        if (chainId_ == ARBITRUM_SEPOLIA_CHAIN_ID) {
             whitelistedTokens = new address[](1);
-            whitelistedTokens[0] = 0xbA9986D2381edf1DA03B0B9c1f8b00dc4AacC369; // USDC.E (bridged)
+            whitelistedTokens[0] = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // USDC
         }
 
         return whitelistedTokens;

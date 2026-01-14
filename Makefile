@@ -142,15 +142,20 @@ deploy-swap-adapter-arbitrum: VERIFIER="etherscan"
 deploy-swap-adapter-arbitrum: VERIFIER_URL=${ARBITRUM_VERIFIER_URL}
 deploy-swap-adapter-arbitrum: deploy-swap-adapter
 
+deploy-swap-adapter-soneium: RPC_URL=$(SONEIUM_RPC_URL)
+deploy-swap-adapter-soneium: VERIFIER="blockscout"
+deploy-swap-adapter-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
+deploy-swap-adapter-soneium: deploy-swap-adapter
+
 deploy-swap-adapter-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-swap-adapter-sepolia: VERIFIER="etherscan"
 deploy-swap-adapter-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
 deploy-swap-adapter-sepolia: deploy-swap-adapter
 
-deploy-swap-adapter-soneium: RPC_URL=$(SONEIUM_RPC_URL)
-deploy-swap-adapter-soneium: VERIFIER="blockscout"
-deploy-swap-adapter-soneium: VERIFIER_URL=${SONEIUM_VERIFIER_URL}
-deploy-swap-adapter-soneium: deploy-swap-adapter
+deploy-swap-adapter-arbitrum-sepolia: RPC_URL=$(ARBITRUM_SEPOLIA_RPC_URL)
+deploy-swap-adapter-arbitrum-sepolia: VERIFIER="etherscan"
+deploy-swap-adapter-arbitrum-sepolia: VERIFIER_URL=${ARBITRUM_SEPOLIA_VERIFIER_URL}
+deploy-swap-adapter-arbitrum-sepolia: deploy-swap-adapter
 
 deploy-swap-facility:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) PAUSER=$(PAUSER) \
