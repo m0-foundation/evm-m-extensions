@@ -86,6 +86,11 @@ deploy-yield-to-one-forced-transfer-mainnet: VERIFIER="etherscan"
 deploy-yield-to-one-forced-transfer-mainnet: VERIFIER_URL=${MAINNET_VERIFIER_URL}
 deploy-yield-to-one-forced-transfer-mainnet: deploy-yield-to-one-forced-transfer
 
+deploy-yield-to-one-forced-transfer-citrea: RPC_URL=$(CITREA_RPC_URL)
+deploy-yield-to-one-forced-transfer-citrea: VERIFIER="custom"
+deploy-yield-to-one-forced-transfer-citrea: VERIFIER_URL=${CITREA_VERIFIER_URL}
+deploy-yield-to-one-forced-transfer-citrea: deploy-yield-to-one-forced-transfer
+
 deploy-yield-to-one-forced-transfer-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER="etherscan"
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
