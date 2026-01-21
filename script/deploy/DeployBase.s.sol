@@ -164,7 +164,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            0x55a8103041a1bda35C6AE4c8E4C26656Fa83e961, // Moonpay Proxy Admin
+            extensionConfig.admin,
             abi.encodeWithSelector(
                 MYieldToOneForcedTransfer.initialize.selector,
                 extensionConfig.extensionName,
