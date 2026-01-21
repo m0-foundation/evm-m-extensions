@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 
 import { console } from "../../lib/forge-std/src/console.sol";
 
+import { IProxyAdmin } from "../../lib/openzeppelin-foundry-upgrades/src/internal/interfaces/IProxyAdmin.sol";
 import { MultiSigBatchBase } from "../../lib/common/script/MultiSigBatchBase.sol";
 import { Options } from "../../lib/openzeppelin-foundry-upgrades/src/Options.sol";
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
@@ -11,10 +12,6 @@ import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.s
 import { SwapFacility } from "../../src/swap/SwapFacility.sol";
 
 import { Config } from "../Config.sol";
-
-interface IProxyAdmin {
-    function upgradeAndCall(address proxy, address implementation, bytes memory data) external payable;
-}
 
 /**
  * @title  ProposeUpgradeBase
