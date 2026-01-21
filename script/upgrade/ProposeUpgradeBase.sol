@@ -38,6 +38,7 @@ contract ProposeUpgradeBase is MultiSigBatchBase, Config {
         address swapFacility,
         address pauser
     ) internal {
+        string memory contractName = "SwapFacility.sol";
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
         address proxyAdmin = Upgrades.getAdminAddress(swapFacility);
@@ -59,11 +60,11 @@ contract ProposeUpgradeBase is MultiSigBatchBase, Config {
         // This validates storage layout compatibility before deploying
         Options memory opts;
         opts.constructorData = abi.encode(config.mToken, config.registrar);
-        opts.referenceContract = "SwapFacility.sol";
+        opts.referenceContract = contractName;
 
         console.log("Validating and deploying new implementation...");
         vm.startBroadcast(proposer);
-        address newImplementation = Upgrades.prepareUpgrade("SwapFacility.sol", opts);
+        address newImplementation = Upgrades.prepareUpgrade(contractName, opts);
         vm.stopBroadcast();
 
         console.log("New Implementation:  ", newImplementation);
