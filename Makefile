@@ -274,10 +274,18 @@ upgrade-swap-facility:
 	forge script script/upgrade/UpgradeSwapFacility.s.sol:UpgradeSwapFacility \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS) \
+	--verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
 
 upgrade-swap-facility-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
+upgrade-swap-facility-sepolia: VERIFIER="etherscan"
+upgrade-swap-facility-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
 upgrade-swap-facility-sepolia: upgrade-swap-facility
+
+upgrade-swap-facility-arbitrum-sepolia: RPC_URL=$(ARBITRUM_SEPOLIA_RPC_URL)
+upgrade-swap-facility-arbitrum-sepolia: VERIFIER="etherscan"
+upgrade-swap-facility-arbitrum-sepolia: VERIFIER_URL=${ARBITRUM_SEPOLIA_VERIFIER_URL}
+upgrade-swap-facility-arbitrum-sepolia: upgrade-swap-facility
 
 # This upgrade is strictly specific to Sepolia as it caters to an old SwapFacility deployment
 upgrade-old-swap-facility:
