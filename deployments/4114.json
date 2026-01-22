@@ -1,6 +1,6 @@
 {
-  "extensionAddresses": [],
-  "extensionNames": [],
+  "extensionAddresses": ["0x8D82c4E3c936C7B5724A382a9c5a4E6Eb7aB6d5D"],
+  "extensionNames": ["Citrea USD"],
   "swapAdapter": "0x0000000000000000000000000000000000000000",
   "swapFacility": "0xB6807116b3B1B321a390594e31ECD6e0076f6278"
 }
