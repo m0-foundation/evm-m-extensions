@@ -68,6 +68,7 @@ bsc = { key = "${ETHERSCAN_API_KEY}", url = "${BSC_VERIFIER_URL}" }
 hyperliquid = { key = "${ETHERSCAN_API_KEY}", url = "${HYPERLIQUID_VERIFIER_URL}" }
 optimism = { key = "${ETHERSCAN_API_KEY}", url = "${OPTIMISM_VERIFIER_URL}" }
 base = { key = "${ETHERSCAN_API_KEY}", url = "${BASE_VERIFIER_URL}" }
+sei = { key = "${ETHERSCAN_API_KEY}", url = "${SEI_VERIFIER_URL}" }
 
 sepolia = { key = "${ETHERSCAN_API_KEY}", url = "${SEPOLIA_VERIFIER_URL}" }
 arbitrum_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "${ARBITRUM_SEPOLIA_VERIFIER_URL}" }
