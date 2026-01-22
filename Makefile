@@ -263,6 +263,11 @@ deploy-swap-facility-citrea: VERIFIER="custom"
 deploy-swap-facility-citrea: VERIFIER_URL=${CITREA_VERIFIER_URL}
 deploy-swap-facility-citrea: deploy-swap-facility
 
+deploy-swap-facility-sei: RPC_URL=$(SEI_RPC_URL)
+deploy-swap-facility-sei: VERIFIER="etherscan"
+deploy-swap-facility-sei: VERIFIER_URL=${SEI_VERIFIER_URL}
+deploy-swap-facility-sei: deploy-swap-facility
+
 #
 #
 # UPGRADE
