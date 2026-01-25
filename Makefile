@@ -351,6 +351,11 @@ propose-swap-facility-upgrade-mainnet: VERIFIER="etherscan"
 propose-swap-facility-upgrade-mainnet: VERIFIER_URL=$(MAINNET_VERIFIER_URL)
 propose-swap-facility-upgrade-mainnet: propose-swap-facility-upgrade
 
+propose-swap-facility-upgrade-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+propose-swap-facility-upgrade-arbitrum: VERIFIER="etherscan"
+propose-swap-facility-upgrade-arbitrum: VERIFIER_URL=$(ARBITRUM_VERIFIER_URL)
+propose-swap-facility-upgrade-arbitrum: propose-swap-facility-upgrade
+
 propose-swap-facility-upgrade-base: RPC_URL=$(BASE_RPC_URL)
 propose-swap-facility-upgrade-base: VERIFIER="etherscan"
 propose-swap-facility-upgrade-base: VERIFIER_URL=$(BASE_VERIFIER_URL)
