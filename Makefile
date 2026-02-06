@@ -310,6 +310,23 @@ upgrade-jmi-extension:
 upgrade-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 upgrade-jmi-extension-sepolia: upgrade-jmi-extension
 
+# Upgrade JMI Extension with one-time token rescue via initializeV2
+upgrade-jmi-extension-with-rescue:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) \
+	EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \
+	RESCUE_TOKEN=$(RESCUE_TOKEN) \
+	RESCUE_RECIPIENT=$(RESCUE_RECIPIENT) \
+	forge script script/upgrade/UpgradeJMIExtensionWithRescue.s.sol:UpgradeJMIExtensionWithRescue \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive -v \
+	$(BROADCAST_FLAGS) --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+
+upgrade-jmi-extension-with-rescue-base: RPC_URL=$(BASE_RPC_URL)
+upgrade-jmi-extension-with-rescue-base: VERIFIER="etherscan"
+upgrade-jmi-extension-with-rescue-base: VERIFIER_URL=${BASE_VERIFIER_URL}
+upgrade-jmi-extension-with-rescue-base: upgrade-jmi-extension-with-rescue
+
 #
 #
 # PROPOSE (via Multisig)

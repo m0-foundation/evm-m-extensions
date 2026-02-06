@@ -63,6 +63,9 @@ interface IJMIExtension is IMYieldToOne {
     /// @notice Emitted in initializer if Asset Cap Manager is 0x0.
     error ZeroAssetCapManager();
 
+    /// @notice Emitted when attempting to rescue M token.
+    error CannotRescueMToken();
+
     /* ============ Interactive Functions ============ */
 
     /**

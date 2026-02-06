@@ -156,6 +156,22 @@ contract JMIExtension is IJMIExtension, JMIExtensionLayout, MYieldToOne {
         _grantRole(ASSET_CAP_MANAGER_ROLE, assetCapManager);
     }
 
+    /**
+     * @notice One-time initialization to rescue accidentally sent tokens during upgrade.
+     * @dev    Can only be called once via reinitializer(2).
+     * @param  token     The address of the token to rescue.
+     * @param  recipient The address to receive the rescued tokens.
+     */
+    function initializeV2(address token, address recipient) external reinitializer(2) {
+        if (token == mToken) revert CannotRescueMToken();
+        if (recipient == address(0)) revert InvalidRecipient(recipient);
+
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (balance > 0) {
+            IERC20(token).safeTransfer(recipient, balance);
+        }
+    }
+
     /* ============ Interactive Functions ============ */
 
     /// @inheritdoc IJMIExtension
