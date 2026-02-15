@@ -1,6 +1,6 @@
 {
-  "extensionAddresses": [],
-  "extensionNames": [],
+  "extensionAddresses": ["0xdb1C440386b864181C77c02A51b7f4F6dD840dF4"],
+  "extensionNames": ["MM Token"],
   "swapAdapter": "0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b",
   "swapFacility": "0xB6807116b3B1B321a390594e31ECD6e0076f6278"
 }
