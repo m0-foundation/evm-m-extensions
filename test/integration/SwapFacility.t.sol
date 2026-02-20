@@ -10,9 +10,6 @@ import { IERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/
 import { SafeERC20 } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { Upgrades } from "../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
-import { WrappedMToken } from "../../lib/wrapped-m-token/src/WrappedMToken.sol";
-import { EarnerManager } from "../../lib/wrapped-m-token/src/EarnerManager.sol";
-import { WrappedMTokenMigratorV1 } from "../../lib/wrapped-m-token/src/WrappedMTokenMigratorV1.sol";
 import { Proxy } from "../../lib/common/src/Proxy.sol";
 
 import { UpgradeBase } from "../../script/upgrade/UpgradeBase.sol";
@@ -114,21 +111,6 @@ contract SwapFacilityIntegrationTest is BaseIntegrationTest, UpgradeBase {
 
         vm.prank(admin);
         swapFacility.grantRole(M_SWAPPER_ROLE, USER);
-
-        // // TODO: Remove this when Wrapped M is upgraded to V2
-        // address earnerManagerImplementation = address(new EarnerManager(registrar, admin));
-        // address earnerManager = address(new Proxy(earnerManagerImplementation));
-        // address wrappedMTokenImplementationV2 = address(
-        //     new WrappedMToken(address(mToken), registrar, earnerManager, admin, address(swapFacility), admin)
-        // );
-
-        // // Ignore earners migration
-        // address wrappedMTokenMigratorV1 = address(
-        //     new WrappedMTokenMigratorV1(wrappedMTokenImplementationV2, new address[](0))
-        // );
-
-        // vm.prank(WrappedMToken(WRAPPED_M).migrationAdmin());
-        // WrappedMToken(WRAPPED_M).migrate(wrappedMTokenMigratorV1);
     }
 
     /* ============ swap ============ */
