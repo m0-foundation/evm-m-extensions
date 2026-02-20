@@ -351,7 +351,37 @@ propose-swap-facility-upgrade-mainnet: VERIFIER="etherscan"
 propose-swap-facility-upgrade-mainnet: VERIFIER_URL=$(MAINNET_VERIFIER_URL)
 propose-swap-facility-upgrade-mainnet: propose-swap-facility-upgrade
 
+propose-swap-facility-upgrade-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+propose-swap-facility-upgrade-arbitrum: VERIFIER="etherscan"
+propose-swap-facility-upgrade-arbitrum: VERIFIER_URL=$(ARBITRUM_VERIFIER_URL)
+propose-swap-facility-upgrade-arbitrum: propose-swap-facility-upgrade
+
 propose-swap-facility-upgrade-base: RPC_URL=$(BASE_RPC_URL)
 propose-swap-facility-upgrade-base: VERIFIER="etherscan"
 propose-swap-facility-upgrade-base: VERIFIER_URL=$(BASE_VERIFIER_URL)
 propose-swap-facility-upgrade-base: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-optimism: RPC_URL=$(OPTIMISM_RPC_URL)
+propose-swap-facility-upgrade-optimism: VERIFIER="etherscan"
+propose-swap-facility-upgrade-optimism: VERIFIER_URL=$(OPTIMISM_VERIFIER_URL)
+propose-swap-facility-upgrade-optimism: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-bsc: RPC_URL=$(BSC_RPC_URL)
+propose-swap-facility-upgrade-bsc: VERIFIER="etherscan"
+propose-swap-facility-upgrade-bsc: VERIFIER_URL=$(BSC_VERIFIER_URL)
+propose-swap-facility-upgrade-bsc: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-soneium: RPC_URL=$(SONEIUM_RPC_URL)
+propose-swap-facility-upgrade-soneium: VERIFIER="blockscout"
+propose-swap-facility-upgrade-soneium: VERIFIER_URL=$(SONEIUM_VERIFIER_URL)
+propose-swap-facility-upgrade-soneium: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-mantra: RPC_URL=$(MANTRA_RPC_URL)
+propose-swap-facility-upgrade-mantra: VERIFIER="blockscout"
+propose-swap-facility-upgrade-mantra: VERIFIER_URL=$(MANTRA_VERIFIER_URL)
+propose-swap-facility-upgrade-mantra: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-hyperliquid: RPC_URL=$(HYPERLIQUID_RPC_URL)
+propose-swap-facility-upgrade-hyperliquid: VERIFIER="etherscan"
+propose-swap-facility-upgrade-hyperliquid: VERIFIER_URL=$(HYPERLIQUID_VERIFIER_URL)
+propose-swap-facility-upgrade-hyperliquid: propose-swap-facility-upgrade
