@@ -355,3 +355,32 @@ propose-swap-facility-upgrade-base: RPC_URL=$(BASE_RPC_URL)
 propose-swap-facility-upgrade-base: VERIFIER="etherscan"
 propose-swap-facility-upgrade-base: VERIFIER_URL=$(BASE_VERIFIER_URL)
 propose-swap-facility-upgrade-base: propose-swap-facility-upgrade
+
+#
+#
+# PROPOSE (via Multisig to Timelock)
+#
+#
+
+propose-timelock-swap-facility-upgrade:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SAFE_ADDRESS=$(SAFE_ADDRESS) TIMELOCK_ADDRESS=$(TIMELOCK_ADDRESS) PAUSER=$(PAUSER) \
+	forge script script/upgrade/ProposeTimelockSwapFacilityUpgrade.s.sol:ProposeTimelockSwapFacilityUpgrade \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS) \
+	--verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+
+propose-timelock-swap-facility-upgrade-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+propose-timelock-swap-facility-upgrade-mainnet: VERIFIER="etherscan"
+propose-timelock-swap-facility-upgrade-mainnet: VERIFIER_URL=$(MAINNET_VERIFIER_URL)
+propose-timelock-swap-facility-upgrade-mainnet: propose-timelock-swap-facility-upgrade
+
+propose-timelock-swap-facility-upgrade-bsc: RPC_URL=$(BSC_RPC_URL)
+propose-timelock-swap-facility-upgrade-bsc: VERIFIER="etherscan"
+propose-timelock-swap-facility-upgrade-bsc: VERIFIER_URL=$(BSC_VERIFIER_URL)
+propose-timelock-swap-facility-upgrade-bsc: propose-timelock-swap-facility-upgrade
+
+propose-timelock-swap-facility-upgrade-linea: RPC_URL=$(LINEA_RPC_URL)
+propose-timelock-swap-facility-upgrade-linea: VERIFIER="etherscan"
+propose-timelock-swap-facility-upgrade-linea: VERIFIER_URL=$(LINEA_VERIFIER_URL)
+propose-timelock-swap-facility-upgrade-linea: propose-timelock-swap-facility-upgrade

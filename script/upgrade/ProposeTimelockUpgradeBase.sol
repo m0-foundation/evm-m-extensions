@@ -29,9 +29,6 @@ contract ProposeTimelockUpgradeBase is TimelockBatchBase, Config {
 
     Safe.Client internal _safeClient;
 
-    address internal constant _PROPOSER_SAFE_MULTISIG = 0xb7A9B5f301eF3bAD36C2b4964E82931Dd7fb989C;
-    address internal constant _TIMELOCK = 0x23CA665c8a73292Fc7AC2cC4493d2cE883BBA468;
-
     /// @dev Duplicated from ScriptBase to avoid diamond inheritance with TimelockBatchBase
     struct Deployments {
         address[] extensionAddresses;
@@ -40,7 +37,13 @@ contract ProposeTimelockUpgradeBase is TimelockBatchBase, Config {
         address swapFacility;
     }
 
-    function _proposeTimelockSwapFacilityUpgrade(address proposer, address swapFacility, address pauser) internal {
+    function _proposeTimelockSwapFacilityUpgrade(
+        address proposer,
+        address safeMultisig,
+        address timelock,
+        address swapFacility,
+        address pauser
+    ) internal {
         string memory contractPath = "SwapFacility.sol:SwapFacility";
         DeployConfig memory config = _getDeployConfig(block.chainid);
 
@@ -51,8 +54,8 @@ contract ProposeTimelockUpgradeBase is TimelockBatchBase, Config {
         console.log("================================================================================");
         console.log("Chain ID:            ", block.chainid);
         console.log("Proposer:            ", proposer);
-        console.log("Proposer Multisig:   ", _PROPOSER_SAFE_MULTISIG);
-        console.log("Timelock:            ", _TIMELOCK);
+        console.log("Proposer Multisig:   ", safeMultisig);
+        console.log("Timelock:            ", timelock);
         console.log("SwapFacility Proxy:  ", swapFacility);
         console.log("ProxyAdmin:          ", proxyAdmin);
         console.log("M Token:             ", config.mToken);
@@ -60,39 +63,41 @@ contract ProposeTimelockUpgradeBase is TimelockBatchBase, Config {
         console.log("Pauser:              ", pauser);
         console.log("================================================================================");
 
-        // Step 1: Validate upgrade safety and deploy new implementation using Upgrades.prepareUpgrade
-        // Note: unsafeSkipStorageCheck=true skips storage layout comparison (no previous version available)
-        // but still validates upgrade safety rules (no constructor logic, proper initializers, etc.)
-        Options memory opts;
-        opts.constructorData = abi.encode(config.mToken, config.registrar);
-        opts.unsafeSkipStorageCheck = true;
+        {
+            // Step 1: Validate upgrade safety and deploy new implementation using Upgrades.prepareUpgrade
+            // Note: unsafeSkipStorageCheck=true skips storage layout comparison (no previous version available)
+            // but still validates upgrade safety rules (no constructor logic, proper initializers, etc.)
+            Options memory opts;
+            opts.constructorData = abi.encode(config.mToken, config.registrar);
+            opts.unsafeSkipStorageCheck = true;
 
-        console.log("Validating and deploying new implementation...");
-        vm.startBroadcast(proposer);
-        address newImplementation = Upgrades.prepareUpgrade(contractPath, opts);
-        vm.stopBroadcast();
+            console.log("Validating and deploying new implementation...");
+            vm.startBroadcast(proposer);
+            address newImplementation = Upgrades.prepareUpgrade(contractPath, opts);
+            vm.stopBroadcast();
 
-        console.log("New Implementation:  ", newImplementation);
+            console.log("New Implementation:  ", newImplementation);
 
-        // Step 2: Prepare the upgradeAndCall data
-        bytes memory initializeV2Data = abi.encodeWithSelector(SwapFacility.initializeV2.selector, pauser);
+            // Step 2: Prepare the upgradeAndCall data
+            bytes memory initializeV2Data = abi.encodeWithSelector(SwapFacility.initializeV2.selector, pauser);
 
-        bytes memory upgradeAndCallData = abi.encodeCall(
-            IProxyAdmin.upgradeAndCall,
-            (swapFacility, newImplementation, initializeV2Data)
-        );
+            bytes memory upgradeAndCallData = abi.encodeCall(
+                IProxyAdmin.upgradeAndCall,
+                (swapFacility, newImplementation, initializeV2Data)
+            );
 
-        // Step 3: Add upgradeAndCall to timelock batch
-        _addToTimelockBatch(proxyAdmin, upgradeAndCallData);
+            // Step 3: Add upgradeAndCall to timelock batch
+            _addToTimelockBatch(proxyAdmin, upgradeAndCallData);
+        }
 
         // Step 4: Simulate the batch as the timelock
         console.log("--------------------------------------------------------------------------------");
         console.log("Simulating batch as timelock...");
-        _simulateBatch(_TIMELOCK);
+        _simulateBatch(timelock);
         console.log("Simulation successful!");
 
         // Step 5: Encode scheduleBatch call data
-        uint256 minDelay = TimelockController(payable(_TIMELOCK)).getMinDelay();
+        uint256 minDelay = TimelockController(payable(timelock)).getMinDelay();
         console.log("Timelock min delay:  ", minDelay);
 
         bytes memory scheduleBatchData = _getScheduleBatchCallData(bytes32(0), bytes32(0), minDelay);
@@ -100,10 +105,10 @@ contract ProposeTimelockUpgradeBase is TimelockBatchBase, Config {
         // Step 6: Propose the scheduleBatch call to the proposer Safe multisig
         console.log("--------------------------------------------------------------------------------");
         console.log("Proposing scheduleBatch to Safe...");
-        _safeClient.initialize(_PROPOSER_SAFE_MULTISIG);
+        _safeClient.initialize(safeMultisig);
 
         vm.startBroadcast(proposer);
-        _safeClient.proposeTransaction(_TIMELOCK, scheduleBatchData, proposer);
+        _safeClient.proposeTransaction(timelock, scheduleBatchData, proposer);
         vm.stopBroadcast();
 
         console.log("================================================================================");
