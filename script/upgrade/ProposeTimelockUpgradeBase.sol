@@ -19,7 +19,7 @@ import { Config } from "../Config.sol";
 
 /**
  * @title  ProposeTimelockUpgradeBase
- * @notice Base contract for timelock-routed upgrade proposal scripts.
+ * @notice Base contract for proposing and executing timelock-routed upgrade scripts.
  * @dev    NOTE: This contract duplicates `Deployments` struct and `_readDeployment` from ScriptBase
  *         instead of inheriting it. This is intentional to avoid diamond inheritance issues
  *         in the IDE (both TimelockBatchBase and ScriptBase extend Script).
@@ -114,6 +114,25 @@ contract ProposeTimelockUpgradeBase is TimelockBatchBase, Config {
         console.log("================================================================================");
         console.log("SwapFacility timelock upgrade proposed successfully!");
         console.log("================================================================================");
+    }
+
+    /// @notice Executes a previously scheduled timelock batch after the delay has elapsed.
+    /// @param  timelock_ The address of the TimelockController.
+    /// @param  salt_     The salt used when scheduling the timelock operation.
+    function _executeTimelockBatch(address timelock_, bytes32 salt_) internal {
+        TimelockController timelock = TimelockController(payable(timelock_));
+
+        bytes32 id = timelock.hashOperationBatch(
+            _timelockTargets,
+            _timelockValues,
+            _timelockPayloads,
+            bytes32(0),
+            salt_
+        );
+
+        require(timelock.isOperationReady(id), "ProposeTimelockUpgradeBase: operation not ready");
+
+        timelock.executeBatch(_timelockTargets, _timelockValues, _timelockPayloads, bytes32(0), salt_);
     }
 
     /// @dev Duplicated from ScriptBase to avoid diamond inheritance with TimelockBatchBase

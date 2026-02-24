@@ -384,3 +384,24 @@ propose-timelock-swap-facility-upgrade-linea: RPC_URL=$(LINEA_RPC_URL)
 propose-timelock-swap-facility-upgrade-linea: VERIFIER="etherscan"
 propose-timelock-swap-facility-upgrade-linea: VERIFIER_URL=$(LINEA_VERIFIER_URL)
 propose-timelock-swap-facility-upgrade-linea: propose-timelock-swap-facility-upgrade
+
+#
+#
+# EXECUTE (Timelock)
+#
+#
+
+execute-timelock-swap-facility-upgrade:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) TIMELOCK_ADDRESS=$(TIMELOCK_ADDRESS) PAUSER=$(PAUSER) NEW_IMPLEMENTATION=$(NEW_IMPLEMENTATION) \
+	forge script script/upgrade/ExecuteTimelockSwapFacilityUpgrade.s.sol:ExecuteTimelockSwapFacilityUpgrade \
+	--rpc-url $(RPC_URL) \
+	--skip test --slow --non-interactive --broadcast
+
+execute-timelock-swap-facility-upgrade-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+execute-timelock-swap-facility-upgrade-mainnet: execute-timelock-swap-facility-upgrade
+
+execute-timelock-swap-facility-upgrade-bsc: RPC_URL=$(BSC_RPC_URL)
+execute-timelock-swap-facility-upgrade-bsc: execute-timelock-swap-facility-upgrade
+
+execute-timelock-swap-facility-upgrade-linea: RPC_URL=$(LINEA_RPC_URL)
+execute-timelock-swap-facility-upgrade-linea: execute-timelock-swap-facility-upgrade
