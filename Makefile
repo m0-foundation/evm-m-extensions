@@ -395,7 +395,7 @@ execute-timelock-swap-facility-upgrade:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) TIMELOCK_ADDRESS=$(TIMELOCK_ADDRESS) PAUSER=$(PAUSER) NEW_IMPLEMENTATION=$(NEW_IMPLEMENTATION) \
 	forge script script/upgrade/ExecuteTimelockSwapFacilityUpgrade.s.sol:ExecuteTimelockSwapFacilityUpgrade \
 	--rpc-url $(RPC_URL) \
-	--skip test --slow --non-interactive --broadcast
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
 
 execute-timelock-swap-facility-upgrade-mainnet: RPC_URL=$(MAINNET_RPC_URL)
 execute-timelock-swap-facility-upgrade-mainnet: execute-timelock-swap-facility-upgrade

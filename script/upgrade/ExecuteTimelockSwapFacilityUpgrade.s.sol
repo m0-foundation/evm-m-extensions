@@ -35,7 +35,7 @@ contract ExecuteTimelockSwapFacilityUpgrade is ProposeTimelockUpgradeBase {
         _addToTimelockBatch(proxyAdmin, upgradeAndCallData);
 
         vm.startBroadcast(sender);
-        _executeTimelockBatch(timelock, bytes32(0));
+        _executeTimelockBatch(timelock, bytes32(0), bytes32(0));
         vm.stopBroadcast();
     }
 }
