@@ -19,6 +19,18 @@ abstract contract Pausable is IPausable, AccessControlUpgradeable, PausableUpgra
     /// @inheritdoc IPausable
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
+    /* ============ Modifiers ============ */
+
+    modifier isNotPaused() {
+        _requireNotPaused();
+        _;
+    }
+
+    modifier isPaused() {
+        _requirePaused();
+        _;
+    }
+    
     /* ============ Initializer ============ */
 
     /**
