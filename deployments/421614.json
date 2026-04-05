@@ -1,9 +1,10 @@
 {
   "extensionAddresses": [
     "0x0320795c99788062B06EBF61B3029365d62Ab83C",
-    "0x60230a172f8Bc5ed5501D4cF745Cd3D699a8fDdb"
+    "0x60230a172f8Bc5ed5501D4cF745Cd3D699a8fDdb",
+    "0x2f76f41905E0c74a7C397f85B319Ea6aC128215C"
   ],
-  "extensionNames": ["TrUSD", "TBUSD"],
+  "extensionNames": ["TrUSD", "TBUSD", "triUSD"],
   "swapAdapter": "0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b",
   "swapFacility": "0xB6807116b3B1B321a390594e31ECD6e0076f6278"
 }
