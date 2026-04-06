@@ -5,7 +5,8 @@
     "0x06B0B905a9D42b8f356824bA2aFDaB58bc03992a",
     "0xD941d350F489c0a34Bfb5A3cFed232c54Edb157e",
     "0x919f781b5FfdCd236AB0D246AdA8202da2454C9C",
-    "0xeEFAA67c63590B397b151B18a49FD31060541f14"
+    "0xeEFAA67c63590B397b151B18a49FD31060541f14",
+    "0x1b751DB29279B338eB6e908cBE5c1DDc8C381C82"
   ],
   "extensionNames": [
     "MEarnerManagerTestnet",
@@ -13,7 +14,8 @@
     "MYieldToAllTestnet",
     "JMIExtensionTestnet",
     "WExtension",
-    "LetoUSD"
+    "LetoUSD",
+    "PabloUSD"
   ],
   "swapAdapter": "0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b",
   "swapFacility": "0xB6807116b3B1B321a390594e31ECD6e0076f6278"
