@@ -2,9 +2,10 @@
   "extensionAddresses": [
     "0x919f781b5FfdCd236AB0D246AdA8202da2454C9C",
     "0xeEFAA67c63590B397b151B18a49FD31060541f14",
-    "0x1b751DB29279B338eB6e908cBE5c1DDc8C381C82"
+    "0x1b751DB29279B338eB6e908cBE5c1DDc8C381C82",
+    "0x8F2c64D362034008D3C291842729C4aba4a04c82"
   ],
-  "extensionNames": ["WExtension", "LetoUSD", "PabloUSD"],
+  "extensionNames": ["WExtension", "LetoUSD", "PabloUSD", "MaUSD"],
   "swapAdapter": "0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b",
   "swapFacility": "0xB6807116b3B1B321a390594e31ECD6e0076f6278"
 }
