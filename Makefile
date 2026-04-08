@@ -275,6 +275,35 @@ deploy-swap-facility-0g: deploy-swap-facility
 
 #
 #
+# CONFIGURE (Post-deployment config actions)
+#
+#
+
+enable-earning:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \
+	forge script script/execute/EnableEarning.s.sol:EnableEarning \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
+
+set-permissioned-extension:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SWAP_FACILITY_ADDRESS=$(SWAP_FACILITY_ADDRESS) \
+	EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) SAFE_ADDRESS=$(SAFE_ADDRESS) \
+	forge script script/execute/ProposeSetPermissionedExtension.s.sol:ProposeSetPermissionedExtension \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
+
+set-permissioned-mswapper:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SWAP_FACILITY_ADDRESS=$(SWAP_FACILITY_ADDRESS) \
+	EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) SWAPPER_ADDRESS=$(SWAPPER_ADDRESS) SAFE_ADDRESS=$(SAFE_ADDRESS) \
+	forge script script/execute/ProposeSetPermissionedMSwapper.s.sol:ProposeSetPermissionedMSwapper \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
+
+#
+#
 # UPGRADE
 #
 #
