@@ -3,13 +3,15 @@
     "0x2Aac5000956D2e2ff96fA17995E09138A47fCA1B",
     "0x7e80F053CABD1bf2Cb124eDCA8D8Ea5f26a396C0",
     "0x06B0B905a9D42b8f356824bA2aFDaB58bc03992a",
-    "0xD941d350F489c0a34Bfb5A3cFed232c54Edb157e"
+    "0xD941d350F489c0a34Bfb5A3cFed232c54Edb157e",
+    "0x6a4f06786Af6F7DfeF0B13Dc24acf62B44f5Bb6B"
   ],
   "extensionNames": [
     "MEarnerManagerTestnet",
     "MYieldToOneTestnet",
     "MYieldToAllTestnet",
-    "JMIExtensionTestnet"
+    "JMIExtensionTestnet",
+    "xUSD"
   ],
   "swapAdapter": "0x023bd2F0A95373C55FC8D1c5F8e60cC3B9Bc4f4b",
   "swapFacility": "0xB6807116b3B1B321a390594e31ECD6e0076f6278"
