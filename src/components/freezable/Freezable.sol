@@ -56,7 +56,6 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
     /// @inheritdoc IFreezable
     function freezeAccounts(address[] calldata accounts) external virtual onlyRole(FREEZE_MANAGER_ROLE) {
         FreezableStorageStruct storage $ = _getFreezableStorageLocation();
-
         for (uint256 i; i < accounts.length; ++i) {
             _freeze($, accounts[i]);
         }
@@ -83,6 +82,20 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
         return _getFreezableStorageLocation().isFrozen[account];
     }
 
+    /* ============ Hooks For Internal Interactive Functions ============ */
+
+    /**
+     * @dev   Hook called before freezing an account.
+     * @param account   The account to be frozen.
+     */
+    function _beforeFreeze(address account) internal virtual {}
+
+    /**
+     * @dev    Hook called before unfreezing an account.
+     * @param  account   The account to be unfrozen.
+     */
+    function _beforeUnfreeze(address account) internal virtual {}
+
     /* ============ Internal Interactive Functions ============ */
 
     /**
@@ -93,6 +106,8 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
     function _freeze(FreezableStorageStruct storage $, address account) internal {
         // Return early if the account is already frozen
         if ($.isFrozen[account]) return;
+
+        _beforeFreeze(account);
 
         $.isFrozen[account] = true;
 
@@ -107,6 +122,8 @@ abstract contract Freezable is IFreezable, FreezableStorageLayout, AccessControl
     function _unfreeze(FreezableStorageStruct storage $, address account) internal {
         // Return early if the account is not frozen
         if (!$.isFrozen[account]) return;
+
+        _beforeUnfreeze(account);
 
         $.isFrozen[account] = false;
 

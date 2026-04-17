@@ -1,14 +1,14 @@
 {
   "lib/common": {
     "tag": {
-      "name": "v1.4.0",
+      "name": "v1.5.0",
       "rev": "613d2d95a476612270324ecbe92317eb5e9bc98f"
     }
   },
   "lib/forge-std": {
     "branch": {
       "name": "v1",
-      "rev": "ff47d4052a6018d9e5419e5cf013b16ff8006aae"
+      "rev": "0844d7e1fc5e60d77b68e469bff60265f236c398"
     }
   },
   "lib/openzeppelin-foundry-upgrades": {
@@ -19,8 +19,8 @@
   },
   "lib/wrapped-m-token": {
     "branch": {
-      "name": "feat/swap-facility-support",
-      "rev": "49b88215911d52a47b0da94177fb6f647d90301a"
+      "name": "main",
+      "rev": "83f7948af29239ef64aea3ba1bae820bb5498a8e"
     }
   }
 }

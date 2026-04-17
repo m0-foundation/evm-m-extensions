@@ -13,6 +13,7 @@ ast = true
 build_info = true
 extra_output = ["storageLayout"]
 no_match_coverage = "script|test"
+remappings = ["safe-smart-account/=lib/common/lib/safe-utils/lib/safe-smart-account/contracts/"]
 ignored_warnings_from = ["lib", "test", "script"]
 fs_permissions = [
   { access = "read-write", path = "./deployments" },

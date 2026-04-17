@@ -83,6 +83,7 @@ contract Config {
     uint256 public constant PLASMA_CHAIN_ID = 9745;
     uint256 public constant CITREA_CHAIN_ID = 4114;
     uint256 public constant SEI_CHAIN_ID = 1329;
+    uint256 public constant LINEA_CHAIN_ID = 59144;
     uint256 public constant ZG_CHAIN_ID = 16661;
 
     // Testnet chain IDs
@@ -137,6 +138,7 @@ contract Config {
         }
         if (chainId_ == CITREA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == SEI_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == LINEA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == ZG_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs

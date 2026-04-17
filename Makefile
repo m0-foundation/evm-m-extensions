@@ -356,7 +356,86 @@ propose-swap-facility-upgrade-mainnet: VERIFIER="etherscan"
 propose-swap-facility-upgrade-mainnet: VERIFIER_URL=$(MAINNET_VERIFIER_URL)
 propose-swap-facility-upgrade-mainnet: propose-swap-facility-upgrade
 
+propose-swap-facility-upgrade-arbitrum: RPC_URL=$(ARBITRUM_RPC_URL)
+propose-swap-facility-upgrade-arbitrum: VERIFIER="etherscan"
+propose-swap-facility-upgrade-arbitrum: VERIFIER_URL=$(ARBITRUM_VERIFIER_URL)
+propose-swap-facility-upgrade-arbitrum: propose-swap-facility-upgrade
+
 propose-swap-facility-upgrade-base: RPC_URL=$(BASE_RPC_URL)
 propose-swap-facility-upgrade-base: VERIFIER="etherscan"
 propose-swap-facility-upgrade-base: VERIFIER_URL=$(BASE_VERIFIER_URL)
 propose-swap-facility-upgrade-base: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-optimism: RPC_URL=$(OPTIMISM_RPC_URL)
+propose-swap-facility-upgrade-optimism: VERIFIER="etherscan"
+propose-swap-facility-upgrade-optimism: VERIFIER_URL=$(OPTIMISM_VERIFIER_URL)
+propose-swap-facility-upgrade-optimism: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-bsc: RPC_URL=$(BSC_RPC_URL)
+propose-swap-facility-upgrade-bsc: VERIFIER="etherscan"
+propose-swap-facility-upgrade-bsc: VERIFIER_URL=$(BSC_VERIFIER_URL)
+propose-swap-facility-upgrade-bsc: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-soneium: RPC_URL=$(SONEIUM_RPC_URL)
+propose-swap-facility-upgrade-soneium: VERIFIER="blockscout"
+propose-swap-facility-upgrade-soneium: VERIFIER_URL=$(SONEIUM_VERIFIER_URL)
+propose-swap-facility-upgrade-soneium: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-mantra: RPC_URL=$(MANTRA_RPC_URL)
+propose-swap-facility-upgrade-mantra: VERIFIER="blockscout"
+propose-swap-facility-upgrade-mantra: VERIFIER_URL=$(MANTRA_VERIFIER_URL)
+propose-swap-facility-upgrade-mantra: propose-swap-facility-upgrade
+
+propose-swap-facility-upgrade-hyperliquid: RPC_URL=$(HYPERLIQUID_RPC_URL)
+propose-swap-facility-upgrade-hyperliquid: VERIFIER="etherscan"
+propose-swap-facility-upgrade-hyperliquid: VERIFIER_URL=$(HYPERLIQUID_VERIFIER_URL)
+propose-swap-facility-upgrade-hyperliquid: propose-swap-facility-upgrade
+#
+#
+# PROPOSE (via Multisig to Timelock)
+#
+#
+
+propose-timelock-swap-facility-upgrade:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SAFE_ADDRESS=$(SAFE_ADDRESS) TIMELOCK_ADDRESS=$(TIMELOCK_ADDRESS) PAUSER=$(PAUSER) \
+	forge script script/upgrade/ProposeTimelockSwapFacilityUpgrade.s.sol:ProposeTimelockSwapFacilityUpgrade \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS) \
+	--verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+
+propose-timelock-swap-facility-upgrade-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+propose-timelock-swap-facility-upgrade-mainnet: VERIFIER="etherscan"
+propose-timelock-swap-facility-upgrade-mainnet: VERIFIER_URL=$(MAINNET_VERIFIER_URL)
+propose-timelock-swap-facility-upgrade-mainnet: propose-timelock-swap-facility-upgrade
+
+propose-timelock-swap-facility-upgrade-bsc: RPC_URL=$(BSC_RPC_URL)
+propose-timelock-swap-facility-upgrade-bsc: VERIFIER="etherscan"
+propose-timelock-swap-facility-upgrade-bsc: VERIFIER_URL=$(BSC_VERIFIER_URL)
+propose-timelock-swap-facility-upgrade-bsc: propose-timelock-swap-facility-upgrade
+
+propose-timelock-swap-facility-upgrade-linea: RPC_URL=$(LINEA_RPC_URL)
+propose-timelock-swap-facility-upgrade-linea: VERIFIER="etherscan"
+propose-timelock-swap-facility-upgrade-linea: VERIFIER_URL=$(LINEA_VERIFIER_URL)
+propose-timelock-swap-facility-upgrade-linea: propose-timelock-swap-facility-upgrade
+
+#
+#
+# EXECUTE (Timelock)
+#
+#
+
+execute-timelock-swap-facility-upgrade:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) TIMELOCK_ADDRESS=$(TIMELOCK_ADDRESS) PAUSER=$(PAUSER) NEW_IMPLEMENTATION=$(NEW_IMPLEMENTATION) \
+	forge script script/upgrade/ExecuteTimelockSwapFacilityUpgrade.s.sol:ExecuteTimelockSwapFacilityUpgrade \
+	--rpc-url $(RPC_URL) \
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
+
+execute-timelock-swap-facility-upgrade-mainnet: RPC_URL=$(MAINNET_RPC_URL)
+execute-timelock-swap-facility-upgrade-mainnet: execute-timelock-swap-facility-upgrade
+
+execute-timelock-swap-facility-upgrade-bsc: RPC_URL=$(BSC_RPC_URL)
+execute-timelock-swap-facility-upgrade-bsc: execute-timelock-swap-facility-upgrade
+
+execute-timelock-swap-facility-upgrade-linea: RPC_URL=$(LINEA_RPC_URL)
+execute-timelock-swap-facility-upgrade-linea: execute-timelock-swap-facility-upgrade
