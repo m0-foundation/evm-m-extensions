@@ -268,6 +268,11 @@ deploy-swap-facility-sei: VERIFIER="etherscan"
 deploy-swap-facility-sei: VERIFIER_URL=${SEI_VERIFIER_URL}
 deploy-swap-facility-sei: deploy-swap-facility
 
+deploy-swap-facility-0g: RPC_URL=$(ZG_RPC_URL)
+deploy-swap-facility-0g: VERIFIER="custom"
+deploy-swap-facility-0g: VERIFIER_URL=$(ZG_VERIFIER_URL)
+deploy-swap-facility-0g: deploy-swap-facility
+
 #
 #
 # UPGRADE
