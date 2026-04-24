@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.26;
 
+import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
+
 import { MYieldToOne } from "./MYieldToOne.sol";
 import { ForcedTransferable } from "../../components/forcedTransferable/ForcedTransferable.sol";
 
@@ -87,6 +89,27 @@ contract MYieldToOneForcedTransfer is MYieldToOne, ForcedTransferable {
         __MYieldToOne_init(name, symbol, yieldRecipient_, admin, freezeManager, yieldRecipientManager, pauser);
         __ForcedTransferable_init(forcedTransferManager);
     }
+
+    /* ============ Interactive Functions ============ */
+
+    /**
+     * @inheritdoc IMYieldToOne
+     * @dev Reverts if the contract is paused.
+     */
+    function claimYield() public override returns (uint256) {
+        _requireNotPaused();
+        return super.claimYield();
+    }
+
+    /**
+     * @inheritdoc IMYieldToOne
+     * @dev Only updates the yield recipient address; does not claim pending yield for the previous recipient.
+     */
+    function setYieldRecipient(address account) external override onlyRole(YIELD_RECIPIENT_MANAGER_ROLE) {
+        _setYieldRecipient(account);
+    }
+
+    /* ============ Internal Interactive Functions ============ */
 
     /**
      * @dev   Internal ERC20 force transfer function to seize funds from a frozen account.
