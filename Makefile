@@ -91,6 +91,11 @@ deploy-yield-to-one-forced-transfer-citrea: VERIFIER="custom"
 deploy-yield-to-one-forced-transfer-citrea: VERIFIER_URL=${CITREA_VERIFIER_URL}
 deploy-yield-to-one-forced-transfer-citrea: deploy-yield-to-one-forced-transfer
 
+deploy-yield-to-one-forced-transfer-moca: RPC_URL=$(MOCA_RPC_URL)
+deploy-yield-to-one-forced-transfer-moca: VERIFIER="blockscout"
+deploy-yield-to-one-forced-transfer-moca: VERIFIER_URL=${MOCA_VERIFIER_URL}
+deploy-yield-to-one-forced-transfer-moca: deploy-yield-to-one-forced-transfer
+
 deploy-yield-to-one-forced-transfer-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER="etherscan"
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
