@@ -5,10 +5,12 @@ pragma solidity 0.8.26;
 import { IERC20 } from "../../../../lib/common/src/interfaces/IERC20.sol";
 
 import { IAccessControl } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
+import { PausableUpgradeable } from "../../../../lib/common/lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
 import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-upgrades/src/Upgrades.sol";
 
 import { MYieldToOneForcedTransfer } from "../../../../src/projects/yieldToOne/MYieldToOneForcedTransfer.sol";
+import { IMYieldToOne } from "../../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
 
 import { IForcedTransferable } from "../../../../src/components/forcedTransferable/IForcedTransferable.sol";
 import { IFreezable } from "../../../../src/components/freezable/IFreezable.sol";
@@ -344,5 +346,121 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
                 assertEq(mYieldToOneForcedTransfer.balanceOf(recipients[i]), 0);
             }
         }
+    }
+
+    /* ============ claimYield ============ */
+
+    function test_claimYield_noYield() external {
+        vm.prank(alice);
+        uint256 yield = mYieldToOneForcedTransfer.claimYield();
+
+        assertEq(yield, 0);
+    }
+
+    function test_claimYield() external {
+        uint256 yield = 500e6;
+
+        mToken.setBalanceOf(address(mYieldToOneForcedTransfer), mYieldToOneForcedTransfer.totalSupply() + yield);
+
+        assertEq(mYieldToOneForcedTransfer.yield(), yield);
+
+        vm.expectEmit();
+        emit IMYieldToOne.YieldClaimed(yield);
+
+        assertEq(mYieldToOneForcedTransfer.claimYield(), yield);
+
+        assertEq(mYieldToOneForcedTransfer.yield(), 0);
+        assertEq(mYieldToOneForcedTransfer.balanceOf(yieldRecipient), yield);
+    }
+
+    function test_claimYield_paused() external {
+        mToken.setBalanceOf(address(mYieldToOneForcedTransfer), mYieldToOneForcedTransfer.totalSupply() + 500e6);
+
+        vm.prank(pauser);
+        mYieldToOneForcedTransfer.pause();
+
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+        mYieldToOneForcedTransfer.claimYield();
+    }
+
+    /* ============ setYieldRecipient ============ */
+
+    function test_setYieldRecipient_onlyYieldRecipientManager() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IAccessControl.AccessControlUnauthorizedAccount.selector,
+                alice,
+                YIELD_RECIPIENT_MANAGER_ROLE
+            )
+        );
+
+        vm.prank(alice);
+        mYieldToOneForcedTransfer.setYieldRecipient(alice);
+    }
+
+    function test_setYieldRecipient_zeroYieldRecipient() public {
+        vm.expectRevert(IMYieldToOne.ZeroYieldRecipient.selector);
+
+        vm.prank(yieldRecipientManager);
+        mYieldToOneForcedTransfer.setYieldRecipient(address(0));
+    }
+
+    function test_setYieldRecipient_noUpdate() public {
+        assertEq(mYieldToOneForcedTransfer.yieldRecipient(), yieldRecipient);
+
+        vm.prank(yieldRecipientManager);
+        mYieldToOneForcedTransfer.setYieldRecipient(yieldRecipient);
+
+        assertEq(mYieldToOneForcedTransfer.yieldRecipient(), yieldRecipient);
+    }
+
+    function test_setYieldRecipient() public {
+        assertEq(mYieldToOneForcedTransfer.yieldRecipient(), yieldRecipient);
+
+        vm.expectEmit();
+        emit IMYieldToOne.YieldRecipientSet(alice);
+
+        vm.prank(yieldRecipientManager);
+        mYieldToOneForcedTransfer.setYieldRecipient(alice);
+
+        assertEq(mYieldToOneForcedTransfer.yieldRecipient(), alice);
+    }
+
+    function test_setYieldRecipient_doesNotClaimYield() public {
+        uint256 accruedYield = 500;
+
+        // Accrue yield for the previous recipient.
+        mToken.setBalanceOf(address(mYieldToOneForcedTransfer), mYieldToOneForcedTransfer.totalSupply() + accruedYield);
+
+        assertEq(mYieldToOneForcedTransfer.yield(), accruedYield);
+
+        vm.expectEmit();
+        emit IMYieldToOne.YieldRecipientSet(alice);
+
+        vm.prank(yieldRecipientManager);
+        mYieldToOneForcedTransfer.setYieldRecipient(alice);
+
+        // Recipient is updated.
+        assertEq(mYieldToOneForcedTransfer.yieldRecipient(), alice);
+
+        // Previously accrued yield is NOT claimed: it remains with the contract,
+        // neither recipient receives a mint, and yield() still reflects the full amount.
+        assertEq(mYieldToOneForcedTransfer.yield(), accruedYield);
+        assertEq(mYieldToOneForcedTransfer.balanceOf(yieldRecipient), 0);
+        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), 0);
+    }
+
+    function test_setYieldRecipient_paused() public {
+        vm.prank(pauser);
+        mYieldToOneForcedTransfer.pause();
+
+        vm.expectEmit();
+        emit IMYieldToOne.YieldRecipientSet(alice);
+
+        vm.prank(yieldRecipientManager);
+        mYieldToOneForcedTransfer.setYieldRecipient(alice);
+
+        // Recipient update is independent of pause state since claimYield is no longer invoked.
+        assertEq(mYieldToOneForcedTransfer.yieldRecipient(), alice);
     }
 }

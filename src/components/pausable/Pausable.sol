@@ -34,11 +34,25 @@ abstract contract Pausable is IPausable, AccessControlUpgradeable, PausableUpgra
 
     /// @inheritdoc IPausable
     function pause() external onlyRole(PAUSER_ROLE) {
+        _beforePause();
         _pause();
     }
 
     /// @inheritdoc IPausable
     function unpause() external onlyRole(PAUSER_ROLE) {
+        _beforeUnpause();
         _unpause();
     }
+
+    /* ============ Hooks For Internal Interactive Functions ============ */
+
+    /**
+     * @dev   Hook called before pausing the contract.
+     */
+    function _beforePause() internal virtual {}
+
+    /**
+     * @dev    Hook called before unpausing the contract.
+     */
+    function _beforeUnpause() internal virtual {}
 }
