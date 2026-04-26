@@ -15,6 +15,7 @@ contract DeployYieldToOne is DeployBase {
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.yieldRecipient = vm.envAddress("YIELD_RECIPIENT");
         extensionConfig.admin = vm.envAddress("ADMIN");
+        extensionConfig.proxyAdmin = vm.envAddress("PROXY_ADMIN");
         extensionConfig.freezeManager = vm.envAddress("FREEZE_MANAGER");
         extensionConfig.yieldRecipientManager = vm.envAddress("YIELD_RECIPIENT_MANAGER");
         extensionConfig.pauser = vm.envAddress("PAUSER");

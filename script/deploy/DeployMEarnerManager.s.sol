@@ -14,6 +14,7 @@ contract DeployMEarnerManager is DeployBase {
         extensionConfig.extensionName = vm.envString("EXTENSION_NAME");
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.admin = vm.envAddress("ADMIN");
+        extensionConfig.proxyAdmin = vm.envAddress("PROXY_ADMIN");
         extensionConfig.earnerManager = vm.envAddress("EARNER_MANAGER");
         extensionConfig.feeRecipient = vm.envAddress("FEE_RECIPIENT");
         extensionConfig.pauser = vm.envAddress("PAUSER");

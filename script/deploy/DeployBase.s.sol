@@ -109,7 +109,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            extensionConfig.admin,
+            extensionConfig.proxyAdmin,
             abi.encodeWithSelector(
                 MEarnerManager.initialize.selector,
                 extensionConfig.extensionName,
@@ -137,7 +137,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            extensionConfig.admin,
+            extensionConfig.proxyAdmin,
             abi.encodeWithSelector(
                 MYieldToOne.initialize.selector,
                 extensionConfig.extensionName,
@@ -164,7 +164,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            extensionConfig.admin,
+            extensionConfig.proxyAdmin,
             abi.encodeWithSelector(
                 MYieldToOneForcedTransfer.initialize.selector,
                 extensionConfig.extensionName,
@@ -192,7 +192,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
 
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            extensionConfig.admin,
+            extensionConfig.proxyAdmin,
             abi.encodeWithSelector(
                 JMIExtension.initialize.selector,
                 extensionConfig.extensionName,
@@ -233,7 +233,7 @@ contract DeployBase is DeployHelpers, ScriptBase {
     ) private returns (address proxy) {
         proxy = _deployCreate3TransparentProxy(
             implementation,
-            extensionConfig.admin,
+            extensionConfig.proxyAdmin,
             abi.encodeWithSelector(
                 MYieldFee.initialize.selector,
                 extensionConfig.extensionName,
