@@ -17,6 +17,7 @@ contract Config {
         string extensionName; // ERC20 name
         string symbol;
         address admin;
+        address proxyAdmin;
         address earnerManager;
         address feeRecipient;
         address pauser;
@@ -28,6 +29,7 @@ contract Config {
         string symbol;
         address yieldRecipient;
         address admin;
+        address proxyAdmin;
         address freezeManager;
         address yieldRecipientManager;
         address pauser;
@@ -39,6 +41,7 @@ contract Config {
         string symbol;
         address yieldRecipient;
         address admin;
+        address proxyAdmin;
         address freezeManager;
         address yieldRecipientManager;
         address pauser;
@@ -51,6 +54,7 @@ contract Config {
         string symbol;
         address yieldRecipient;
         address admin;
+        address proxyAdmin;
         address assetCapManager;
         address freezeManager;
         address pauser;
@@ -64,6 +68,7 @@ contract Config {
         uint16 feeRate;
         address feeRecipient;
         address admin;
+        address proxyAdmin;
         address feeManager;
         address claimRecipientManager;
         address freezeManager;

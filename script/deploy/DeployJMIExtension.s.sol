@@ -15,6 +15,7 @@ contract DeployJMIExtension is DeployBase {
         extensionConfig.symbol = vm.envString("EXTENSION_SYMBOL");
         extensionConfig.yieldRecipient = vm.envAddress("YIELD_RECIPIENT");
         extensionConfig.admin = vm.envAddress("ADMIN");
+        extensionConfig.proxyAdmin = vm.envAddress("PROXY_ADMIN");
         extensionConfig.assetCapManager = vm.envAddress("ASSET_CAP_MANAGER");
         extensionConfig.freezeManager = vm.envAddress("FREEZE_MANAGER");
         extensionConfig.pauser = vm.envAddress("PAUSER");
