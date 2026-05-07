@@ -91,6 +91,11 @@ deploy-yield-to-one-forced-transfer-citrea: VERIFIER="custom"
 deploy-yield-to-one-forced-transfer-citrea: VERIFIER_URL=${CITREA_VERIFIER_URL}
 deploy-yield-to-one-forced-transfer-citrea: deploy-yield-to-one-forced-transfer
 
+deploy-yield-to-one-forced-transfer-rise: RPC_URL=$(RISE_RPC_URL)
+deploy-yield-to-one-forced-transfer-rise: VERIFIER="blockscout"
+deploy-yield-to-one-forced-transfer-rise: VERIFIER_URL=${RISE_VERIFIER_URL}
+deploy-yield-to-one-forced-transfer-rise: deploy-yield-to-one-forced-transfer
+
 deploy-yield-to-one-forced-transfer-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER="etherscan"
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER_URL=${SEPOLIA_VERIFIER_URL}
@@ -121,7 +126,13 @@ deploy-jmi-extension:
 	forge script script/deploy/DeployJMIExtension.s.sol:DeployJMIExtension \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive $(BROADCAST_FLAGS)
+	--skip test --slow --non-interactive $(BROADCAST_FLAGS) \
+	--verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+
+deploy-jmi-extension-rise: RPC_URL=$(RISE_RPC_URL)
+deploy-jmi-extension-rise: VERIFIER="blockscout"
+deploy-jmi-extension-rise: VERIFIER_URL=${RISE_VERIFIER_URL}
+deploy-jmi-extension-rise: deploy-jmi-extension
 
 deploy-jmi-extension-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-jmi-extension-sepolia: deploy-jmi-extension 

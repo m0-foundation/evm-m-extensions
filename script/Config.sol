@@ -85,6 +85,7 @@ contract Config {
     uint256 public constant SEI_CHAIN_ID = 1329;
     uint256 public constant LINEA_CHAIN_ID = 59144;
     uint256 public constant ZG_CHAIN_ID = 16661;
+    uint256 public constant RISE_CHAIN_ID = 4153;
 
     // Testnet chain IDs
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -140,6 +141,7 @@ contract Config {
         if (chainId_ == SEI_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == LINEA_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == ZG_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == RISE_CHAIN_ID) return _getDefaultDeployConfig();
 
         // Testnet configs
         if (chainId_ == LOCAL_CHAIN_ID) return _getDefaultDeployConfig();
