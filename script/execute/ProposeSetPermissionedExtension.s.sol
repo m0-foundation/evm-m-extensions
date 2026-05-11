@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.26;
 
-import { console } from "../../lib/forge-std/src/console.sol";
-import { ScriptBase } from "../ScriptBase.s.sol";
+import { console } from "forge-std/console.sol";
+
 import { MultiSigBatchBase } from "../../lib/common/script/MultiSigBatchBase.sol";
 import { ISwapFacility } from "../../src/swap/interfaces/ISwapFacility.sol";
 
