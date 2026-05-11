@@ -1,0 +1,6 @@
+{
+  "extensionAddresses": ["0xb0032AB2CBdC957ee91750CB46d79afc9153d060"],
+  "extensionNames": ["RISE Dollar"],
+  "swapAdapter": "0x0000000000000000000000000000000000000000",
+  "swapFacility": "0x0000000000000000000000000000000000000000"
+}
