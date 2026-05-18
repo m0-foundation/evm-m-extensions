@@ -32,6 +32,10 @@ interface IMYieldToOne {
     /// @notice Emitted in initializer if Admin is 0x0.
     error ZeroAdmin();
 
+    /// @notice Emitted when a public read accesses a shielded value without holder authorization
+    ///         (caller must use a Seismic signed read with `msg.sender == account`).
+    error Unauthorized();
+
     /* ============ Interactive Functions ============ */
 
     /// @notice Claims accrued yield to yield recipient.

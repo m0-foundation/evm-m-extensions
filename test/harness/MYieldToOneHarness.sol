@@ -21,7 +21,12 @@ contract MYieldToOneHarness is MYieldToOne {
     }
 
     function setBalanceOf(address account, uint256 amount) external {
-        _getMYieldToOneStorageLocation().balanceOf[account] = amount;
+        _getMYieldToOneStorageLocation().balanceOf[account] = suint256(amount);
+    }
+
+    /// @dev Bypasses the public `balanceOf` gate — for test assertions only.
+    function getBalanceOf(address account) external view returns (uint256) {
+        return uint256(_getMYieldToOneStorageLocation().balanceOf[account]);
     }
 
     function setTotalSupply(uint256 amount) external {

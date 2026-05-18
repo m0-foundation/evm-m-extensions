@@ -288,7 +288,7 @@ abstract contract MExtension is IMExtension, ERC20ExtendedUpgradeable {
      * @param account Address of an account.
      * @param amount  Amount to transfer or burn.
      */
-    function _revertIfInsufficientBalance(address account, uint256 amount) internal view {
+    function _revertIfInsufficientBalance(address account, uint256 amount) internal view virtual {
         uint256 balance = balanceOf(account);
 
         if (balance < amount) revert InsufficientBalance(account, balance, amount);

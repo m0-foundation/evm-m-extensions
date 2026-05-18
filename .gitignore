@@ -31,3 +31,10 @@ soljson-latest.js
 
 # Gas report
 gasreport.ansi
+
+# Claude
+.claude/
+.planning/
+
+# Seismic toolchain (repo-local install — see scripts/seismic-env.sh)
+.seismic-toolchain/

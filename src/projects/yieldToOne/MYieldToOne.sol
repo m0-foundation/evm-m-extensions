@@ -15,7 +15,7 @@ abstract contract MYieldToOneStorageLayout {
     struct MYieldToOneStorageStruct {
         uint256 totalSupply;
         address yieldRecipient;
-        mapping(address account => uint256 balance) balanceOf;
+        mapping(address account => suint256 balance) balanceOf;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOne")) - 1)) & ~bytes32(uint256(0xff))
@@ -136,8 +136,12 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IERC20
+    /// @dev Shielded read. Requires `msg.sender == account`; external clients must use a
+    ///      Seismic signed read (TxSeismic type 0x4A). Plain `eth_call` zeroes `msg.sender`
+    ///      and reverts here.
     function balanceOf(address account) public view override returns (uint256) {
-        return _getMYieldToOneStorageLocation().balanceOf[account];
+        if (msg.sender != account) revert Unauthorized();
+        return uint256(_getMYieldToOneStorageLocation().balanceOf[account]);
     }
 
     /// @inheritdoc IERC20
@@ -228,7 +232,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
         // NOTE: Can be `unchecked` because the max amount of $M is never greater than `type(uint240).max`.
         unchecked {
-            $.balanceOf[recipient] += amount;
+            $.balanceOf[recipient] = $.balanceOf[recipient] + suint256(amount);
             $.totalSupply += amount;
         }
 
@@ -245,7 +249,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
         // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used in MExtension.
         unchecked {
-            $.balanceOf[account] -= amount;
+            $.balanceOf[account] = $.balanceOf[account] - suint256(amount);
             $.totalSupply -= amount;
         }
 
@@ -263,9 +267,29 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
         // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` for `sender` is used in MExtension.
         unchecked {
-            $.balanceOf[sender] -= amount;
-            $.balanceOf[recipient] += amount;
+            $.balanceOf[sender] = $.balanceOf[sender] - suint256(amount);
+            $.balanceOf[recipient] = $.balanceOf[recipient] + suint256(amount);
         }
+    }
+
+    /**
+     * @dev   Shielded balance accessor for internal callers (e.g. `_revertIfInsufficientBalance`).
+     *        Bypasses the public `balanceOf` gate so that `transferFrom` works when the spender
+     *        is anyone other than the holder — including `m-portal-v2.Portal.transferFrom` during
+     *        outbound bridging. Returns the raw `suint256` so comparisons stay shielded.
+     */
+    function _balanceOf(address account) internal view returns (suint256) {
+        return _getMYieldToOneStorageLocation().balanceOf[account];
+    }
+
+    /**
+     * @dev   Overrides `MExtension._revertIfInsufficientBalance` to compare in shielded space and
+     *        revert with `balance = 0` so the holder's actual balance does not leak via the revert
+     *        payload. The `IMExtension.InsufficientBalance` error shape is preserved (no interface
+     *        change) — only the `balance` field is zeroed at the call site.
+     */
+    function _revertIfInsufficientBalance(address account, uint256 amount) internal view override {
+        if (_balanceOf(account) < suint256(amount)) revert InsufficientBalance(account, 0, amount);
     }
 
     /**

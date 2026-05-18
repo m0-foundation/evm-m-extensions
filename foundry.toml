@@ -27,6 +27,21 @@ lint_on_build = false
 build_info = true
 sizes = true
 
+# Seismic profile — builds the MYieldToOne implementation with ssolc (currently 0.8.31).
+# `evm_version = "mercury"` is the Seismic EVM revision that supports shielded types
+# (suint, sbool, saddress, sbytes). The default profile keeps "cancun" + solc 0.8.26
+# for the rest of the suite so audit-reproducibility of sibling extensions is preserved.
+# Activate with: `FOUNDRY_PROFILE=seismic sforge build`
+#
+# `no_match_path` skips integration suites for out-of-scope extensions (PRD §3, OOS-01..03).
+# Those tests fork ETH_MAINNET via $MAINNET_RPC_URL; mainnet's JSON-RPC doesn't implement
+# `eth_getFlaggedStorageAt`, so any setUp that touches a shielded MYieldToOne balance
+# (which BaseIntegrationTest deploys for every integration suite) aborts with HTTP 400.
+# Extend this glob if more sibling-extension integration tests trip the same wall.
+[profile.seismic]
+evm_version = "mercury"
+no_match_path = "test/integration/{MEarnerManager,MYieldFee,MSpokeYieldFee,MYieldToOneForcedTransfer,JMIExtension}.t.sol"
+
 [fuzz]
 runs = 5_000
 

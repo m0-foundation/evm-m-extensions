@@ -35,7 +35,7 @@ contract JMIExtensionHarness is JMIExtension {
     }
 
     function setBalanceOf(address account, uint256 amount) external {
-        _getMYieldToOneStorageLocation().balanceOf[account] = amount;
+        _getMYieldToOneStorageLocation().balanceOf[account] = suint256(amount);
     }
 
     function setTotalAssets(uint256 amount) external {
