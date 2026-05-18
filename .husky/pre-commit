@@ -1,1 +1,12 @@
+# If the repo-local Seismic toolchain is installed (see scripts/seismic-env.sh),
+# put sforge/ssolc on PATH and pin FOUNDRY_PROFILE=seismic so the test step
+# below compiles shielded-type code (suint256, etc.) that stock solc rejects.
+# When the toolchain isn't present, the hook falls back to stock forge.
+if [ -x ".seismic-toolchain/bin/sforge" ]; then
+    PATH="$PWD/.seismic-toolchain/bin:$PATH"
+    export PATH
+    FOUNDRY_PROFILE=seismic
+    export FOUNDRY_PROFILE
+fi
+
 npm run lint-staged && npm test

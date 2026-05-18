@@ -25,7 +25,9 @@ deploy-sepolia :; FOUNDRY_PROFILE=production forge script script/Deploy.s.sol --
 slither :; FOUNDRY_PROFILE=production forge build --build-info --skip '*/test/**' --skip '*/script/**' --force && slither --compile-force-framework foundry --ignore-compile --sarif results.sarif --config-file slither.config.json .
 
 # Common tasks
-profile ?=default
+# Honor an inherited FOUNDRY_PROFILE (e.g. exported by .husky/pre-commit when the
+# Seismic toolchain is detected). Falls back to "default" when neither is set.
+profile ?= $(if $(FOUNDRY_PROFILE),$(FOUNDRY_PROFILE),default)
 
 build:
 	@./build.sh -p production
