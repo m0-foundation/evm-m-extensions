@@ -36,6 +36,14 @@ interface IMYieldToOne {
     ///         (caller must use a Seismic signed read with `msg.sender == account`).
     error Unauthorized();
 
+    /// @notice Reverted when the inherited `IERC20.approve` / `permit` path is invoked.
+    ///         Callers must use the shielded `approve(address,suint256)` overload.
+    error UseShieldedApprove();
+
+    /// @notice Reverted when the inherited `IERC20.transfer` / `transferFrom` path is invoked
+    ///         for a non-zero amount. Callers must use the shielded overloads.
+    error UseShieldedTransfer();
+
     /* ============ Interactive Functions ============ */
 
     /// @notice Claims accrued yield to yield recipient.
@@ -49,6 +57,37 @@ interface IMYieldToOne {
      * @param  yieldRecipient The address of the new yield recipient.
      */
     function setYieldRecipient(address yieldRecipient) external;
+
+    /**
+     * @notice Shielded ERC20 transfer. The amount is a Seismic shielded type and is stored
+     *         and compared in shielded space; the public `Transfer` event still emits the
+     *         cleartext amount for indexer compatibility (events are public on EVM).
+     * @param  recipient The address receiving the tokens.
+     * @param  amount    The shielded amount to transfer.
+     * @return success   Always `true` on non-revert (mirrors `IERC20.transfer`).
+     */
+    function transfer(address recipient, suint256 amount) external returns (bool);
+
+    /**
+     * @notice Shielded ERC20 approve. Stores the allowance as `suint256`.
+     * @param  spender The address allowed to spend on behalf of `msg.sender`.
+     * @param  amount  The shielded allowance amount. Use `suint256(type(uint256).max)` for an
+     *                 infinite, non-decrementing allowance (matches `ERC20ExtendedUpgradeable`).
+     * @return success Always `true` on non-revert.
+     */
+    function approve(address spender, suint256 amount) external returns (bool);
+
+    /**
+     * @notice Shielded ERC20 transferFrom. Reads and decrements the shielded allowance in
+     *         shielded space. Reverts with `InsufficientAllowance(spender, 0, amount)` —
+     *         zeroing the allowance field so the revert payload does not leak the shielded
+     *         allowance value.
+     * @param  sender    The address whose tokens are being moved.
+     * @param  recipient The address receiving the tokens.
+     * @param  amount    The shielded amount to transfer.
+     * @return success   Always `true` on non-revert.
+     */
+    function transferFrom(address sender, address recipient, suint256 amount) external returns (bool);
 
     /* ============ View/Pure Functions ============ */
 

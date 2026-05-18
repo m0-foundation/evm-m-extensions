@@ -12,6 +12,7 @@ import { Upgrades, UnsafeUpgrades } from "../../../../lib/openzeppelin-foundry-u
 
 import { MYieldToOne } from "../../../../src/projects/yieldToOne/MYieldToOne.sol";
 import { IMYieldToOne } from "../../../../src/projects/yieldToOne/interfaces/IMYieldToOne.sol";
+import { IMExtension } from "../../../../src/interfaces/IMExtension.sol";
 
 import { IFreezable } from "../../../../src/components/freezable/IFreezable.sol";
 import { IPausable } from "../../../../src/components/pausable/IPausable.sol";
@@ -156,7 +157,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         );
     }
 
-    /* ============ _approve ============ */
+    /* ============ approve (shielded) ============ */
 
     function test_approve_frozenAccount() public {
         vm.prank(freezeManager);
@@ -165,7 +166,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
         vm.prank(alice);
-        mYieldToOne.approve(bob, 1_000e6);
+        mYieldToOne.approve(bob, suint256(1_000e6));
     }
 
     function test_approve_frozenSpender() public {
@@ -175,7 +176,65 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
 
         vm.prank(alice);
+        mYieldToOne.approve(bob, suint256(1_000e6));
+    }
+
+    function test_approve_writesShieldedStorage() public {
+        uint256 amount = 1_000e6;
+
+        vm.expectEmit();
+        emit IERC20.Approval(alice, bob, amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(bob, suint256(amount));
+
+        assertEq(mYieldToOne.getShieldedAllowance(alice, bob), amount);
+    }
+
+    function test_approve_inheritedPathReverts() public {
+        // The IERC20 `approve(address,uint256)` is overridden to revert at the entry point.
+        vm.expectRevert(IMYieldToOne.UseShieldedApprove.selector);
+
+        vm.prank(alice);
         mYieldToOne.approve(bob, 1_000e6);
+    }
+
+    function test_approve_permitReverts() public {
+        // Inherited EIP-2612 `permit` is overridden to revert directly at the entry point —
+        // both the v/r/s overload and the bytes-signature overload.
+        vm.expectRevert(IMYieldToOne.UseShieldedApprove.selector);
+        mYieldToOne.permit(alice, bob, 1_000e6, type(uint256).max, 0, bytes32(0), bytes32(0));
+
+        vm.expectRevert(IMYieldToOne.UseShieldedApprove.selector);
+        mYieldToOne.permit(alice, bob, 1_000e6, type(uint256).max, "");
+    }
+
+    /* ============ allowance (gated read) ============ */
+
+    function test_allowance_unauthorized() public {
+        // alice approves bob; carol (third party) attempts to read → reverts.
+        vm.prank(alice);
+        mYieldToOne.approve(bob, suint256(500e6));
+
+        vm.expectRevert(IMYieldToOne.Unauthorized.selector);
+        vm.prank(carol);
+        mYieldToOne.allowance(alice, bob);
+    }
+
+    function test_allowance_ownerCanRead() public {
+        vm.prank(alice);
+        mYieldToOne.approve(bob, suint256(500e6));
+
+        vm.prank(alice);
+        assertEq(mYieldToOne.allowance(alice, bob), 500e6);
+    }
+
+    function test_allowance_spenderCanRead() public {
+        vm.prank(alice);
+        mYieldToOne.approve(bob, suint256(500e6));
+
+        vm.prank(bob);
+        assertEq(mYieldToOne.allowance(alice, bob), 500e6);
     }
 
     /* ============ _wrap ============ */
@@ -237,7 +296,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.prank(address(swapFacility));
         mYieldToOne.wrap(alice, amount);
 
-        assertEq(mYieldToOne.balanceOf(alice), amount);
+        assertEq(mYieldToOne.getBalanceOf(alice), amount);
         assertEq(mYieldToOne.totalSupply(), amount);
 
         assertEq(mToken.balanceOf(alice), 0);
@@ -289,7 +348,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.unwrap(alice, 1e6);
 
         assertEq(mYieldToOne.totalSupply(), 999e6);
-        assertEq(mYieldToOne.balanceOf(address(swapFacility)), 999e6);
+        assertEq(mYieldToOne.getBalanceOf(address(swapFacility)), 999e6);
         assertEq(mToken.balanceOf(address(swapFacility)), 1e6);
 
         vm.expectEmit();
@@ -299,7 +358,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.unwrap(alice, 499e6);
 
         assertEq(mYieldToOne.totalSupply(), 500e6);
-        assertEq(mYieldToOne.balanceOf(address(swapFacility)), 500e6);
+        assertEq(mYieldToOne.getBalanceOf(address(swapFacility)), 500e6);
         assertEq(mToken.balanceOf(address(swapFacility)), 500e6);
 
         vm.expectEmit();
@@ -309,30 +368,30 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.unwrap(alice, 500e6);
 
         assertEq(mYieldToOne.totalSupply(), 0);
-        assertEq(mYieldToOne.balanceOf(address(swapFacility)), 0);
+        assertEq(mYieldToOne.getBalanceOf(address(swapFacility)), 0);
 
         // M tokens are sent to SwapFacility and then forwarded to Alice
         assertEq(mToken.balanceOf(address(swapFacility)), amount);
         assertEq(mToken.balanceOf(address(mYieldToOne)), 0);
     }
 
-    /* ============ _transfer ============ */
-    function test_transfer_frozenSender() external {
+    /* ============ transfer (shielded) ============ */
+    function test_transfer_frozenSpender() external {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        // Alice allows Carol to transfer tokens on her behalf
+        // Alice allows Carol to transfer tokens on her behalf (shielded approve).
         vm.prank(alice);
-        mYieldToOne.approve(carol, amount);
+        mYieldToOne.approve(carol, suint256(amount));
 
         vm.prank(freezeManager);
         mYieldToOne.freeze(carol);
 
-        // Reverts cause Carol is frozen and cannot transfer tokens on Alice's behalf
+        // Reverts because Carol (the spender / msg.sender) is frozen.
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, carol));
 
         vm.prank(carol);
-        mYieldToOne.transferFrom(alice, bob, amount);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
     }
 
     function test_transfer_frozenAccount() external {
@@ -345,7 +404,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
 
         vm.prank(alice);
-        mYieldToOne.transfer(bob, amount);
+        mYieldToOne.transfer(bob, suint256(amount));
     }
 
     function test_transfer_frozenRecipient() external {
@@ -358,7 +417,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
 
         vm.prank(alice);
-        mYieldToOne.transfer(bob, amount);
+        mYieldToOne.transfer(bob, suint256(amount));
     }
 
     function test_transfer_paused() public {
@@ -370,7 +429,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
         vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
         vm.prank(alice);
-        mYieldToOne.transfer(bob, 1);
+        mYieldToOne.transfer(bob, suint256(1));
     }
 
     function test_transfer() external {
@@ -381,10 +440,30 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         emit IERC20.Transfer(alice, bob, amount);
 
         vm.prank(alice);
-        mYieldToOne.transfer(bob, amount);
+        mYieldToOne.transfer(bob, suint256(amount));
 
-        assertEq(mYieldToOne.balanceOf(alice), 0);
-        assertEq(mYieldToOne.balanceOf(bob), amount);
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+    }
+
+    function test_transfer_insufficientBalance() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount - 1);
+
+        // Shielded comparison reverts with `balance = 0` (not the real balance) to avoid leak.
+        vm.expectRevert(abi.encodeWithSelector(IMExtension.InsufficientBalance.selector, alice, 0, amount));
+
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, suint256(amount));
+    }
+
+    function test_transfer_inheritedPathReverts() external {
+        // The IERC20 `transfer(address,uint256)` is overridden to revert at the entry point —
+        // no balance / freeze / pause state matters.
+        vm.expectRevert(IMYieldToOne.UseShieldedTransfer.selector);
+
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, 1_000e6);
     }
 
     function testFuzz_transfer(uint256 supply, uint256 aliceBalance, uint256 transferAmount) external {
@@ -399,10 +478,79 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.setBalanceOf(bob, bobBalance);
 
         vm.prank(alice);
-        mYieldToOne.transfer(bob, transferAmount);
+        mYieldToOne.transfer(bob, suint256(transferAmount));
 
-        assertEq(mYieldToOne.balanceOf(alice), aliceBalance - transferAmount);
-        assertEq(mYieldToOne.balanceOf(bob), bobBalance + transferAmount);
+        assertEq(mYieldToOne.getBalanceOf(alice), aliceBalance - transferAmount);
+        assertEq(mYieldToOne.getBalanceOf(bob), bobBalance + transferAmount);
+    }
+
+    /* ============ transferFrom (shielded) ============ */
+
+    function test_transferFrom_finiteAllowanceDecrements() external {
+        uint256 amount = 1_000e6;
+        uint256 allowanceAmount = 1_500e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(allowanceAmount));
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, bob, amount);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
+
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), allowanceAmount - amount);
+    }
+
+    function test_transferFrom_infiniteAllowanceNoDecrement() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(type(uint256).max));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
+
+        // Infinite allowance is preserved (matches ERC20ExtendedUpgradeable.transferFrom semantics).
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), type(uint256).max);
+    }
+
+    function test_transferFrom_insufficientAllowance() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(amount - 1));
+
+        // Allowance field zeroed in the revert payload — matches the shielded-balance precedent.
+        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAllowance.selector, carol, 0, amount));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
+    }
+
+    function test_transferFrom_noAllowance() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        // No prior approve — shielded allowance is zero.
+        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAllowance.selector, carol, 0, amount));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
+    }
+
+    function test_transferFrom_inheritedPathReverts() external {
+        // The IERC20 `transferFrom(address,address,uint256)` is overridden to revert at the
+        // entry point.
+        vm.expectRevert(IMYieldToOne.UseShieldedTransfer.selector);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, 1_000e6);
     }
 
     /* ============ yield ============ */
@@ -452,7 +600,7 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.totalSupply(), 1_500e6);
 
         assertEq(mToken.balanceOf(yieldRecipient), 0);
-        assertEq(mYieldToOne.balanceOf(yieldRecipient), yield);
+        assertEq(mYieldToOne.getBalanceOf(yieldRecipient), yield);
     }
 
     /* ============ setYieldRecipient ============ */
@@ -511,6 +659,6 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
         assertEq(mYieldToOne.yieldRecipient(), alice);
         assertEq(mYieldToOne.yield(), 0);
-        assertEq(mYieldToOne.balanceOf(yieldRecipient), 500);
+        assertEq(mYieldToOne.getBalanceOf(yieldRecipient), 500);
     }
 }

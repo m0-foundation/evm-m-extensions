@@ -2,7 +2,9 @@
 
 pragma solidity ^0.8.26;
 
+import { ERC20ExtendedUpgradeable } from "../../../lib/common/src/ERC20ExtendedUpgradeable.sol";
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
 
@@ -16,6 +18,11 @@ abstract contract MYieldToOneStorageLayout {
         uint256 totalSupply;
         address yieldRecipient;
         mapping(address account => suint256 balance) balanceOf;
+        // Shielded allowance storage — written by the shielded `approve` / `transferFrom`
+        // overloads and read through the gated `allowance(address,address)` override below.
+        // The inherited `ERC20ExtendedStorageStruct.allowance` slot is never written to
+        // (the inherited `approve` / `permit` entry points revert) and remains zero forever.
+        mapping(address account => mapping(address spender => suint256 allowance)) shieldedAllowance;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOne")) - 1)) & ~bytes32(uint256(0xff))
@@ -133,6 +140,95 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         _setYieldRecipient(account);
     }
 
+    /* ============ Shielded ERC20 Entry Points ============ */
+
+    /// @inheritdoc IMYieldToOne
+    function transfer(address recipient, suint256 amount) external returns (bool) {
+        _shieldedTransfer(msg.sender, recipient, amount);
+        return true;
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function approve(address spender, suint256 amount) external returns (bool) {
+        _shieldedApprove(msg.sender, spender, amount);
+        return true;
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function transferFrom(address sender, address recipient, suint256 amount) external returns (bool) {
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+        suint256 spenderAllowance = $.shieldedAllowance[sender][msg.sender];
+
+        // Infinite-allowance shortcut mirrors `ERC20ExtendedUpgradeable.transferFrom` (line 106):
+        // a max-value allowance does not decrement. The cast to `uint256` is a control-flow
+        // comparison only — it does not write back to storage and does not leak the shielded
+        // value to any external observer.
+        if (uint256(spenderAllowance) != type(uint256).max) {
+            if (spenderAllowance < amount) revert IERC20Extended.InsufficientAllowance(msg.sender, 0, uint256(amount));
+
+            unchecked {
+                $.shieldedAllowance[sender][msg.sender] = spenderAllowance - amount;
+            }
+        }
+
+        _shieldedTransfer(sender, recipient, amount);
+        return true;
+    }
+
+    /* ============ Inherited IERC20 / IERC20Extended Entry Points (Reverted) ============ */
+    // The inherited unshielded `transfer` / `transferFrom` / `approve` / `permit` entry points
+    // remain in the ABI for IERC20 compatibility but always revert. Callers must use the
+    // `suint256`-typed overloads above. Marking these `pure` because they touch no state.
+
+    /// @inheritdoc IERC20
+    function transfer(
+        address /* recipient */,
+        uint256 /* amount */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        revert UseShieldedTransfer();
+    }
+
+    /// @inheritdoc IERC20
+    function transferFrom(
+        address /* sender */,
+        address /* recipient */,
+        uint256 /* amount */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        revert UseShieldedTransfer();
+    }
+
+    /// @inheritdoc IERC20
+    function approve(
+        address /* spender */,
+        uint256 /* amount */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        revert UseShieldedApprove();
+    }
+
+    /// @inheritdoc IERC20Extended
+    function permit(
+        address /* owner */,
+        address /* spender */,
+        uint256 /* value */,
+        uint256 /* deadline */,
+        uint8 /* v */,
+        bytes32 /* r */,
+        bytes32 /* s */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20Extended) {
+        revert UseShieldedApprove();
+    }
+
+    /// @inheritdoc IERC20Extended
+    function permit(
+        address /* owner */,
+        address /* spender */,
+        uint256 /* value */,
+        uint256 /* deadline */,
+        bytes memory /* signature */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20Extended) {
+        revert UseShieldedApprove();
+    }
+
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IERC20
@@ -147,6 +243,20 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /// @inheritdoc IERC20
     function totalSupply() public view returns (uint256) {
         return _getMYieldToOneStorageLocation().totalSupply;
+    }
+
+    /// @inheritdoc IERC20
+    /// @dev Shielded read. Requires `msg.sender == owner` or `msg.sender == spender`; external
+    ///      clients must use a Seismic signed read (TxSeismic type 0x4A). The inherited
+    ///      unshielded `ERC20ExtendedStorageStruct.allowance` slot is no longer written to
+    ///      (the IERC20 `approve` / `permit` entry points revert), so this gated view is the
+    ///      sole readable allowance source.
+    function allowance(
+        address owner,
+        address spender
+    ) public view override(ERC20ExtendedUpgradeable, IERC20) returns (uint256) {
+        if (msg.sender != owner && msg.sender != spender) revert Unauthorized();
+        return uint256(_getMYieldToOneStorageLocation().shieldedAllowance[owner][spender]);
     }
 
     /// @inheritdoc IMYieldToOne
@@ -257,15 +367,15 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /**
-     * @dev   Internal balance update function called on transfer.
-     * @param sender    The sender's address.
-     * @param recipient The recipient's address.
-     * @param amount    The amount to be transferred.
+     * @dev   Internal balance update used by both the inherited (now-unreachable from outside)
+     *        and the shielded transfer paths, and by `MYieldToOneForcedTransfer._forceTransfer`.
+     *        Casts the public `uint256` to the shielded storage type at the boundary.
      */
     function _update(address sender, address recipient, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
 
-        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` for `sender` is used in MExtension.
+        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` for `sender` runs
+        // before this call (in `MExtension._transfer` and in `_shieldedTransfer`).
         unchecked {
             $.balanceOf[sender] = $.balanceOf[sender] - suint256(amount);
             $.balanceOf[recipient] = $.balanceOf[recipient] + suint256(amount);
@@ -273,10 +383,51 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /**
-     * @dev   Shielded balance accessor for internal callers (e.g. `_revertIfInsufficientBalance`).
-     *        Bypasses the public `balanceOf` gate so that `transferFrom` works when the spender
-     *        is anyone other than the holder — including `m-portal-v2.Portal.transferFrom` during
-     *        outbound bridging. Returns the raw `suint256` so comparisons stay shielded.
+     * @dev   Shielded transfer pipeline. Mirrors the structure of `MExtension._transfer` but
+     *        entry-points to the same `_update` primitive via a `suint256 → uint256` bridge.
+     *        Reuses the existing `_beforeTransfer` hook for freeze/pause checks.
+     * @dev   Reverts with `InsufficientBalance(account, 0, amount)` — zeroing the `balance`
+     *        field so the revert payload does not leak the shielded balance value, matching
+     *        the precedent set by `_revertIfInsufficientBalance`.
+     */
+    function _shieldedTransfer(address sender, address recipient, suint256 amount) internal {
+        uint256 amount_ = uint256(amount);
+
+        _revertIfInvalidRecipient(recipient);
+        _beforeTransfer(sender, recipient, amount_);
+
+        emit Transfer(sender, recipient, amount_);
+
+        if (amount_ == 0) return;
+
+        if (_getMYieldToOneStorageLocation().balanceOf[sender] < amount) {
+            revert InsufficientBalance(sender, 0, amount_);
+        }
+
+        _update(sender, recipient, amount_);
+    }
+
+    /**
+     * @dev   Shielded approve pipeline. Writes to `MYieldToOneStorageStruct.shieldedAllowance`
+     *        in this contract's own ERC-7201 slot; the inherited
+     *        `ERC20ExtendedStorageStruct.allowance` slot is never touched. Reuses the
+     *        existing `_beforeApprove` hook for freeze checks.
+     */
+    function _shieldedApprove(address account, address spender, suint256 amount) internal {
+        uint256 amount_ = uint256(amount);
+
+        _beforeApprove(account, spender, amount_);
+
+        _getMYieldToOneStorageLocation().shieldedAllowance[account][spender] = amount;
+
+        emit Approval(account, spender, amount_);
+    }
+
+    /**
+     * @dev   Shielded balance accessor for internal callers. Bypasses the public `balanceOf`
+     *        gate. Used by `_revertIfInsufficientBalance` (still reached via the unwrap path
+     *        in `MExtension._unwrap`) and available for any future shielded internal logic.
+     *        Returns the raw `suint256` so comparisons stay shielded.
      */
     function _balanceOf(address account) internal view returns (suint256) {
         return _getMYieldToOneStorageLocation().balanceOf[account];
