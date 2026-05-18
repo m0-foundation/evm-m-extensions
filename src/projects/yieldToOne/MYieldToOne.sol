@@ -232,11 +232,13 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IERC20
-    /// @dev Shielded read. Requires `msg.sender == account`; external clients must use a
-    ///      Seismic signed read (TxSeismic type 0x4A). Plain `eth_call` zeroes `msg.sender`
-    ///      and reverts here.
+    /// @dev Shielded read. Allowed callers: `account` itself (via a Seismic signed read,
+    ///      TxSeismic type 0x4A — plain `eth_call` zeroes `msg.sender` and reverts), or the
+    ///      `swapFacility` immutable. The SwapFacility exemption lets shared M0 infra
+    ///      observe extension balances for operational paths it controls; the holder's
+    ///      balance is not exposed to arbitrary callers.
     function balanceOf(address account) public view override returns (uint256) {
-        if (msg.sender != account) revert Unauthorized();
+        if (msg.sender != account && msg.sender != swapFacility) revert Unauthorized();
         return uint256(_getMYieldToOneStorageLocation().balanceOf[account]);
     }
 

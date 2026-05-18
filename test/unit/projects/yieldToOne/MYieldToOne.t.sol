@@ -209,6 +209,32 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.permit(alice, bob, 1_000e6, type(uint256).max, "");
     }
 
+    /* ============ balanceOf (gated read) ============ */
+
+    function test_balanceOf_holderCanRead() public {
+        mYieldToOne.setBalanceOf(alice, 1_000e6);
+
+        vm.prank(alice);
+        assertEq(mYieldToOne.balanceOf(alice), 1_000e6);
+    }
+
+    function test_balanceOf_unauthorized() public {
+        mYieldToOne.setBalanceOf(alice, 1_000e6);
+
+        vm.expectRevert(IMYieldToOne.Unauthorized.selector);
+        vm.prank(bob);
+        mYieldToOne.balanceOf(alice);
+    }
+
+    function test_balanceOf_swapFacilityCanRead() public {
+        mYieldToOne.setBalanceOf(alice, 1_000e6);
+
+        // SwapFacility is exempted so M0 infra can observe extension balances along its
+        // operational paths without forcing a Seismic signed read.
+        vm.prank(address(swapFacility));
+        assertEq(mYieldToOne.balanceOf(alice), 1_000e6);
+    }
+
     /* ============ allowance (gated read) ============ */
 
     function test_allowance_unauthorized() public {
