@@ -3,6 +3,7 @@
 pragma solidity ^0.8.26;
 
 import { IERC20 } from "../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import { IAccessControl } from "../../lib/common/lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/access/IAccessControl.sol";
 
@@ -77,7 +78,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         _swapInM(address(mYieldToOne), alice, alice, amount);
 
         // Check balances of MYieldToOne and Alice after wrapping
-        assertEq(mYieldToOne.balanceOf(alice), amount); // user receives exact amount
+        assertEq(mYieldToOne.getBalanceOf(alice), amount); // user receives exact amount
         assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), amount, 2); // rounds down
 
         // Fast forward 10 days in the future to generate yield
@@ -90,8 +91,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         vm.prank(alice);
         mYieldToOne.transfer(bob, amount / 2);
 
-        assertEq(mYieldToOne.balanceOf(bob), amount / 2);
-        assertEq(mYieldToOne.balanceOf(alice), amount / 2);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount / 2);
+        assertEq(mYieldToOne.getBalanceOf(alice), amount / 2);
 
         // yield stays the same
         assertEq(mYieldToOne.yield(), 11375);
@@ -107,17 +108,17 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         assertEq(mYieldToOne.yield(), 11373);
 
-        assertEq(mYieldToOne.balanceOf(bob), 0);
-        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), 0);
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
         assertEq(mToken.balanceOf(bob), amount + amount / 2);
         assertEq(mToken.balanceOf(alice), amount / 2);
 
-        assertEq(mYieldToOne.balanceOf(yieldRecipient), 0);
+        assertEq(mYieldToOne.getBalanceOf(yieldRecipient), 0);
 
         // claim yield
         mYieldToOne.claimYield();
 
-        assertEq(mYieldToOne.balanceOf(yieldRecipient), 11373);
+        assertEq(mYieldToOne.getBalanceOf(yieldRecipient), 11373);
         assertEq(mYieldToOne.yield(), 0);
         assertEq(mToken.balanceOf(address(mYieldToOne)), 11373);
         assertEq(mYieldToOne.totalSupply(), 11373);
@@ -131,7 +132,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         _swapInM(address(mYieldToOne), bob, bob, amount);
 
         // Check balances of MYieldToOne and Bob after wrapping
-        assertEq(mYieldToOne.balanceOf(bob), amount);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
         assertEq(mToken.balanceOf(address(mYieldToOne)), 11373 + amount);
 
         // Disable earning for the contract
@@ -183,7 +184,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _swapInM(address(mYieldToOne), alice, alice, 5e6);
 
-        assertEq(mYieldToOne.balanceOf(alice), 5e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 5e6);
         assertEq(mYieldToOne.totalSupply(), 5e6);
 
         assertEq(mToken.balanceOf(alice), 5e6);
@@ -193,7 +194,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _swapInM(address(mYieldToOne), alice, alice, 5e6);
 
-        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 10e6);
         assertEq(mYieldToOne.totalSupply(), 10e6);
 
         assertEq(mToken.balanceOf(alice), 0);
@@ -206,7 +207,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         assertEq(mYieldToOne.yield(), 42_3730);
 
-        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 10e6);
         assertEq(mYieldToOne.totalSupply(), 10e6);
     }
 
@@ -217,12 +218,12 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         _swapInMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
 
-        assertEq(mYieldToOne.balanceOf(alice), 5e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 5e6);
         assertEq(mToken.balanceOf(alice), 5e6);
 
         _swapInMWithPermitSignature(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
 
-        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 10e6);
         assertEq(mToken.balanceOf(alice), 0);
     }
 
@@ -239,7 +240,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         // 2 wei are lost due to rounding
         assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 10e6, 2);
         assertEq(mToken.balanceOf(alice), 10e6);
-        assertEq(mYieldToOne.balanceOf(alice), 10e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 10e6);
         assertEq(mYieldToOne.totalSupply(), 10e6);
 
         // Move time forward to generate yield
@@ -251,7 +252,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 42_3730 + 5e6, 1);
         assertEq(mToken.balanceOf(alice), 15e6);
-        assertEq(mYieldToOne.balanceOf(alice), 5e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 5e6);
         assertEq(mYieldToOne.totalSupply(), 5e6);
 
         _swapMOut(address(mYieldToOne), alice, alice, 5e6);
@@ -263,11 +264,16 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         assertEq(mYieldToOne.yield(), 42_3730 - 2);
         assertEq(mToken.balanceOf(address(mYieldToOne)), 42_3730 - 2);
 
-        assertEq(mYieldToOne.balanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
         assertEq(mYieldToOne.totalSupply(), 0);
     }
 
     function test_unwrapWithPermits() external {
+        // MYieldToOne's `permit` is deferred (reverts), so the SwapFacility `swapWithPermit`
+        // swap-out path is unsupported for this token. Migrated to the plain native-`approve`
+        // swap-out path: the holder calls native `approve(swapFacility, amount)` (allowed because
+        // swapFacility is infra) then drives a non-permit swap-out. Same balance assertions as the
+        // original permit-based flow.
         _addToList(EARNERS_LIST, address(mYieldToOne));
         mYieldToOne.enableEarning();
 
@@ -276,17 +282,34 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
         _giveM(address(mYieldToOne), 11e6);
 
         assertEq(mToken.balanceOf(alice), 10e6);
-        assertEq(mYieldToOne.balanceOf(alice), 11e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 11e6);
 
-        _swapOutMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
+        _swapMOut(address(mYieldToOne), alice, alice, 5e6);
 
-        assertEq(mYieldToOne.balanceOf(alice), 6e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 6e6);
         assertEq(mToken.balanceOf(alice), 15e6);
 
-        _swapOutMWithPermitSignature(address(mYieldToOne), alice, aliceKey, alice, 5e6, 1, block.timestamp);
+        _swapMOut(address(mYieldToOne), alice, alice, 5e6);
 
-        assertEq(mYieldToOne.balanceOf(alice), 1e6);
+        assertEq(mYieldToOne.getBalanceOf(alice), 1e6);
         assertEq(mToken.balanceOf(alice), 20e6);
+    }
+
+    function test_unwrapWithPermits_unsupported() external {
+        // The `swapWithPermit` swap-out is explicitly unsupported for MYieldToOne: `permit` reverts,
+        // the revert is swallowed by SwapFacility's try/catch, the shielded allowance stays zero, and
+        // the subsequent native `transferFrom` (SwapFacility is infra) reverts on zero allowance.
+        _addToList(EARNERS_LIST, address(mYieldToOne));
+        mYieldToOne.enableEarning();
+
+        mYieldToOne.setBalanceOf(alice, 11e6);
+        mYieldToOne.setTotalSupply(11e6);
+        _giveM(address(mYieldToOne), 11e6);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IERC20Extended.InsufficientAllowance.selector, address(swapFacility), 0, 5e6)
+        );
+        _swapOutMWithPermitVRS(address(mYieldToOne), alice, aliceKey, alice, 5e6, 0, block.timestamp);
     }
 
     /* ============ claimYield ============ */
@@ -301,7 +324,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         // 2 wei are lost due to rounding
         assertApproxEqAbs(mToken.balanceOf(address(mYieldToOne)), 10e6, 2);
-        assertEq(mYieldToOne.balanceOf(yieldRecipient), 0);
+        assertEq(mYieldToOne.getBalanceOf(yieldRecipient), 0);
 
         // Move time forward to generate yield
         vm.warp(vm.getBlockTimestamp() + 365 days);
@@ -314,7 +337,7 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
 
         assertEq(mYieldToOne.yield(), 0);
         assertEq(mYieldToOne.totalSupply(), 10e6 + 42_3730);
-        assertEq(mYieldToOne.balanceOf(yieldRecipient), 42_3730);
+        assertEq(mYieldToOne.getBalanceOf(yieldRecipient), 42_3730);
         assertEq(mToken.balanceOf(address(mYieldToOne)), 10e6 + 42_3730);
     }
 }

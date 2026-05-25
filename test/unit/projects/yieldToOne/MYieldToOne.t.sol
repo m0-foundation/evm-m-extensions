@@ -157,6 +157,132 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         );
     }
 
+    /* ============ setAllowlisted ============ */
+
+    function test_setAllowlisted_onlyAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, DEFAULT_ADMIN_ROLE)
+        );
+
+        vm.prank(alice);
+        mYieldToOne.setAllowlisted(bob, true);
+    }
+
+    function test_setAllowlisted_zeroAllowlistAccount() public {
+        vm.expectRevert(IMYieldToOne.ZeroAllowlistAccount.selector);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(address(0), true);
+    }
+
+    function test_setAllowlisted_noUpdate() public {
+        // Setting an account to its current (default `false`) status is a no-op: no event.
+        vm.recordLogs();
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, false);
+
+        assertEq(vm.getRecordedLogs().length, 0);
+        assertFalse(mYieldToOne.isAllowlisted(bob));
+    }
+
+    function test_setAllowlisted_noUpdateAfterSet() public {
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, true);
+
+        assertTrue(mYieldToOne.isAllowlisted(bob));
+
+        // Re-setting the same status emits no second event and leaves state unchanged.
+        vm.recordLogs();
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, true);
+
+        assertEq(vm.getRecordedLogs().length, 0);
+        assertTrue(mYieldToOne.isAllowlisted(bob));
+    }
+
+    function test_setAllowlisted() public {
+        assertFalse(mYieldToOne.isAllowlisted(bob));
+
+        vm.expectEmit();
+        emit IMYieldToOne.AllowlistSet(bob, true);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, true);
+
+        assertTrue(mYieldToOne.isAllowlisted(bob));
+
+        vm.expectEmit();
+        emit IMYieldToOne.AllowlistSet(bob, false);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, false);
+
+        assertFalse(mYieldToOne.isAllowlisted(bob));
+    }
+
+    /* ============ setAllowlisted (batch) ============ */
+
+    function test_setAllowlisted_batchOnlyAdmin() public {
+        address[] memory infra = new address[](2);
+        infra[0] = bob;
+        infra[1] = carol;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, DEFAULT_ADMIN_ROLE)
+        );
+
+        vm.prank(alice);
+        mYieldToOne.setAllowlisted(infra, true);
+    }
+
+    function test_setAllowlisted_batchZeroAllowlistAccount() public {
+        address[] memory infra = new address[](2);
+        infra[0] = bob;
+        infra[1] = address(0);
+
+        vm.expectRevert(IMYieldToOne.ZeroAllowlistAccount.selector);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(infra, true);
+    }
+
+    function test_setAllowlisted_batch() public {
+        address[] memory infra = new address[](3);
+        infra[0] = bob;
+        infra[1] = carol;
+        infra[2] = david;
+
+        vm.expectEmit();
+        emit IMYieldToOne.AllowlistSet(bob, true);
+        vm.expectEmit();
+        emit IMYieldToOne.AllowlistSet(carol, true);
+        vm.expectEmit();
+        emit IMYieldToOne.AllowlistSet(david, true);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(infra, true);
+
+        assertTrue(mYieldToOne.isAllowlisted(bob));
+        assertTrue(mYieldToOne.isAllowlisted(carol));
+        assertTrue(mYieldToOne.isAllowlisted(david));
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(infra, false);
+
+        assertFalse(mYieldToOne.isAllowlisted(bob));
+        assertFalse(mYieldToOne.isAllowlisted(carol));
+        assertFalse(mYieldToOne.isAllowlisted(david));
+    }
+
+    /* ============ isAllowlisted ============ */
+
+    function test_isAllowlisted_swapFacilityNotAllowlisted() public view {
+        // swapFacility is permanently infra via the immutable, not via the allowlist mapping.
+        assertFalse(mYieldToOne.isAllowlisted(address(swapFacility)));
+    }
+
     /* ============ approve (shielded) ============ */
 
     function test_approve_frozenAccount() public {
@@ -209,6 +335,261 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         mYieldToOne.permit(alice, bob, 1_000e6, type(uint256).max, "");
     }
 
+    /* ============ approve (native, allowlist-gated) ============ */
+
+    function test_nativeApprove_nonInfraSpenderReverts() public {
+        // bob is not allowlisted and not the swapFacility → native path is closed.
+        vm.expectRevert(IMYieldToOne.UseShieldedApprove.selector);
+
+        vm.prank(alice);
+        mYieldToOne.approve(bob, 1_000e6);
+    }
+
+    function test_nativeApprove_allowlistedSpender() public {
+        uint256 amount = 1_000e6;
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, true);
+
+        vm.expectEmit();
+        emit IERC20.Approval(alice, bob, amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(bob, amount);
+
+        // Native path writes the SAME shielded slot as the shielded `approve(address,suint256)`.
+        assertEq(mYieldToOne.getShieldedAllowance(alice, bob), amount);
+    }
+
+    function test_nativeApprove_swapFacilitySpender() public {
+        uint256 amount = 1_000e6;
+
+        // swapFacility is permanently infra via the immutable — no allowlisting needed.
+        vm.expectEmit();
+        emit IERC20.Approval(alice, address(swapFacility), amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(address(swapFacility), amount);
+
+        assertEq(mYieldToOne.getShieldedAllowance(alice, address(swapFacility)), amount);
+    }
+
+    function test_nativeApprove_frozenAccount() public {
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, true);
+
+        vm.prank(freezeManager);
+        mYieldToOne.freeze(alice);
+
+        // Freeze is still enforced on the native path (routes through `_beforeApprove`).
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+
+        vm.prank(alice);
+        mYieldToOne.approve(bob, 1_000e6);
+    }
+
+    function test_nativeApprove_frozenSpender() public {
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(bob, true);
+
+        vm.prank(freezeManager);
+        mYieldToOne.freeze(bob);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, bob));
+
+        vm.prank(alice);
+        mYieldToOne.approve(bob, 1_000e6);
+    }
+
+    /* ============ transferFrom (native, allowlist-gated) ============ */
+
+    function test_nativeTransferFrom_nonInfraCallerReverts() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+        mYieldToOne.setShieldedAllowance(alice, carol, amount);
+
+        // carol is not allowlisted and not the swapFacility → native path is closed.
+        vm.expectRevert(IMYieldToOne.UseShieldedTransfer.selector);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+    }
+
+    function test_nativeTransferFrom_allowlistedCaller() public {
+        uint256 amount = 1_000e6;
+        uint256 allowanceAmount = 1_500e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(allowanceAmount));
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, bob, amount);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+        // Decrements the shared shielded allowance slot.
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), allowanceAmount - amount);
+    }
+
+    function test_nativeTransferFrom_swapFacilityCaller() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(alice);
+        mYieldToOne.approve(address(swapFacility), suint256(amount));
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, bob, amount);
+
+        vm.prank(address(swapFacility));
+        mYieldToOne.transferFrom(alice, bob, amount);
+
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+        assertEq(mYieldToOne.getShieldedAllowance(alice, address(swapFacility)), 0);
+    }
+
+    function test_nativeTransferFrom_infiniteAllowanceNoDecrement() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(type(uint256).max));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+
+        // Infinite allowance is preserved (matches the shielded path).
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), type(uint256).max);
+    }
+
+    function test_nativeTransferFrom_insufficientAllowance() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(amount - 1));
+
+        // Allowance field zeroed in the revert payload — matches the shielded-balance precedent.
+        vm.expectRevert(abi.encodeWithSelector(IERC20Extended.InsufficientAllowance.selector, carol, 0, amount));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+    }
+
+    function test_nativeTransferFrom_paused() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(amount));
+
+        vm.prank(pauser);
+        mYieldToOne.pause();
+
+        // Pause is still enforced on the native path (routes through `_beforeTransfer`).
+        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+    }
+
+    function test_nativeTransferFrom_frozenAccount() public {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(amount));
+
+        vm.prank(freezeManager);
+        mYieldToOne.freeze(alice);
+
+        vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountFrozen.selector, alice));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+    }
+
+    function test_nativeTransferFrom_shieldedApproveSpentByNativePath() public {
+        // Cross-consistency: a shielded `approve(suint256)` is spendable by a native
+        // `transferFrom(uint256)` from an allowlisted caller — proves the single shared slot.
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(amount));
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, amount);
+
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), 0);
+    }
+
+    function test_nativeApprove_spentByShieldedTransferFrom() public {
+        // Cross-consistency (reverse): a native `approve(uint256)` to an allowlisted spender is
+        // spendable by the shielded `transferFrom(suint256)` — proves the single shared slot.
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, amount);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
+
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), 0);
+    }
+
+    function testFuzz_nativeTransferFrom(uint256 supply, uint256 aliceBalance, uint256 transferAmount) external {
+        supply = bound(supply, 1, type(uint240).max);
+        aliceBalance = bound(aliceBalance, 1, supply);
+        transferAmount = bound(transferAmount, 1, aliceBalance);
+        uint256 bobBalance = supply - aliceBalance;
+
+        if (bobBalance == 0) return;
+
+        mYieldToOne.setBalanceOf(alice, aliceBalance);
+        mYieldToOne.setBalanceOf(bob, bobBalance);
+        mYieldToOne.setShieldedAllowance(alice, carol, transferAmount);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, transferAmount);
+
+        assertEq(mYieldToOne.getBalanceOf(alice), aliceBalance - transferAmount);
+        assertEq(mYieldToOne.getBalanceOf(bob), bobBalance + transferAmount);
+        assertEq(mYieldToOne.getShieldedAllowance(alice, carol), 0);
+    }
+
     /* ============ balanceOf (gated read) ============ */
 
     function test_balanceOf_holderCanRead() public {
@@ -233,6 +614,36 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         // operational paths without forcing a Seismic signed read.
         vm.prank(address(swapFacility));
         assertEq(mYieldToOne.balanceOf(alice), 1_000e6);
+    }
+
+    function test_balanceOf_allowlistedInfraCanReadAnyHolder() public {
+        mYieldToOne.setBalanceOf(alice, 1_000e6);
+
+        // An allowlisted infra contract (e.g. LimitOrderProtocol) reads an arbitrary holder's
+        // cleartext balance to drive its operational paths.
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(carol);
+        assertEq(mYieldToOne.balanceOf(alice), 1_000e6);
+    }
+
+    function test_balanceOf_removingFromAllowlistReblocks() public {
+        mYieldToOne.setBalanceOf(alice, 1_000e6);
+
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, true);
+
+        vm.prank(carol);
+        assertEq(mYieldToOne.balanceOf(alice), 1_000e6);
+
+        // Removing the address from the allowlist re-blocks its read.
+        vm.prank(admin);
+        mYieldToOne.setAllowlisted(carol, false);
+
+        vm.expectRevert(IMYieldToOne.Unauthorized.selector);
+        vm.prank(carol);
+        mYieldToOne.balanceOf(alice);
     }
 
     /* ============ allowance (gated read) ============ */

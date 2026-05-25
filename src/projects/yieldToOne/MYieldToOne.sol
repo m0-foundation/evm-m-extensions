@@ -18,11 +18,17 @@ abstract contract MYieldToOneStorageLayout {
         uint256 totalSupply;
         address yieldRecipient;
         mapping(address account => suint256 balance) balanceOf;
-        // Shielded allowance storage — written by the shielded `approve` / `transferFrom`
-        // overloads and read through the gated `allowance(address,address)` override below.
-        // The inherited `ERC20ExtendedStorageStruct.allowance` slot is never written to
-        // (the inherited `approve` / `permit` entry points revert) and remains zero forever.
+        // Shielded allowance storage — written by BOTH the shielded `approve` / `transferFrom`
+        // overloads and the native, infra-gated `approve` / `transferFrom` overloads (which cast at
+        // the ABI boundary), and read through the gated `allowance(address,address)` override below.
+        // The inherited `ERC20ExtendedStorageStruct.allowance` slot is never written to (native
+        // `approve` writes here instead; `permit` reverts) and remains zero forever.
         mapping(address account => mapping(address spender => suint256 allowance)) shieldedAllowance;
+        // Infra allowlist — admin-curated set of trusted M0 infrastructure contracts (the
+        // `swapFacility` immutable is additionally exempt without occupying a slot here). An
+        // allowlisted address may use the native `uint256` `approve` (as spender) / `transferFrom`
+        // (as caller) paths and may read any holder's cleartext `balanceOf`. Read via `_isInfra`.
+        mapping(address account => bool isAllowlisted) allowlist;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOne")) - 1)) & ~bytes32(uint256(0xff))
@@ -140,6 +146,20 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         _setYieldRecipient(account);
     }
 
+    /* ============ Allowlist Management ============ */
+
+    /// @inheritdoc IMYieldToOne
+    function setAllowlisted(address account, bool status) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setAllowlisted(account, status);
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function setAllowlisted(address[] calldata accounts, bool status) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i; i < accounts.length; ++i) {
+            _setAllowlisted(accounts[i], status);
+        }
+    }
+
     /* ============ Shielded ERC20 Entry Points ============ */
 
     /// @inheritdoc IMYieldToOne
@@ -156,29 +176,17 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
     /// @inheritdoc IMYieldToOne
     function transferFrom(address sender, address recipient, suint256 amount) external returns (bool) {
-        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
-        suint256 spenderAllowance = $.shieldedAllowance[sender][msg.sender];
-
-        // Infinite-allowance shortcut mirrors `ERC20ExtendedUpgradeable.transferFrom` (line 106):
-        // a max-value allowance does not decrement. The cast to `uint256` is a control-flow
-        // comparison only — it does not write back to storage and does not leak the shielded
-        // value to any external observer.
-        if (uint256(spenderAllowance) != type(uint256).max) {
-            if (spenderAllowance < amount) revert IERC20Extended.InsufficientAllowance(msg.sender, 0, uint256(amount));
-
-            unchecked {
-                $.shieldedAllowance[sender][msg.sender] = spenderAllowance - amount;
-            }
-        }
-
-        _shieldedTransfer(sender, recipient, amount);
+        _spendAllowanceAndTransfer(sender, recipient, amount);
         return true;
     }
 
-    /* ============ Inherited IERC20 / IERC20Extended Entry Points (Reverted) ============ */
-    // The inherited unshielded `transfer` / `transferFrom` / `approve` / `permit` entry points
-    // remain in the ABI for IERC20 compatibility but always revert. Callers must use the
-    // `suint256`-typed overloads above. Marking these `pure` because they touch no state.
+    /* ============ Inherited IERC20 / IERC20Extended Entry Points (Allowlist-Gated) ============ */
+    // The native `uint256` `approve` / `transferFrom` entry points are re-enabled for trusted M0
+    // infra only: `approve` is allowed when the spender is infra, `transferFrom` when the caller is
+    // infra (see `_isInfra`). Both write the same `shieldedAllowance` slot as the `suint256` overloads
+    // (the `uint256` is only an ABI-boundary cast), so the two paths cannot diverge. Non-infra callers
+    // must use the `suint256`-typed overloads above. The native `transfer` and both `permit` overloads
+    // stay `pure` reverting — no infra calls them on the extension, so they remain shielded-only.
 
     /// @inheritdoc IERC20
     function transfer(
@@ -189,20 +197,32 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /// @inheritdoc IERC20
+    /// @dev Native `uint256` path, allowed only when `msg.sender` is trusted M0 infra (`_isInfra`).
+    ///      Shares the `shieldedAllowance` slot with the `suint256` overload via an ABI-boundary cast;
+    ///      everyone else must use `transferFrom(address,address,suint256)`.
     function transferFrom(
-        address /* sender */,
-        address /* recipient */,
-        uint256 /* amount */
-    ) external pure override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
-        revert UseShieldedTransfer();
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        if (!_isInfra(msg.sender)) revert UseShieldedTransfer();
+
+        _spendAllowanceAndTransfer(sender, recipient, suint256(amount));
+        return true;
     }
 
     /// @inheritdoc IERC20
+    /// @dev Native `uint256` path, allowed only when `spender` is trusted M0 infra (`_isInfra`).
+    ///      Writes the same `shieldedAllowance` slot as `approve(address,suint256)` via an
+    ///      ABI-boundary cast; everyone else must use `approve(address,suint256)`.
     function approve(
-        address /* spender */,
-        uint256 /* amount */
-    ) external pure override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
-        revert UseShieldedApprove();
+        address spender,
+        uint256 amount
+    ) external override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        if (!_isInfra(spender)) revert UseShieldedApprove();
+
+        _shieldedApprove(msg.sender, spender, suint256(amount));
+        return true;
     }
 
     /// @inheritdoc IERC20Extended
@@ -233,12 +253,14 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
     /// @inheritdoc IERC20
     /// @dev Shielded read. Allowed callers: `account` itself (via a Seismic signed read,
-    ///      TxSeismic type 0x4A — plain `eth_call` zeroes `msg.sender` and reverts), or the
-    ///      `swapFacility` immutable. The SwapFacility exemption lets shared M0 infra
-    ///      observe extension balances for operational paths it controls; the holder's
-    ///      balance is not exposed to arbitrary callers.
+    ///      TxSeismic type 0x4A — plain `eth_call` zeroes `msg.sender` and reverts), or any
+    ///      trusted M0 infra address (`_isInfra`: the `swapFacility` immutable plus the
+    ///      admin-curated allowlist). The infra exemption lets shared M0 infrastructure
+    ///      (e.g. LimitOrderProtocol, which reads user balances to deliver liquidity) observe
+    ///      extension balances for operational paths it controls; the holder's balance is not
+    ///      exposed to arbitrary callers.
     function balanceOf(address account) public view override returns (uint256) {
-        if (msg.sender != account && msg.sender != swapFacility) revert Unauthorized();
+        if (msg.sender != account && !_isInfra(msg.sender)) revert Unauthorized();
         return uint256(_getMYieldToOneStorageLocation().balanceOf[account]);
     }
 
@@ -250,9 +272,9 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /// @inheritdoc IERC20
     /// @dev Shielded read. Requires `msg.sender == owner` or `msg.sender == spender`; external
     ///      clients must use a Seismic signed read (TxSeismic type 0x4A). The inherited
-    ///      unshielded `ERC20ExtendedStorageStruct.allowance` slot is no longer written to
-    ///      (the IERC20 `approve` / `permit` entry points revert), so this gated view is the
-    ///      sole readable allowance source.
+    ///      unshielded `ERC20ExtendedStorageStruct.allowance` slot is no longer written to (native
+    ///      `approve` writes the `shieldedAllowance` slot instead, and `permit` reverts), so this
+    ///      gated view is the sole readable allowance source.
     function allowance(
         address owner,
         address spender
@@ -274,6 +296,11 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /// @inheritdoc IMYieldToOne
     function yieldRecipient() public view returns (address) {
         return _getMYieldToOneStorageLocation().yieldRecipient;
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function isAllowlisted(address account) external view returns (bool) {
+        return _getMYieldToOneStorageLocation().allowlist[account];
     }
 
     /* ============ Hooks For Internal Interactive Functions ============ */
@@ -385,6 +412,35 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /**
+     * @dev   Shared allowance-spend + transfer path for both the shielded `transferFrom(suint256)`
+     *        and the native, infra-gated `transferFrom(uint256)` overloads. Reads and decrements the
+     *        shielded allowance in shielded space, then delegates to `_shieldedTransfer`. The single
+     *        `shieldedAllowance` slot is the only allowance store, so both overloads stay consistent.
+     * @dev   Reverts with `InsufficientAllowance(spender, 0, amount)` — zeroing the allowance field so
+     *        the revert payload does not leak the shielded allowance value (native path included).
+     */
+    function _spendAllowanceAndTransfer(address sender, address recipient, suint256 amount) internal {
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+        suint256 spenderAllowance = $.shieldedAllowance[sender][msg.sender];
+
+        // Infinite-allowance shortcut mirrors `ERC20ExtendedUpgradeable.transferFrom` (line 106):
+        // a max-value allowance does not decrement. The cast to `uint256` is a control-flow
+        // comparison only — it does not write back to storage and does not leak the shielded
+        // value to any external observer.
+        if (uint256(spenderAllowance) != type(uint256).max) {
+            if (spenderAllowance < amount) revert IERC20Extended.InsufficientAllowance(msg.sender, 0, uint256(amount));
+
+            // NOTE: Can be `unchecked` because the `spenderAllowance < amount` check above guarantees
+            //       `spenderAllowance >= amount`, so the subtraction never underflows.
+            unchecked {
+                $.shieldedAllowance[sender][msg.sender] = spenderAllowance - amount;
+            }
+        }
+
+        _shieldedTransfer(sender, recipient, amount);
+    }
+
+    /**
      * @dev   Shielded transfer pipeline. Mirrors the structure of `MExtension._transfer` but
      *        entry-points to the same `_update` primitive via a `suint256 → uint256` bridge.
      *        Reuses the existing `_beforeTransfer` hook for freeze/pause checks.
@@ -436,6 +492,19 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /**
+     * @dev    Returns whether `account` is trusted M0 infra — the single place the `swapFacility`
+     *         immutable and the dynamic allowlist are OR'd together. `swapFacility` is permanently
+     *         exempt (immutable, cannot be admin-removed); every other infra address (Portal,
+     *         LimitOrderProtocol, ...) is curated in the admin-gated allowlist.
+     *         Gates the native `approve` / `transferFrom` paths and the `balanceOf` read.
+     * @param  account The address being checked.
+     * @return Whether the address is trusted M0 infra.
+     */
+    function _isInfra(address account) internal view returns (bool) {
+        return account == swapFacility || _getMYieldToOneStorageLocation().allowlist[account];
+    }
+
+    /**
      * @dev   Overrides `MExtension._revertIfInsufficientBalance` to compare in shielded space and
      *        revert with `balance = 0` so the holder's actual balance does not leak via the revert
      *        payload. The `IMExtension.InsufficientBalance` error shape is preserved (no interface
@@ -459,5 +528,23 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         $.yieldRecipient = yieldRecipient_;
 
         emit YieldRecipientSet(yieldRecipient_);
+    }
+
+    /**
+     * @dev   Sets the infra allowlist status of `account`.
+     * @param account The address whose allowlist status is being set.
+     * @param status  The new allowlist status (`true` = allowlisted).
+     */
+    function _setAllowlisted(address account, bool status) internal {
+        if (account == address(0)) revert ZeroAllowlistAccount();
+
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+
+        // Return early if the status is unchanged.
+        if ($.allowlist[account] == status) return;
+
+        $.allowlist[account] = status;
+
+        emit AllowlistSet(account, status);
     }
 }
