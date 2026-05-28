@@ -16,6 +16,7 @@ contract DeployYieldToAllWithFee is DeployBase {
         extensionConfig.feeRate = uint16(vm.envUint("FEE_RATE"));
         extensionConfig.feeRecipient = vm.envAddress("FEE_RECIPIENT");
         extensionConfig.admin = vm.envAddress("ADMIN");
+        extensionConfig.proxyAdminOwner = vm.envAddress("PROXY_ADMIN_OWNER");
         extensionConfig.feeManager = vm.envAddress("FEE_MANAGER");
         extensionConfig.claimRecipientManager = vm.envAddress("CLAIM_RECIPIENT_MANAGER");
         extensionConfig.freezeManager = vm.envAddress("FREEZE_MANAGER");
