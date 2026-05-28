@@ -28,6 +28,39 @@ interface IMYieldToOne {
      */
     event AllowlistSet(address indexed account, bool status);
 
+    /**
+     * @notice Emitted by user-to-user shielded transfers (the `suint256` overloads). The
+     *         third field is an AES-GCM ciphertext of the amount, encrypted to the
+     *         recipient's registered public key via ECDH against the contract's keypair.
+     *         Empty bytes when the recipient has not registered a public key — the transfer
+     *         still succeeds, but the amount is recoverable only via the recipient's gated
+     *         `balanceOf` read (see `docs/seismic-question-encrypted-events-ux.md`).
+     * @dev    Distinct `topic0` from the inherited `Transfer(address,address,uint256)`:
+     *         indexers MUST subscribe to both signatures to observe the full transfer
+     *         history. Infra-mediated paths (mint, burn, native `transferFrom(uint256)`,
+     *         forced transfer) emit the inherited `uint256` overload exclusively.
+     * @param  from            The address transferring the tokens.
+     * @param  to              The address receiving the tokens.
+     * @param  encryptedAmount AES-GCM ciphertext of the transferred amount, or `bytes("")`
+     *                        when `to` has not registered a public key.
+     */
+    event Transfer(address indexed from, address indexed to, bytes encryptedAmount);
+
+    /**
+     * @notice Emitted by `setContractKey` once the contract keypair is installed. Only the
+     *         public key is logged; the private key is held in shielded storage and is
+     *         never observable from logs or events.
+     * @param  publicKey The contract's compressed (33-byte) secp256k1 public key.
+     */
+    event ContractKeySet(bytes publicKey);
+
+    /**
+     * @notice Emitted by `registerPublicKey` when an account installs or overwrites its
+     *         recipient public key for encrypted-event decryption.
+     * @param  account The account whose recipient public key was (re-)registered.
+     */
+    event PublicKeyRegistered(address indexed account);
+
     /* ============ Custom Errors ============ */
 
     /// @notice Emitted in initializer if Yield Recipient is 0x0.
@@ -55,6 +88,25 @@ interface IMYieldToOne {
 
     /// @notice Reverted in `setAllowlisted` if the account is the zero address.
     error ZeroAllowlistAccount();
+
+    /// @notice Reverted by `setContractKey` / `registerPublicKey` if the supplied public
+    ///         key is not exactly 33 bytes (compressed secp256k1 encoding).
+    error InvalidPublicKeyLength();
+
+    /// @notice Reverted by `setContractKey` if the contract keypair has already been
+    ///         installed. Rotation is deliberately not supported — a new key would orphan
+    ///         every historical ciphertext.
+    error ContractKeyAlreadySet();
+
+    /// @notice Reverted by the encrypted-emit path if a shielded transfer is attempted
+    ///         before the admin has called `setContractKey`.
+    error ContractKeyNotSet();
+
+    /// @notice Reverted by an encrypted-emit precompile wrapper when the underlying
+    ///         `staticcall` to the Seismic precompile fails. `precompile` is the address
+    ///         of the precompile that returned a failing result (0x65 ECDH, 0x66 AES-GCM,
+    ///         0x68 HKDF).
+    error PrecompileFailed(address precompile);
 
     /* ============ Interactive Functions ============ */
 
@@ -125,6 +177,34 @@ interface IMYieldToOne {
      */
     function transferFrom(address sender, address recipient, suint256 amount) external returns (bool);
 
+    /**
+     * @notice Installs the contract's encryption keypair used to derive per-recipient
+     *         AES-GCM keys for shielded `Transfer` event payloads. One-shot: reverts
+     *         `ContractKeyAlreadySet` on any subsequent call.
+     * @dev    MUST only be callable by the `DEFAULT_ADMIN_ROLE`.
+     * @dev    MUST be sent as a Seismic `TxSeismic` transaction (type `0x4A`) so the
+     *         private key is encrypted in calldata. This is an operational requirement
+     *         that cannot be enforced from Solidity — see
+     *         `docs/seismic-question-encrypted-events-ux.md`.
+     * @dev    Reverts `InvalidPublicKeyLength` unless `publicKey.length == 33`
+     *         (compressed secp256k1 encoding).
+     * @dev    Rotation is intentionally out of scope: rotating the contract key would
+     *         orphan every historical ciphertext stored in past events.
+     * @param  privateKey The contract's secp256k1 private key, shielded at the ABI
+     *                   boundary so it remains in flagged storage.
+     * @param  publicKey  The contract's compressed (33-byte) secp256k1 public key.
+     */
+    function setContractKey(sbytes32 privateKey, bytes calldata publicKey) external;
+
+    /**
+     * @notice Registers the caller's recipient public key. Idempotent — a subsequent call
+     *         overwrites the previously registered key (future ciphertexts use the new
+     *         key; historical ciphertexts remain decryptable only with the old key).
+     * @dev    Reverts `InvalidPublicKeyLength` unless `publicKey.length == 33`.
+     * @param  publicKey The caller's compressed (33-byte) secp256k1 public key.
+     */
+    function registerPublicKey(bytes calldata publicKey) external;
+
     /* ============ View/Pure Functions ============ */
 
     /// @notice The role that can manage the yield recipient.
@@ -142,4 +222,21 @@ interface IMYieldToOne {
      * @return Whether the address is allowlisted.
      */
     function isAllowlisted(address account) external view returns (bool);
+
+    /**
+     * @notice Returns the recipient public key previously registered by `account` via
+     *         `registerPublicKey`, or empty bytes if none has been registered. Plain
+     *         (non-shielded) read — readable by any caller.
+     * @param  account The address whose registered public key is being queried.
+     * @return The registered compressed (33-byte) secp256k1 public key, or empty bytes.
+     */
+    function publicKeyOf(address account) external view returns (bytes memory);
+
+    /**
+     * @notice Returns the contract's currently installed public key, or empty bytes if
+     *         `setContractKey` has not yet been called. Plain (non-shielded) read —
+     *         off-chain decryption clients fetch this to verify the ECDH peer.
+     * @return The contract's compressed (33-byte) secp256k1 public key, or empty bytes.
+     */
+    function contractPublicKey() external view returns (bytes memory);
 }

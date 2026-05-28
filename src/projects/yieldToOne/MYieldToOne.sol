@@ -15,20 +15,41 @@ import { MExtension } from "../../MExtension.sol";
 abstract contract MYieldToOneStorageLayout {
     /// @custom:storage-location erc7201:M0.storage.MYieldToOne
     struct MYieldToOneStorageStruct {
+        // slot 0 — total supply (public, unshielded).
         uint256 totalSupply;
+        // slot 1 — yield destination (public).
         address yieldRecipient;
+        // slot 2 — shielded balances keyed by holder.
         mapping(address account => suint256 balance) balanceOf;
-        // Shielded allowance storage — written by BOTH the shielded `approve` / `transferFrom`
+        // slot 3 — shielded allowance storage — written by BOTH the shielded `approve` / `transferFrom`
         // overloads and the native, infra-gated `approve` / `transferFrom` overloads (which cast at
         // the ABI boundary), and read through the gated `allowance(address,address)` override below.
         // The inherited `ERC20ExtendedStorageStruct.allowance` slot is never written to (native
         // `approve` writes here instead; `permit` reverts) and remains zero forever.
         mapping(address account => mapping(address spender => suint256 allowance)) shieldedAllowance;
-        // Infra allowlist — admin-curated set of trusted M0 infrastructure contracts (the
+        // slot 4 — infra allowlist — admin-curated set of trusted M0 infrastructure contracts (the
         // `swapFacility` immutable is additionally exempt without occupying a slot here). An
         // allowlisted address may use the native `uint256` `approve` (as spender) / `transferFrom`
         // (as caller) paths and may read any holder's cleartext `balanceOf`. Read via `_isInfra`.
         mapping(address account => bool isAllowlisted) allowlist;
+        // === appended for encrypted Transfer events ===
+        // slot 5 — recipient public-key registry. Each holder MAY register a compressed
+        // (33-byte) secp256k1 public key via `registerPublicKey`; the contract uses it as the
+        // ECDH peer when encrypting `Transfer` amounts to that holder. An unregistered
+        // recipient triggers the empty-ciphertext fallback in `_emitEncryptedTransfer`.
+        mapping(address account => bytes publicKey) publicKeys;
+        // slot 6 — contract public key (plain bytes, readable by anyone). Off-chain
+        // decryption clients fetch this to perform ECDH with their own private key.
+        bytes _contractPublicKey;
+        // slot 7 — contract private key (shielded). Set once via `setContractKey` (which MUST
+        // be sent as `TxSeismic` type `0x4A` so the key is encrypted in calldata). Used as
+        // the local ECDH input; never returned from any view or exposed in calldata.
+        sbytes32 contractPrivateKey;
+        // slot 8 — monotonic counter feeding the per-emit AES-GCM nonce. Pre-incremented
+        // before every encrypted emit, so the first emitted nonce uses counter value 1 and
+        // no two encrypted emits ever reuse a nonce under the same key — a deliberate
+        // departure from the tutorial's `keccak256(from, to, block.number)` formulation.
+        uint256 encryptedEventNonce;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOne")) - 1)) & ~bytes32(uint256(0xff))
@@ -160,11 +181,53 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         }
     }
 
+    /* ============ Encrypted-Event Keypair Management ============ */
+
+    /// @inheritdoc IMYieldToOne
+    /// @dev OPERATIONAL REQUIREMENT (not enforceable from Solidity): the admin MUST send
+    ///      this call as a Seismic `TxSeismic` transaction (type `0x4A`), so the private
+    ///      key is encrypted in the calldata layer. If sent as a plain transaction the
+    ///      private key is recoverable from the mempool / public tx history, defeating the
+    ///      purpose of the shielded slot. See `docs/seismic-question-encrypted-events-ux.md`.
+    /// @dev Open question filed with Seismic: whether the `bytes32($.contractPrivateKey)
+    ///      != bytes32(0)` one-shot guard reads cleanly from shielded storage without
+    ///      leaking the value, and whether `sbytes32(0)` is the canonical unset sentinel.
+    ///      See `docs/seismic-question-encrypted-events-ux.md` (questions §2).
+    function setContractKey(
+        sbytes32 privateKey,
+        bytes calldata publicKey
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (publicKey.length != 33) revert InvalidPublicKeyLength();
+
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+
+        // One-shot guard. The cast to `bytes32` is a control-flow comparison only — it
+        // mirrors the infinite-allowance shortcut in `_spendAllowanceAndTransfer` and does
+        // not write the shielded value back to storage.
+        if (bytes32($.contractPrivateKey) != bytes32(0)) revert ContractKeyAlreadySet();
+
+        $.contractPrivateKey = privateKey;
+        $._contractPublicKey = publicKey;
+
+        emit ContractKeySet(publicKey);
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function registerPublicKey(bytes calldata publicKey) external virtual {
+        if (publicKey.length != 33) revert InvalidPublicKeyLength();
+
+        _getMYieldToOneStorageLocation().publicKeys[msg.sender] = publicKey;
+
+        emit PublicKeyRegistered(msg.sender);
+    }
+
     /* ============ Shielded ERC20 Entry Points ============ */
 
     /// @inheritdoc IMYieldToOne
     function transfer(address recipient, suint256 amount) external returns (bool) {
-        _shieldedTransfer(msg.sender, recipient, amount);
+        // User-to-user path: amount is shielded end-to-end, so the emitted `Transfer`
+        // event must carry the encrypted-bytes overload.
+        _shieldedTransfer(msg.sender, recipient, amount, true);
         return true;
     }
 
@@ -176,7 +239,8 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
     /// @inheritdoc IMYieldToOne
     function transferFrom(address sender, address recipient, suint256 amount) external returns (bool) {
-        _spendAllowanceAndTransfer(sender, recipient, amount);
+        // User-to-user path via allowance: encrypted-bytes emit.
+        _spendAllowanceAndTransfer(sender, recipient, amount, true);
         return true;
     }
 
@@ -207,7 +271,9 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     ) external override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
         if (!_isInfra(msg.sender)) revert UseShieldedTransfer();
 
-        _spendAllowanceAndTransfer(sender, recipient, suint256(amount));
+        // Infra-mediated move: amount is already public on the bridge/calldata side, so
+        // the emit stays on the inherited plaintext `Transfer(uint256)` overload.
+        _spendAllowanceAndTransfer(sender, recipient, suint256(amount), false);
         return true;
     }
 
@@ -301,6 +367,16 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /// @inheritdoc IMYieldToOne
     function isAllowlisted(address account) external view returns (bool) {
         return _getMYieldToOneStorageLocation().allowlist[account];
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function publicKeyOf(address account) external view returns (bytes memory) {
+        return _getMYieldToOneStorageLocation().publicKeys[account];
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function contractPublicKey() external view returns (bytes memory) {
+        return _getMYieldToOneStorageLocation()._contractPublicKey;
     }
 
     /* ============ Hooks For Internal Interactive Functions ============ */
@@ -418,8 +494,17 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        `shieldedAllowance` slot is the only allowance store, so both overloads stay consistent.
      * @dev   Reverts with `InsufficientAllowance(spender, 0, amount)` — zeroing the allowance field so
      *        the revert payload does not leak the shielded allowance value (native path included).
+     * @param encryptEmit If `true`, the downstream `_shieldedTransfer` emits the encrypted-bytes
+     *                    `Transfer(address,address,bytes)` overload; otherwise it emits the inherited
+     *                    plaintext `Transfer(address,address,uint256)` overload. The flag never
+     *                    changes the allowance or balance logic, only the event shape.
      */
-    function _spendAllowanceAndTransfer(address sender, address recipient, suint256 amount) internal {
+    function _spendAllowanceAndTransfer(
+        address sender,
+        address recipient,
+        suint256 amount,
+        bool encryptEmit
+    ) internal {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
         suint256 spenderAllowance = $.shieldedAllowance[sender][msg.sender];
 
@@ -437,7 +522,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
             }
         }
 
-        _shieldedTransfer(sender, recipient, amount);
+        _shieldedTransfer(sender, recipient, amount, encryptEmit);
     }
 
     /**
@@ -447,14 +532,23 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @dev   Reverts with `InsufficientBalance(account, 0, amount)` — zeroing the `balance`
      *        field so the revert payload does not leak the shielded balance value, matching
      *        the precedent set by `_revertIfInsufficientBalance`.
+     * @param encryptEmit Selects the `Transfer` event overload: `true` emits the
+     *                    encrypted-bytes overload via `_emitEncryptedTransfer` (user-to-user
+     *                    `suint256` entry points); `false` emits the inherited plaintext
+     *                    `Transfer(uint256)` overload (native infra-gated `transferFrom`,
+     *                    where the amount is already public via the bridge calldata).
      */
-    function _shieldedTransfer(address sender, address recipient, suint256 amount) internal {
+    function _shieldedTransfer(address sender, address recipient, suint256 amount, bool encryptEmit) internal {
         uint256 amount_ = uint256(amount);
 
         _revertIfInvalidRecipient(recipient);
         _beforeTransfer(sender, recipient, amount_);
 
-        emit Transfer(sender, recipient, amount_);
+        if (encryptEmit) {
+            _emitEncryptedTransfer(sender, recipient, amount);
+        } else {
+            emit Transfer(sender, recipient, amount_);
+        }
 
         if (amount_ == 0) return;
 
@@ -463,6 +557,111 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         }
 
         _update(sender, recipient, amount_);
+    }
+
+    /* ============ Encrypted Transfer Event Pipeline ============ */
+
+    /**
+     * @dev   Emits the encrypted-bytes `Transfer(address,address,bytes)` overload for a
+     *        user-to-user shielded transfer. The amount is encrypted under an AES-GCM key
+     *        derived from ECDH between the contract's private key and the recipient's
+     *        registered public key, plus HKDF.
+     * @dev   Unregistered-recipient fallback: if the recipient has not called
+     *        `registerPublicKey`, the event is emitted with empty `bytes` and the transfer
+     *        still succeeds. The recipient recovers the amount only via their own gated
+     *        `balanceOf` read — historical amounts are not recoverable from logs.
+     *        See `docs/seismic-question-encrypted-events-ux.md`.
+     * @dev   Reverts `ContractKeyNotSet` if the admin has not yet installed the contract
+     *        keypair via `setContractKey`. This is a configuration error, not a runtime
+     *        failure — it should only ever fire on a misconfigured deployment.
+     * @dev   The AES-GCM nonce is derived from a contract-wide monotonic counter
+     *        (`encryptedEventNonce`) hashed with `(from, to)` — see slot 8 NatSpec for
+     *        the rationale (departure from the tutorial's collision-prone formulation).
+     * @param from   The sender of the transfer (mirrors `Transfer.from`).
+     * @param to     The recipient of the transfer (mirrors `Transfer.to`).
+     * @param amount The shielded amount being transferred.
+     */
+    function _emitEncryptedTransfer(address from, address to, suint256 amount) internal {
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+        bytes memory pubKey = $.publicKeys[to];
+
+        // Unregistered recipient — emit the empty-ciphertext fallback (transfer still
+        // succeeds; amount recoverable only via gated `balanceOf`).
+        if (pubKey.length == 0) {
+            emit Transfer(from, to, bytes(""));
+            return;
+        }
+
+        // The control-flow comparison only — see `setContractKey` NatSpec for the open
+        // question filed with Seismic about shielded-storage zero-sentinel reads.
+        if (bytes32($.contractPrivateKey) == bytes32(0)) revert ContractKeyNotSet();
+
+        // Pre-increment so the first emitted nonce uses counter value 1, and no two
+        // encrypted emits ever share a nonce under the same AES-GCM key.
+        uint256 n = ++$.encryptedEventNonce;
+
+        sbytes32 sharedSecret = _ecdh($.contractPrivateKey, pubKey);
+        sbytes32 aesKey = _hkdf(sharedSecret);
+        bytes12 nonce = bytes12(keccak256(abi.encode(from, to, n)));
+        bytes memory ciphertext = _aesGcmEncrypt(aesKey, nonce, abi.encode(uint256(amount)));
+
+        emit Transfer(from, to, ciphertext);
+    }
+
+    /**
+     * @dev   Thin wrapper around the Seismic ECDH precompile at `0x65`. Computes the
+     *        shared secret between `privKey` (kept in shielded storage) and the
+     *        recipient's compressed (33-byte) `peerPubKey`. The output is shielded so it
+     *        stays in flagged storage for the HKDF step.
+     * @dev   Reverts `PrecompileFailed(0x65)` if the precompile returns failure.
+     * @dev   Open question filed with Seismic (see `docs/seismic-question-encrypted-events-ux.md`):
+     *        confirm the canonical precompile addresses and the `abi.encodePacked` input
+     *        layout against the production Seismic precompile contract.
+     */
+    function _ecdh(sbytes32 privKey, bytes memory peerPubKey) internal view returns (sbytes32) {
+        (bool success, bytes memory result) = address(0x65).staticcall(
+            abi.encodePacked(bytes32(privKey), peerPubKey)
+        );
+        if (!success) revert PrecompileFailed(address(0x65));
+        return sbytes32(abi.decode(result, (bytes32)));
+    }
+
+    /**
+     * @dev   Thin wrapper around the Seismic HKDF precompile at `0x68`. Expands the ECDH
+     *        shared secret into a fresh AES-GCM key. Both input and output are shielded.
+     * @dev   Reverts `PrecompileFailed(0x68)` if the precompile returns failure.
+     * @dev   Open question filed with Seismic: confirm the precompile address and input
+     *        layout. See `docs/seismic-question-encrypted-events-ux.md`.
+     */
+    function _hkdf(sbytes32 sharedSecret) internal view returns (sbytes32) {
+        (bool success, bytes memory result) = address(0x68).staticcall(
+            abi.encodePacked(bytes32(sharedSecret))
+        );
+        if (!success) revert PrecompileFailed(address(0x68));
+        return sbytes32(abi.decode(result, (bytes32)));
+    }
+
+    /**
+     * @dev   Thin wrapper around the Seismic AES-GCM-encrypt precompile at `0x66`.
+     *        Encrypts `plaintext` under `key` with the supplied 12-byte `nonce` and
+     *        returns the raw ciphertext (authentication tag included, per the
+     *        precompile's wire format).
+     * @dev   Reverts `PrecompileFailed(0x66)` if the precompile returns failure.
+     * @dev   Open question filed with Seismic: confirm the precompile address, input
+     *        layout, and whether the returned ciphertext already includes the GCM tag
+     *        or whether the caller is expected to append it. See
+     *        `docs/seismic-question-encrypted-events-ux.md`.
+     */
+    function _aesGcmEncrypt(
+        sbytes32 key,
+        bytes12 nonce,
+        bytes memory plaintext
+    ) internal view returns (bytes memory) {
+        (bool success, bytes memory ciphertext) = address(0x66).staticcall(
+            abi.encodePacked(bytes32(key), nonce, plaintext)
+        );
+        if (!success) revert PrecompileFailed(address(0x66));
+        return ciphertext;
     }
 
     /**
