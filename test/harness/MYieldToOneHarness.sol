@@ -41,4 +41,9 @@ contract MYieldToOneHarness is MYieldToOne {
     function getShieldedAllowance(address owner, address spender) external view returns (uint256) {
         return uint256(_getMYieldToOneStorageLocation().shieldedAllowance[owner][spender]);
     }
+
+    /// @dev Reads the monotonic encrypted-event nonce counter (slot 8) — for test assertions only.
+    function getEncryptedEventNonce() external view returns (uint256) {
+        return _getMYieldToOneStorageLocation().encryptedEventNonce;
+    }
 }

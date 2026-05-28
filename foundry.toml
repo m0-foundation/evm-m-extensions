@@ -33,14 +33,23 @@ sizes = true
 # for the rest of the suite so audit-reproducibility of sibling extensions is preserved.
 # Activate with: `FOUNDRY_PROFILE=seismic sforge build`
 #
-# `no_match_path` skips integration suites for out-of-scope extensions (PRD §3, OOS-01..03).
-# Those tests fork ETH_MAINNET via $MAINNET_RPC_URL; mainnet's JSON-RPC doesn't implement
-# `eth_getFlaggedStorageAt`, so any setUp that touches a shielded MYieldToOne balance
-# (which BaseIntegrationTest deploys for every integration suite) aborts with HTTP 400.
-# Extend this glob if more sibling-extension integration tests trip the same wall.
+# `no_match_path` skips two flavors of out-of-scope tests under the Seismic profile:
+#
+# (1) The entire `test/integration/` directory. Every integration suite forks
+#     ETH_MAINNET via `BaseIntegrationTest`, which deploys a shielded MYieldToOne;
+#     mainnet's JSON-RPC doesn't implement `eth_getFlaggedStorageAt`, so any setUp
+#     that touches a shielded balance aborts with HTTP 400. Integration coverage
+#     for this profile lives on Seismic devnet, not locally.
+#
+# (2) `test/unit/projects/JMIExtension.t.sol` — JMIExtension inherits MYieldToOne,
+#     but under ssolc+mercury the contract size is 25 853 bytes (EIP-170 limit
+#     24 576), and the suite was written against the unshielded `balanceOf` surface
+#     so it trips `Unauthorized()` on the new gated read. JMI is not a Seismic
+#     deployment target (D1–D5 in `docs/seismic-src20-flow-diagrams.md`); its unit
+#     tests live under the default profile where the unshielded path still works.
 [profile.seismic]
 evm_version = "mercury"
-no_match_path = "test/integration/{MEarnerManager,MYieldFee,MSpokeYieldFee,MYieldToOneForcedTransfer,JMIExtension}.t.sol"
+no_match_path = "test/{integration/**,unit/projects/JMIExtension.t.sol}"
 
 [fuzz]
 runs = 5_000

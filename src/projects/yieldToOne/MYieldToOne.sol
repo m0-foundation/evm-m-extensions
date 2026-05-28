@@ -499,12 +499,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *                    plaintext `Transfer(address,address,uint256)` overload. The flag never
      *                    changes the allowance or balance logic, only the event shape.
      */
-    function _spendAllowanceAndTransfer(
-        address sender,
-        address recipient,
-        suint256 amount,
-        bool encryptEmit
-    ) internal {
+    function _spendAllowanceAndTransfer(address sender, address recipient, suint256 amount, bool encryptEmit) internal {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
         suint256 spenderAllowance = $.shieldedAllowance[sender][msg.sender];
 
@@ -619,9 +614,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        layout against the production Seismic precompile contract.
      */
     function _ecdh(sbytes32 privKey, bytes memory peerPubKey) internal view returns (sbytes32) {
-        (bool success, bytes memory result) = address(0x65).staticcall(
-            abi.encodePacked(bytes32(privKey), peerPubKey)
-        );
+        (bool success, bytes memory result) = address(0x65).staticcall(abi.encodePacked(bytes32(privKey), peerPubKey));
         if (!success) revert PrecompileFailed(address(0x65));
         return sbytes32(abi.decode(result, (bytes32)));
     }
@@ -634,9 +627,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        layout. See `docs/seismic-question-encrypted-events-ux.md`.
      */
     function _hkdf(sbytes32 sharedSecret) internal view returns (sbytes32) {
-        (bool success, bytes memory result) = address(0x68).staticcall(
-            abi.encodePacked(bytes32(sharedSecret))
-        );
+        (bool success, bytes memory result) = address(0x68).staticcall(abi.encodePacked(bytes32(sharedSecret)));
         if (!success) revert PrecompileFailed(address(0x68));
         return sbytes32(abi.decode(result, (bytes32)));
     }
@@ -652,11 +643,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        or whether the caller is expected to append it. See
      *        `docs/seismic-question-encrypted-events-ux.md`.
      */
-    function _aesGcmEncrypt(
-        sbytes32 key,
-        bytes12 nonce,
-        bytes memory plaintext
-    ) internal view returns (bytes memory) {
+    function _aesGcmEncrypt(sbytes32 key, bytes12 nonce, bytes memory plaintext) internal view returns (bytes memory) {
         (bool success, bytes memory ciphertext) = address(0x66).staticcall(
             abi.encodePacked(bytes32(key), nonce, plaintext)
         );

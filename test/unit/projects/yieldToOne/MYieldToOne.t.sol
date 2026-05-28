@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.26;
 
+import { Vm } from "../../../../lib/forge-std/src/Vm.sol";
+
 import { IERC20 } from "../../../../lib/common/src/interfaces/IERC20.sol";
 import { IERC20Extended } from "../../../../lib/common/src/interfaces/IERC20Extended.sol";
 
@@ -873,8 +875,13 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, bob, amount);
+        // bob has not registered a public key, so the shielded entry point emits the
+        // bytes-variant Transfer overload with an empty ciphertext (the empty-fallback
+        // branch runs before the contract-key check). Assert the indexed (from, to) fields
+        // and the empty payload; cryptographic-payload assertions live in the dedicated
+        // encrypted-transfer tests below.
+        vm.expectEmit(true, true, false, true);
+        emit IMYieldToOne.Transfer(alice, bob, bytes(""));
 
         vm.prank(alice);
         mYieldToOne.transfer(bob, suint256(amount));
@@ -931,8 +938,10 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         vm.prank(alice);
         mYieldToOne.approve(carol, suint256(allowanceAmount));
 
-        vm.expectEmit();
-        emit IERC20.Transfer(alice, bob, amount);
+        // bob has not registered a public key, so the shielded entry point emits the
+        // bytes-variant Transfer overload with an empty ciphertext (empty-fallback branch).
+        vm.expectEmit(true, true, false, true);
+        emit IMYieldToOne.Transfer(alice, bob, bytes(""));
 
         vm.prank(carol);
         mYieldToOne.transferFrom(alice, bob, suint256(amount));
@@ -1097,5 +1106,450 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         assertEq(mYieldToOne.yieldRecipient(), alice);
         assertEq(mYieldToOne.yield(), 0);
         assertEq(mYieldToOne.getBalanceOf(yieldRecipient), 500);
+    }
+
+    /* ============ Encrypted Transfer Events — Helpers ============ */
+
+    /// @dev Canonical compressed-secp256k1 (33-byte) shape for tests. The actual bytes are
+    ///      irrelevant in unit tests because the three precompiles (`0x65` ECDH,
+    ///      `0x68` HKDF, `0x66` AES-GCM encrypt) are mocked — Seismic validates the
+    ///      precompile semantics on devnet, not here. See task spec §C.
+    function _validPubKey(bytes1 marker) internal pure returns (bytes memory) {
+        bytes memory key = new bytes(33);
+        key[0] = 0x02; // compressed-secp256k1 even-Y prefix
+        for (uint256 i = 1; i < 33; ++i) {
+            key[i] = marker;
+        }
+        return key;
+    }
+
+    /// @dev Installs deterministic mocks for the three Seismic precompiles so the
+    ///      encrypted-emit pipeline can run end-to-end under plain `sforge`. The chosen
+    ///      return values are arbitrary but distinct, so tests can assert the contract
+    ///      forwards the precompile output as the event payload.
+    function _mockPrecompiles() internal {
+        // 0x65 ECDH → 32-byte shared secret.
+        vm.mockCall(address(0x65), bytes(""), abi.encode(bytes32(uint256(1))));
+        // 0x68 HKDF → 32-byte AES-GCM key.
+        vm.mockCall(address(0x68), bytes(""), abi.encode(bytes32(uint256(2))));
+        // 0x66 AES-GCM encrypt → opaque non-empty ciphertext.
+        vm.mockCall(address(0x66), bytes(""), hex"deadbeefcafebabe");
+    }
+
+    /// @dev Installs a contract keypair through the admin path. The actual private-key
+    ///      bytes are never observed externally (would require a Seismic signed read).
+    function _installContractKey() internal {
+        vm.prank(admin);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(0xC0FFEE))), _validPubKey(0xAA));
+    }
+
+    /* ============ setContractKey ============ */
+
+    function test_setContractKey_onlyAdmin() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, alice, DEFAULT_ADMIN_ROLE)
+        );
+
+        vm.prank(alice);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(1))), _validPubKey(0xAA));
+    }
+
+    function test_setContractKey_oneShot() public {
+        vm.prank(admin);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(0xC0FFEE))), _validPubKey(0xAA));
+
+        // Second call must revert — rotation is intentionally not supported.
+        vm.expectRevert(IMYieldToOne.ContractKeyAlreadySet.selector);
+
+        vm.prank(admin);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(0xBEEF))), _validPubKey(0xBB));
+    }
+
+    function test_setContractKey_invalidLength_short() public {
+        bytes memory tooShort = new bytes(32);
+
+        vm.expectRevert(IMYieldToOne.InvalidPublicKeyLength.selector);
+
+        vm.prank(admin);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(1))), tooShort);
+    }
+
+    function test_setContractKey_invalidLength_long() public {
+        bytes memory tooLong = new bytes(34);
+
+        vm.expectRevert(IMYieldToOne.InvalidPublicKeyLength.selector);
+
+        vm.prank(admin);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(1))), tooLong);
+    }
+
+    function test_setContractKey_emitsContractKeySet() public {
+        bytes memory pubKey = _validPubKey(0xAA);
+
+        vm.expectEmit();
+        emit IMYieldToOne.ContractKeySet(pubKey);
+
+        vm.prank(admin);
+        mYieldToOne.setContractKey(sbytes32(bytes32(uint256(0xC0FFEE))), pubKey);
+
+        assertEq(mYieldToOne.contractPublicKey(), pubKey);
+    }
+
+    /* ============ registerPublicKey ============ */
+
+    function test_registerPublicKey_writesStorage() public {
+        bytes memory pubKey = _validPubKey(0xBB);
+
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(pubKey);
+
+        assertEq(mYieldToOne.publicKeyOf(alice), pubKey);
+    }
+
+    function test_registerPublicKey_idempotentOverwrite() public {
+        bytes memory firstKey = _validPubKey(0xBB);
+        bytes memory secondKey = _validPubKey(0xCC);
+
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(firstKey);
+
+        assertEq(mYieldToOne.publicKeyOf(alice), firstKey);
+
+        // Re-registration overwrites — historical ciphertexts decrypt with the old key,
+        // future ciphertexts with the new one.
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(secondKey);
+
+        assertEq(mYieldToOne.publicKeyOf(alice), secondKey);
+    }
+
+    function test_registerPublicKey_invalidLength_short() public {
+        bytes memory tooShort = new bytes(32);
+
+        vm.expectRevert(IMYieldToOne.InvalidPublicKeyLength.selector);
+
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(tooShort);
+    }
+
+    function test_registerPublicKey_invalidLength_long() public {
+        bytes memory tooLong = new bytes(34);
+
+        vm.expectRevert(IMYieldToOne.InvalidPublicKeyLength.selector);
+
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(tooLong);
+    }
+
+    function test_registerPublicKey_emitsPublicKeyRegistered() public {
+        vm.expectEmit();
+        emit IMYieldToOne.PublicKeyRegistered(alice);
+
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(_validPubKey(0xBB));
+    }
+
+    /* ============ Shielded Transfer — Encrypted Emit (registered recipient) ============ */
+
+    function test_shieldedTransfer_registeredRecipient_emitsBytesPayload() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        _installContractKey();
+        _mockPrecompiles();
+
+        bytes memory recipientKey = _validPubKey(0xBB);
+        vm.prank(bob);
+        mYieldToOne.registerPublicKey(recipientKey);
+
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 0);
+
+        vm.recordLogs();
+
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, suint256(amount));
+
+        // Counter incremented exactly once for the single encrypted emit.
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 1);
+
+        // Locate the emitted bytes-variant Transfer log and assert shape.
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 bytesTopic = keccak256("Transfer(address,address,bytes)");
+        bytes32 plaintextTopic = keccak256("Transfer(address,address,uint256)");
+
+        bool foundBytes;
+        bool foundPlaintext;
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(mYieldToOne)) continue;
+            if (logs[i].topics.length == 0) continue;
+
+            if (logs[i].topics[0] == bytesTopic) {
+                foundBytes = true;
+                assertEq(address(uint160(uint256(logs[i].topics[1]))), alice);
+                assertEq(address(uint160(uint256(logs[i].topics[2]))), bob);
+                bytes memory payload = abi.decode(logs[i].data, (bytes));
+                assertGt(payload.length, 0);
+            } else if (logs[i].topics[0] == plaintextTopic) {
+                foundPlaintext = true;
+            }
+        }
+
+        assertTrue(foundBytes, "missing Transfer(address,address,bytes) emit");
+        assertFalse(foundPlaintext, "plaintext Transfer(uint256) emitted on shielded path");
+
+        // Balance updates still happen.
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+    }
+
+    function test_shieldedTransferFrom_registeredRecipient_emitsBytesPayload() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        _installContractKey();
+        _mockPrecompiles();
+
+        vm.prank(bob);
+        mYieldToOne.registerPublicKey(_validPubKey(0xBB));
+
+        vm.prank(alice);
+        mYieldToOne.approve(carol, suint256(amount));
+
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 0);
+
+        vm.recordLogs();
+
+        vm.prank(carol);
+        mYieldToOne.transferFrom(alice, bob, suint256(amount));
+
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 1);
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 bytesTopic = keccak256("Transfer(address,address,bytes)");
+        bytes32 plaintextTopic = keccak256("Transfer(address,address,uint256)");
+
+        bool foundBytes;
+        bool foundPlaintext;
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(mYieldToOne)) continue;
+            if (logs[i].topics.length == 0) continue;
+
+            if (logs[i].topics[0] == bytesTopic) {
+                foundBytes = true;
+                assertEq(address(uint160(uint256(logs[i].topics[1]))), alice);
+                assertEq(address(uint160(uint256(logs[i].topics[2]))), bob);
+                bytes memory payload = abi.decode(logs[i].data, (bytes));
+                assertGt(payload.length, 0);
+            } else if (logs[i].topics[0] == plaintextTopic) {
+                foundPlaintext = true;
+            }
+        }
+
+        assertTrue(foundBytes, "missing Transfer(address,address,bytes) emit");
+        assertFalse(foundPlaintext, "plaintext Transfer(uint256) emitted on shielded path");
+    }
+
+    /* ============ Shielded Transfer — Unregistered Recipient Fallback ============ */
+
+    function test_shieldedTransfer_unregisteredRecipient_emitsEmptyBytesAndSucceeds() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        // Contract key IS set — we want to isolate the unregistered-recipient branch from
+        // the no-contract-key branch (the fallback fires BEFORE the contract-key check, so
+        // both branches are independently testable).
+        _installContractKey();
+
+        // bob is intentionally NOT registered; precompiles intentionally NOT mocked — the
+        // fallback path must not call any of them.
+
+        vm.expectEmit(true, true, false, true);
+        emit IMYieldToOne.Transfer(alice, bob, bytes(""));
+
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, suint256(amount));
+
+        // Counter does NOT increment on the empty-bytes fallback (saves an SSTORE).
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 0);
+
+        // Balances still update.
+        assertEq(mYieldToOne.getBalanceOf(alice), 0);
+        assertEq(mYieldToOne.getBalanceOf(bob), amount);
+    }
+
+    /* ============ Shielded Transfer — Contract Key Not Set ============ */
+
+    function test_shieldedTransfer_contractKeyNotSet_reverts() external {
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        // Recipient IS registered but contract keypair is NOT installed → revert.
+        vm.prank(bob);
+        mYieldToOne.registerPublicKey(_validPubKey(0xBB));
+
+        vm.expectRevert(IMYieldToOne.ContractKeyNotSet.selector);
+
+        vm.prank(alice);
+        mYieldToOne.transfer(bob, suint256(amount));
+    }
+
+    /* ============ Dual-Emit Regression — Infra transferFrom stays plaintext ============ */
+
+    function test_nativeTransferFrom_registeredRecipient_emitsPlaintextOnly() external {
+        // Regression guard for the dual-emit refactor: the infra-gated native
+        // `transferFrom(uint256)` MUST keep emitting the inherited plaintext
+        // `Transfer(uint256)` overload, even when the recipient has a registered key.
+        uint256 amount = 1_000e6;
+        mYieldToOne.setBalanceOf(alice, amount);
+
+        _installContractKey();
+        _mockPrecompiles();
+
+        vm.prank(bob);
+        mYieldToOne.registerPublicKey(_validPubKey(0xBB));
+
+        vm.prank(alice);
+        mYieldToOne.approve(address(swapFacility), suint256(amount));
+
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 0);
+
+        vm.recordLogs();
+
+        vm.prank(address(swapFacility));
+        mYieldToOne.transferFrom(alice, bob, amount);
+
+        // Encrypted path was never entered.
+        assertEq(mYieldToOne.getEncryptedEventNonce(), 0);
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 bytesTopic = keccak256("Transfer(address,address,bytes)");
+        bytes32 plaintextTopic = keccak256("Transfer(address,address,uint256)");
+
+        bool foundBytes;
+        bool foundPlaintext;
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(mYieldToOne)) continue;
+            if (logs[i].topics.length == 0) continue;
+
+            if (logs[i].topics[0] == bytesTopic) {
+                foundBytes = true;
+            } else if (logs[i].topics[0] == plaintextTopic) {
+                foundPlaintext = true;
+                assertEq(address(uint160(uint256(logs[i].topics[1]))), alice);
+                assertEq(address(uint160(uint256(logs[i].topics[2]))), bob);
+                uint256 emittedAmount = abi.decode(logs[i].data, (uint256));
+                assertEq(emittedAmount, amount);
+            }
+        }
+
+        assertTrue(foundPlaintext, "missing plaintext Transfer(uint256) emit on infra path");
+        assertFalse(foundBytes, "infra path leaked into encrypted-bytes Transfer overload");
+    }
+
+    /* ============ Dual-Emit Regression — Mint / Burn stay plaintext ============ */
+
+    function test_mint_emitsPlaintextOnly() external {
+        // _mint is exercised through SwapFacility.wrap (mirror of `test_wrap`). Even with a
+        // contract key installed and a recipient pubkey registered, mint MUST stay on the
+        // inherited plaintext `Transfer(uint256)` overload — bridge amounts are public.
+        uint256 amount = 1_000e6;
+        mToken.setBalanceOf(address(swapFacility), amount);
+
+        _installContractKey();
+        _mockPrecompiles();
+
+        vm.prank(alice);
+        mYieldToOne.registerPublicKey(_validPubKey(0xBB));
+
+        uint256 nonceBefore = mYieldToOne.getEncryptedEventNonce();
+
+        vm.recordLogs();
+
+        vm.prank(address(swapFacility));
+        mYieldToOne.wrap(alice, amount);
+
+        // Counter untouched: mint never enters the encrypted-emit path.
+        assertEq(mYieldToOne.getEncryptedEventNonce(), nonceBefore);
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 bytesTopic = keccak256("Transfer(address,address,bytes)");
+        bytes32 plaintextTopic = keccak256("Transfer(address,address,uint256)");
+
+        bool foundBytes;
+        bool foundPlaintextMint;
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(mYieldToOne)) continue;
+            if (logs[i].topics.length == 0) continue;
+
+            if (logs[i].topics[0] == bytesTopic) {
+                foundBytes = true;
+            } else if (logs[i].topics[0] == plaintextTopic) {
+                // Mint: from == address(0).
+                if (address(uint160(uint256(logs[i].topics[1]))) == address(0)) {
+                    foundPlaintextMint = true;
+                    assertEq(address(uint160(uint256(logs[i].topics[2]))), alice);
+                    assertEq(abi.decode(logs[i].data, (uint256)), amount);
+                }
+            }
+        }
+
+        assertTrue(foundPlaintextMint, "missing plaintext Transfer(0, recipient, amount) on mint");
+        assertFalse(foundBytes, "mint leaked into encrypted-bytes Transfer overload");
+    }
+
+    function test_burn_emitsPlaintextOnly() external {
+        // _burn is exercised through SwapFacility.unwrap (mirror of `test_unwrap`). Even
+        // with a contract key installed and the (notional) recipient pubkey registered,
+        // burn MUST stay on the inherited plaintext `Transfer(uint256)` overload.
+        uint256 amount = 1_000e6;
+
+        mYieldToOne.setBalanceOf(address(swapFacility), amount);
+        mYieldToOne.setTotalSupply(amount);
+
+        mToken.setBalanceOf(address(mYieldToOne), amount);
+
+        _installContractKey();
+        _mockPrecompiles();
+
+        // Register a pubkey for swapFacility just to prove the dual-emit refactor does
+        // not accidentally route burn through the encrypted path even when the source
+        // address has a registered key.
+        vm.prank(address(swapFacility));
+        mYieldToOne.registerPublicKey(_validPubKey(0xCC));
+
+        uint256 nonceBefore = mYieldToOne.getEncryptedEventNonce();
+
+        vm.recordLogs();
+
+        vm.prank(address(swapFacility));
+        mYieldToOne.unwrap(alice, amount);
+
+        // Counter untouched.
+        assertEq(mYieldToOne.getEncryptedEventNonce(), nonceBefore);
+
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 bytesTopic = keccak256("Transfer(address,address,bytes)");
+        bytes32 plaintextTopic = keccak256("Transfer(address,address,uint256)");
+
+        bool foundBytes;
+        bool foundPlaintextBurn;
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(mYieldToOne)) continue;
+            if (logs[i].topics.length == 0) continue;
+
+            if (logs[i].topics[0] == bytesTopic) {
+                foundBytes = true;
+            } else if (logs[i].topics[0] == plaintextTopic) {
+                // Burn: to == address(0).
+                if (address(uint160(uint256(logs[i].topics[2]))) == address(0)) {
+                    foundPlaintextBurn = true;
+                    assertEq(address(uint160(uint256(logs[i].topics[1]))), address(swapFacility));
+                    assertEq(abi.decode(logs[i].data, (uint256)), amount);
+                }
+            }
+        }
+
+        assertTrue(foundPlaintextBurn, "missing plaintext Transfer(account, 0, amount) on burn");
+        assertFalse(foundBytes, "burn leaked into encrypted-bytes Transfer overload");
     }
 }
