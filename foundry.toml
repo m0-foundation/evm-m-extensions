@@ -45,8 +45,8 @@ sizes = true
 #     but under ssolc+mercury the contract size is 25 853 bytes (EIP-170 limit
 #     24 576), and the suite was written against the unshielded `balanceOf` surface
 #     so it trips `Unauthorized()` on the new gated read. JMI is not a Seismic
-#     deployment target (D1–D5 in `docs/seismic-src20-flow-diagrams.md`); its unit
-#     tests live under the default profile where the unshielded path still works.
+#     deployment target; its unit tests live under the default profile where the
+#     unshielded path still works.
 [profile.seismic]
 evm_version = "mercury"
 no_match_path = "test/{integration/**,unit/projects/JMIExtension.t.sol}"

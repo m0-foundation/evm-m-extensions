@@ -188,11 +188,10 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     ///      this call as a Seismic `TxSeismic` transaction (type `0x4A`), so the private
     ///      key is encrypted in the calldata layer. If sent as a plain transaction the
     ///      private key is recoverable from the mempool / public tx history, defeating the
-    ///      purpose of the shielded slot. See `docs/seismic-question-encrypted-events-ux.md`.
+    ///      purpose of the shielded slot.
     /// @dev Open question filed with Seismic: whether the `bytes32($.contractPrivateKey)
     ///      != bytes32(0)` one-shot guard reads cleanly from shielded storage without
     ///      leaking the value, and whether `sbytes32(0)` is the canonical unset sentinel.
-    ///      See `docs/seismic-question-encrypted-events-ux.md` (questions §2).
     function setContractKey(
         sbytes32 privateKey,
         bytes calldata publicKey
@@ -565,7 +564,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        `registerPublicKey`, the event is emitted with empty `bytes` and the transfer
      *        still succeeds. The recipient recovers the amount only via their own gated
      *        `balanceOf` read — historical amounts are not recoverable from logs.
-     *        See `docs/seismic-question-encrypted-events-ux.md`.
      * @dev   Reverts `ContractKeyNotSet` if the admin has not yet installed the contract
      *        keypair via `setContractKey`. This is a configuration error, not a runtime
      *        failure — it should only ever fire on a misconfigured deployment.
@@ -609,9 +607,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        recipient's compressed (33-byte) `peerPubKey`. The output is shielded so it
      *        stays in flagged storage for the HKDF step.
      * @dev   Reverts `PrecompileFailed(0x65)` if the precompile returns failure.
-     * @dev   Open question filed with Seismic (see `docs/seismic-question-encrypted-events-ux.md`):
-     *        confirm the canonical precompile addresses and the `abi.encodePacked` input
-     *        layout against the production Seismic precompile contract.
      */
     function _ecdh(sbytes32 privKey, bytes memory peerPubKey) internal view returns (sbytes32) {
         (bool success, bytes memory result) = address(0x65).staticcall(abi.encodePacked(bytes32(privKey), peerPubKey));
@@ -623,8 +618,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      * @dev   Thin wrapper around the Seismic HKDF precompile at `0x68`. Expands the ECDH
      *        shared secret into a fresh AES-GCM key. Both input and output are shielded.
      * @dev   Reverts `PrecompileFailed(0x68)` if the precompile returns failure.
-     * @dev   Open question filed with Seismic: confirm the precompile address and input
-     *        layout. See `docs/seismic-question-encrypted-events-ux.md`.
      */
     function _hkdf(sbytes32 sharedSecret) internal view returns (sbytes32) {
         (bool success, bytes memory result) = address(0x68).staticcall(abi.encodePacked(bytes32(sharedSecret)));
@@ -638,10 +631,6 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
      *        returns the raw ciphertext (authentication tag included, per the
      *        precompile's wire format).
      * @dev   Reverts `PrecompileFailed(0x66)` if the precompile returns failure.
-     * @dev   Open question filed with Seismic: confirm the precompile address, input
-     *        layout, and whether the returned ciphertext already includes the GCM tag
-     *        or whether the caller is expected to append it. See
-     *        `docs/seismic-question-encrypted-events-ux.md`.
      */
     function _aesGcmEncrypt(sbytes32 key, bytes12 nonce, bytes memory plaintext) internal view returns (bytes memory) {
         (bool success, bytes memory ciphertext) = address(0x66).staticcall(

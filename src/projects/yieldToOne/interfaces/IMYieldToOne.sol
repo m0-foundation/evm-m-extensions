@@ -34,7 +34,7 @@ interface IMYieldToOne {
      *         recipient's registered public key via ECDH against the contract's keypair.
      *         Empty bytes when the recipient has not registered a public key — the transfer
      *         still succeeds, but the amount is recoverable only via the recipient's gated
-     *         `balanceOf` read (see `docs/seismic-question-encrypted-events-ux.md`).
+     *         `balanceOf` read.
      * @dev    Distinct `topic0` from the inherited `Transfer(address,address,uint256)`:
      *         indexers MUST subscribe to both signatures to observe the full transfer
      *         history. Infra-mediated paths (mint, burn, native `transferFrom(uint256)`,
@@ -184,8 +184,7 @@ interface IMYieldToOne {
      * @dev    MUST only be callable by the `DEFAULT_ADMIN_ROLE`.
      * @dev    MUST be sent as a Seismic `TxSeismic` transaction (type `0x4A`) so the
      *         private key is encrypted in calldata. This is an operational requirement
-     *         that cannot be enforced from Solidity — see
-     *         `docs/seismic-question-encrypted-events-ux.md`.
+     *         that cannot be enforced from Solidity.
      * @dev    Reverts `InvalidPublicKeyLength` unless `publicKey.length == 33`
      *         (compressed secp256k1 encoding).
      * @dev    Rotation is intentionally out of scope: rotating the contract key would
