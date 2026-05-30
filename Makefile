@@ -302,6 +302,27 @@ set-permissioned-mswapper:
 	--private-key $(PRIVATE_KEY) \
 	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
 
+# Testnet-only EOA-direct variants of the two multisig-propose targets above.
+# Invoked by m0-launchpad's worker only when network.environment == 'testnet'
+# AND the registry step has executionMode "multisig-propose". On testnet, the
+# deployer EOA holds DEFAULT_ADMIN_ROLE on SwapFacility so a direct broadcast
+# succeeds. Contract-level access control is the implicit second gate on mainnet.
+set-permissioned-extension-testnet-direct:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SWAP_FACILITY_ADDRESS=$(SWAP_FACILITY_ADDRESS) \
+	EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) \
+	forge script script/execute/SetPermissionedExtensionDirect.s.sol:SetPermissionedExtensionDirect \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
+
+set-permissioned-mswapper-testnet-direct:
+	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) SWAP_FACILITY_ADDRESS=$(SWAP_FACILITY_ADDRESS) \
+	EXTENSION_ADDRESS=$(EXTENSION_ADDRESS) SWAPPER_ADDRESS=$(SWAPPER_ADDRESS) \
+	forge script script/execute/SetPermissionedMSwapperDirect.s.sol:SetPermissionedMSwapperDirect \
+	--rpc-url $(RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--skip test --slow --non-interactive $(BROADCAST_ONLY_FLAGS)
+
 #
 #
 # UPGRADE
