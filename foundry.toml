@@ -41,14 +41,21 @@ sizes = true
 #     that touches a shielded balance aborts with HTTP 400. Integration coverage
 #     for this profile lives on Seismic devnet, not locally.
 #
-# (2) `test/unit/projects/JMIExtension.t.sol` — JMIExtension inherits MYieldToOne,
-#     but under ssolc+mercury the contract size is 25 853 bytes (EIP-170 limit
-#     24 576), and the suite was written against the unshielded `balanceOf` surface
-#     so it trips `Unauthorized()` on the new gated read. JMI is not a Seismic
-#     deployment target; its unit tests live under the default profile where the
-#     unshielded path still works.
+# (2) `test/unit/projects/JMIExtension.t.sol` — JMIExtension inherits MYieldToOne.
+#     At `optimizer_runs = 800` (see below) the contract is 23 240 bytes, within the
+#     EIP-170 limit (24 576); it overflows to 25 853 at the default 19 999 runs. The
+#     suite is still skipped here because it was written against the unshielded
+#     `balanceOf` surface, so it trips `Unauthorized()` on the new gated read. JMI is
+#     not a Seismic deployment target; its unit tests live under the default profile
+#     where the unshielded path still works.
 [profile.seismic]
 evm_version = "mercury"
+# `optimizer_runs = 800` overrides the default profile's 19 999. The shielded
+# MYieldToOne closure pushes JMIExtension to 25 853 bytes at 19 999 runs — 1 277 over
+# the EIP-170 24 576-byte limit. 800 is the knee of the size/gas curve: it brings the
+# contract to 23 240 bytes (+1 336 headroom) while keeping as much runtime-gas
+# optimization as the size limit allows. Lower runs -> smaller code, higher per-call gas.
+optimizer_runs = 800
 no_match_path = "test/{integration/**,unit/projects/JMIExtension.t.sol}"
 
 [fuzz]
