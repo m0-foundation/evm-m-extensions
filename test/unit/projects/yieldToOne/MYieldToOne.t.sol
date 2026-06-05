@@ -875,11 +875,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
-        // bob has not registered a public key, so the shielded entry point emits the
-        // bytes-variant Transfer overload with an empty ciphertext (the empty-fallback
-        // branch runs before the contract-key check). Assert the indexed (from, to) fields
-        // and the empty payload; cryptographic-payload assertions live in the dedicated
-        // encrypted-transfer tests below.
+        // bob has no registered key => empty-ciphertext fallback emit (ciphertext assertions
+        // live in the encrypted-transfer tests below).
         vm.expectEmit(true, true, false, true);
         emit IMYieldToOne.Transfer(alice, bob, bytes(""));
 
@@ -1110,10 +1107,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
 
     /* ============ Encrypted Transfer Events — Helpers ============ */
 
-    /// @dev Canonical compressed-secp256k1 (33-byte) shape for tests. The actual bytes are
-    ///      irrelevant in unit tests because the three precompiles (`0x65` ECDH,
-    ///      `0x68` HKDF, `0x66` AES-GCM encrypt) are mocked — Seismic validates the
-    ///      precompile semantics on devnet, not here. See task spec §C.
+    /// @dev Canonical compressed-secp256k1 (33-byte) shape. Actual bytes are irrelevant here —
+    ///      the precompiles (0x65/0x68/0x66) are mocked; Seismic validates their semantics on devnet.
     function _validPubKey(bytes1 marker) internal pure returns (bytes memory) {
         bytes memory key = new bytes(33);
         key[0] = 0x02; // compressed-secp256k1 even-Y prefix
@@ -1396,9 +1391,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     /* ============ Dual-Emit Regression — Infra transferFrom stays plaintext ============ */
 
     function test_nativeTransferFrom_registeredRecipient_emitsPlaintextOnly() external {
-        // Regression guard for the dual-emit refactor: the infra-gated native
-        // `transferFrom(uint256)` MUST keep emitting the inherited plaintext
-        // `Transfer(uint256)` overload, even when the recipient has a registered key.
+        // Regression: infra-gated native `transferFrom` MUST stay on the plaintext Transfer
+        // overload even when the recipient has a registered key.
         uint256 amount = 1_000e6;
         mYieldToOne.setBalanceOf(alice, amount);
 
@@ -1449,9 +1443,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     /* ============ Dual-Emit Regression — Mint / Burn stay plaintext ============ */
 
     function test_mint_emitsPlaintextOnly() external {
-        // _mint is exercised through SwapFacility.wrap (mirror of `test_wrap`). Even with a
-        // contract key installed and a recipient pubkey registered, mint MUST stay on the
-        // inherited plaintext `Transfer(uint256)` overload — bridge amounts are public.
+        // _mint via SwapFacility.wrap MUST stay on the plaintext Transfer overload (bridge amounts
+        // are public) even with a contract key + recipient pubkey registered.
         uint256 amount = 1_000e6;
         mToken.setBalanceOf(address(swapFacility), amount);
 
@@ -1498,9 +1491,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
     }
 
     function test_burn_emitsPlaintextOnly() external {
-        // _burn is exercised through SwapFacility.unwrap (mirror of `test_unwrap`). Even
-        // with a contract key installed and the (notional) recipient pubkey registered,
-        // burn MUST stay on the inherited plaintext `Transfer(uint256)` overload.
+        // _burn via SwapFacility.unwrap MUST stay on the plaintext Transfer overload even with a
+        // contract key + (notional) recipient pubkey registered.
         uint256 amount = 1_000e6;
 
         mYieldToOne.setBalanceOf(address(swapFacility), amount);
@@ -1511,9 +1503,8 @@ contract MYieldToOneUnitTests is BaseUnitTest {
         _installContractKey();
         _mockPrecompiles();
 
-        // Register a pubkey for swapFacility just to prove the dual-emit refactor does
-        // not accidentally route burn through the encrypted path even when the source
-        // address has a registered key.
+        // Register a pubkey for swapFacility to prove burn isn't routed through the encrypted
+        // path even when the source address has a registered key.
         vm.prank(address(swapFacility));
         mYieldToOne.registerPublicKey(_validPubKey(0xCC));
 

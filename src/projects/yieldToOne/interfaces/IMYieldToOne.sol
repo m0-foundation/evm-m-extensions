@@ -29,20 +29,16 @@ interface IMYieldToOne {
     event AllowlistSet(address indexed account, bool status);
 
     /**
-     * @notice Emitted by user-to-user shielded transfers (the `suint256` overloads). The
-     *         third field is an AES-GCM ciphertext of the amount, encrypted to the
-     *         recipient's registered public key via ECDH against the contract's keypair.
-     *         Empty bytes when the recipient has not registered a public key — the transfer
-     *         still succeeds, but the amount is recoverable only via the recipient's gated
-     *         `balanceOf` read.
-     * @dev    Distinct `topic0` from the inherited `Transfer(address,address,uint256)`:
-     *         indexers MUST subscribe to both signatures to observe the full transfer
-     *         history. Infra-mediated paths (mint, burn, native `transferFrom(uint256)`,
-     *         forced transfer) emit the inherited `uint256` overload exclusively.
+     * @notice Emitted by user-to-user shielded transfers (the `suint256` overloads). The third field
+     *         is an AES-GCM ciphertext of the amount, encrypted to the recipient's registered key via
+     *         ECDH; empty bytes if the recipient has not registered one (the transfer still succeeds,
+     *         and the amount is recoverable only via the recipient's gated `balanceOf`).
+     * @dev    Distinct `topic0` from the inherited `Transfer(address,address,uint256)` — indexers MUST
+     *         subscribe to both. Infra paths (mint, burn, native `transferFrom`, forced transfer) emit
+     *         the inherited `uint256` overload exclusively.
      * @param  from            The address transferring the tokens.
      * @param  to              The address receiving the tokens.
-     * @param  encryptedAmount AES-GCM ciphertext of the transferred amount, or `bytes("")`
-     *                        when `to` has not registered a public key.
+     * @param  encryptedAmount AES-GCM ciphertext of the amount, or `bytes("")` if `to` is unregistered.
      */
     event Transfer(address indexed from, address indexed to, bytes encryptedAmount);
 
@@ -147,9 +143,9 @@ interface IMYieldToOne {
     function setAllowlisted(address[] calldata accounts, bool status) external;
 
     /**
-     * @notice Shielded ERC20 transfer. The amount is a Seismic shielded type and is stored
-     *         and compared in shielded space; the public `Transfer` event still emits the
-     *         cleartext amount for indexer compatibility (events are public on EVM).
+     * @notice Shielded ERC20 transfer. `amount` is stored and compared in shielded space. Emits the
+     *         encrypted-bytes `Transfer(address,address,bytes)` overload to `recipient`'s registered
+     *         key (empty ciphertext if `recipient` has not registered one — transfer still succeeds).
      * @param  recipient The address receiving the tokens.
      * @param  amount    The shielded amount to transfer.
      * @return success   Always `true` on non-revert (mirrors `IERC20.transfer`).
@@ -166,10 +162,9 @@ interface IMYieldToOne {
     function approve(address spender, suint256 amount) external returns (bool);
 
     /**
-     * @notice Shielded ERC20 transferFrom. Reads and decrements the shielded allowance in
-     *         shielded space. Reverts with `InsufficientAllowance(spender, 0, amount)` —
-     *         zeroing the allowance field so the revert payload does not leak the shielded
-     *         allowance value.
+     * @notice Shielded ERC20 transferFrom. Reads and decrements the shielded allowance in shielded
+     *         space; reverts `InsufficientAllowance(spender, 0, amount)` (zeroed payload). Emits the
+     *         encrypted-bytes `Transfer` overload (empty ciphertext if `recipient` is unregistered).
      * @param  sender    The address whose tokens are being moved.
      * @param  recipient The address receiving the tokens.
      * @param  amount    The shielded amount to transfer.

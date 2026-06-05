@@ -269,11 +269,8 @@ contract MYieldToOneIntegrationTests is BaseIntegrationTest {
     }
 
     function test_unwrapWithPermits() external {
-        // MYieldToOne's `permit` is deferred (reverts), so the SwapFacility `swapWithPermit`
-        // swap-out path is unsupported for this token. Migrated to the plain native-`approve`
-        // swap-out path: the holder calls native `approve(swapFacility, amount)` (allowed because
-        // swapFacility is infra) then drives a non-permit swap-out. Same balance assertions as the
-        // original permit-based flow.
+        // `permit` reverts, so the `swapWithPermit` path is unsupported here. Migrated to the native
+        // `approve(swapFacility, amount)` path (swapFacility is infra), then a non-permit swap-out.
         _addToList(EARNERS_LIST, address(mYieldToOne));
         mYieldToOne.enableEarning();
 
