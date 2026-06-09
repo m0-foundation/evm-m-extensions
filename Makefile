@@ -62,6 +62,30 @@ clean:
 #
 #
 
+# --- Seismic (mercury/ssolc) verification --------------------------------------
+# Inline `sforge script --verify` can't verify mercury builds as of the moment: the socialscan
+# explorer rejects `evmVersion: mercury` in the standard-json and there is no
+# forge flag to strip it. So seismic targets broadcast only, then auto-verify
+# every contract in the broadcast via script/verify-seismic.py (needs python3 +
+# jq; no ssolc/sforge needed — it reads out/build-info).
+# Testnet (chain 5124) — full socialscan verify endpoint.
+SEISMIC_TESTNET_CHAIN_ID ?= 5124
+SEISMIC_TESTNET_VERIFIER_URL ?= https://api.socialscan.io/seismic-testnet/v1/explorer/command_api/contract
+SEISMIC_VERIFY_TESTNET = VERIFIER_URL=$(SEISMIC_TESTNET_VERIFIER_URL) python3 script/verify-seismic.py $(1) $(2)
+
+# Mainnet — set SEISMIC_MAINNET_{RPC_URL,CHAIN_ID,VERIFIER_URL} in .env before use.
+# The URL below is the expected socialscan mainnet path; confirm it when Seismic
+# mainnet is live. CHAIN_ID defaults empty so the target fails closed until set.
+SEISMIC_MAINNET_CHAIN_ID ?=
+SEISMIC_MAINNET_VERIFIER_URL ?= https://api.socialscan.io/seismic/v1/explorer/command_api/contract
+SEISMIC_VERIFY_MAINNET = VERIFIER_URL=$(SEISMIC_MAINNET_VERIFIER_URL) python3 script/verify-seismic.py $(1) $(2)
+# $(call SEISMIC_VERIFY_{TESTNET,MAINNET},<DeployScript.s.sol>,<chain_id>)
+
+# Default deploy flags = broadcast + inline etherscan verify (works on normal
+# chains). Seismic targets override DEPLOY_FLAGS to broadcast-only + POST_DEPLOY.
+DEPLOY_FLAGS = $(BROADCAST_FLAGS) --verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+POST_DEPLOY ?=
+
 deploy-yield-to-one:
 	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
 	forge script script/deploy/DeployYieldToOne.s.sol:DeployYieldToOne \
@@ -73,25 +97,43 @@ deploy-yield-to-one-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-sepolia: deploy-yield-to-one
 
 deploy-yield-to-one-forced-transfer:
-	FOUNDRY_PROFILE=production PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
-	forge script script/deploy/DeployYieldToOneForcedTransfer.s.sol:DeployYieldToOneForcedTransfer \
+	FOUNDRY_PROFILE=seismic PRIVATE_KEY=$(PRIVATE_KEY) EXTENSION_NAME=$(EXTENSION_NAME) \
+	sforge script script/deploy/DeployYieldToOneForcedTransfer.s.sol:DeployYieldToOneForcedTransfer \
 	--rpc-url $(RPC_URL) \
 	--private-key $(PRIVATE_KEY) \
-	--skip test --slow --non-interactive $(BROADCAST_FLAGS) \
-	--verifier ${VERIFIER} --verifier-url ${VERIFIER_URL}
+	--skip test --slow --non-interactive $(DEPLOY_FLAGS)
+	$(POST_DEPLOY)
 
 deploy-yield-to-one-forced-transfer-local: RPC_URL=$(LOCALHOST_RPC_URL)
 deploy-yield-to-one-forced-transfer-local: deploy-yield-to-one-forced-transfer
 
-deploy-yield-to-one-forced-transfer-mainnet: RPC_URL=$(MAINNET_RPC_URL)
-deploy-yield-to-one-forced-transfer-mainnet: VERIFIER="etherscan"
-deploy-yield-to-one-forced-transfer-mainnet: VERIFIER_URL=${MAINNET_VERIFIER_URL}
-deploy-yield-to-one-forced-transfer-mainnet: deploy-yield-to-one-forced-transfer
+# Re-verify the latest seismic-testnet broadcast without redeploying.
+verify-yield-to-one-forced-transfer-seismic-testnet:
+	$(call SEISMIC_VERIFY_TESTNET,DeployYieldToOneForcedTransfer.s.sol,$(SEISMIC_TESTNET_CHAIN_ID))
+
+# Re-verify the latest seismic-mainnet broadcast without redeploying.
+verify-yield-to-one-forced-transfer-seismic-mainnet:
+	$(call SEISMIC_VERIFY_MAINNET,DeployYieldToOneForcedTransfer.s.sol,$(SEISMIC_MAINNET_CHAIN_ID))
+
+# Seismic mainnet: broadcast only (inline --verify can't reach the explorer),
+# then auto-verify every deployed contract from the broadcast. Requires
+# SEISMIC_MAINNET_{RPC_URL,CHAIN_ID,VERIFIER_URL} in .env; fails closed if unset.
+deploy-yield-to-one-forced-transfer-seismic-mainnet: RPC_URL=$(SEISMIC_MAINNET_RPC_URL)
+deploy-yield-to-one-forced-transfer-seismic-mainnet: DEPLOY_FLAGS=$(BROADCAST_ONLY_FLAGS)
+deploy-yield-to-one-forced-transfer-seismic-mainnet: POST_DEPLOY=$(call SEISMIC_VERIFY_MAINNET,DeployYieldToOneForcedTransfer.s.sol,$(SEISMIC_MAINNET_CHAIN_ID))
+deploy-yield-to-one-forced-transfer-seismic-mainnet: deploy-yield-to-one-forced-transfer
 
 deploy-yield-to-one-forced-transfer-citrea: RPC_URL=$(CITREA_RPC_URL)
 deploy-yield-to-one-forced-transfer-citrea: VERIFIER="custom"
 deploy-yield-to-one-forced-transfer-citrea: VERIFIER_URL=${CITREA_VERIFIER_URL}
 deploy-yield-to-one-forced-transfer-citrea: deploy-yield-to-one-forced-transfer
+
+# Seismic testnet: broadcast only (inline --verify can't reach the explorer),
+# then auto-verify every deployed contract from the broadcast.
+deploy-yield-to-one-forced-transfer-seismic-testnet: RPC_URL=$(SEISMIC_TESTNET_RPC_URL)
+deploy-yield-to-one-forced-transfer-seismic-testnet: DEPLOY_FLAGS=$(BROADCAST_ONLY_FLAGS)
+deploy-yield-to-one-forced-transfer-seismic-testnet: POST_DEPLOY=$(call SEISMIC_VERIFY_TESTNET,DeployYieldToOneForcedTransfer.s.sol,$(SEISMIC_TESTNET_CHAIN_ID))
+deploy-yield-to-one-forced-transfer-seismic-testnet: deploy-yield-to-one-forced-transfer
 
 deploy-yield-to-one-forced-transfer-sepolia: RPC_URL=$(SEPOLIA_RPC_URL)
 deploy-yield-to-one-forced-transfer-sepolia: VERIFIER="etherscan"

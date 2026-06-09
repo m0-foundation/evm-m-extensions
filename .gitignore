@@ -35,6 +35,7 @@ gasreport.ansi
 # Claude
 .claude/
 .planning/
+CLAUDE.local.md
 
 # Seismic toolchain (repo-local install — see scripts/seismic-env.sh)
 .seismic-toolchain/
