@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 contract Config {
     error UnsupportedChain(uint256 chainId);
@@ -100,8 +100,9 @@ contract Config {
     uint256 public constant BSC_TESTNET_CHAIN_ID = 97;
     uint256 public constant SONEIUM_TESTNET_CHAIN_ID = 1946;
     uint256 public constant BASE_SEPOLIA_CHAIN_ID = 84532;
+    uint256 public constant SEISMIC_TESTNET_CHAIN_ID = 5124;
 
-    address public constant DEPLOYER = 0xF2f1ACbe0BA726fEE8d75f3E32900526874740BB;
+    address public constant DEPLOYER = 0x12b1A4226ba7D9Ad492779c924b0fC00BDCb6217;
 
     address public constant M_TOKEN = 0x866A2BF4E572CbcF37D5071A7a58503Bfb36be1b;
     address public constant WRAPPED_M_TOKEN = 0x437cc33344a0B27A429f795ff6B469C72698B291;
@@ -164,6 +165,7 @@ contract Config {
         if (chainId_ == APECHAIN_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BSC_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == BASE_SEPOLIA_CHAIN_ID) return _getDefaultDeployConfig();
+        if (chainId_ == SEISMIC_TESTNET_CHAIN_ID) return _getDefaultDeployConfig();
         if (chainId_ == SONEIUM_TESTNET_CHAIN_ID) {
             config = _getDefaultDeployConfig();
             config.registrar = 0x09ddB94dE27d26Fa426276bF33932594B257F9B6;

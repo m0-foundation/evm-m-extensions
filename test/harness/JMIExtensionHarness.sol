@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import { JMIExtension } from "../../src/projects/jmi/JMIExtension.sol";
 
@@ -35,7 +35,7 @@ contract JMIExtensionHarness is JMIExtension {
     }
 
     function setBalanceOf(address account, uint256 amount) external {
-        _getMYieldToOneStorageLocation().balanceOf[account] = amount;
+        _getMYieldToOneStorageLocation().balanceOf[account] = suint256(amount);
     }
 
     function setTotalAssets(uint256 amount) external {

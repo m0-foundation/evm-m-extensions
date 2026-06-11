@@ -27,6 +27,19 @@ lint_on_build = false
 build_info = true
 sizes = true
 
+# Seismic profile — builds MYieldToOne with ssolc (0.8.31). Activate: `FOUNDRY_PROFILE=seismic sforge build`.
+# `evm_version = "mercury"` is the Seismic EVM revision that supports shielded types (suint/sbool/saddress/sbytes);
+# the default profile stays cancun + solc 0.8.26 so sibling-extension builds remain audit-reproducible.
+# `optimizer_runs = 800` (vs default 19 999): the shielded closure pushes JMIExtension to 25 853 B at 19 999,
+# over the EIP-170 24 576 B limit; 800 is the size/gas knee → 23 240 B (+1 336 headroom).
+# `no_match_path` skips, under this profile only: (1) test/integration/** — forks ETH mainnet, whose RPC lacks
+# `eth_getFlaggedStorageAt` for shielded reads (run on Seismic devnet instead); (2) JMIExtension.t.sol — written
+# against the unshielded `balanceOf`, so it trips `Unauthorized()`; JMI runs under the default profile.
+[profile.seismic]
+evm_version = "mercury"
+optimizer_runs = 800
+no_match_path = "test/{integration/**,unit/projects/JMIExtension.t.sol}"
+
 [fuzz]
 runs = 5_000
 

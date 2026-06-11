@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import { MYieldToOneForcedTransfer } from "../../src/projects/yieldToOne/MYieldToOneForcedTransfer.sol";
 
@@ -31,6 +31,20 @@ contract MYieldToOneForcedTransferHarness is MYieldToOneForcedTransfer {
     }
 
     function setBalanceOf(address account, uint256 amount) external {
-        _getMYieldToOneStorageLocation().balanceOf[account] = amount;
+        _getMYieldToOneStorageLocation().balanceOf[account] = suint256(amount);
+    }
+
+    /// @dev Bypasses the public `balanceOf` gate — for test assertions only.
+    function getBalanceOf(address account) external view returns (uint256) {
+        return uint256(_getMYieldToOneStorageLocation().balanceOf[account]);
+    }
+
+    function setShieldedAllowance(address owner, address spender, uint256 amount) external {
+        _getMYieldToOneStorageLocation().shieldedAllowance[owner][spender] = suint256(amount);
+    }
+
+    /// @dev Bypasses the `shieldedAllowance` gate — for test assertions only.
+    function getShieldedAllowance(address owner, address spender) external view returns (uint256) {
+        return uint256(_getMYieldToOneStorageLocation().shieldedAllowance[owner][spender]);
     }
 }

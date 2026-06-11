@@ -15,7 +15,17 @@ while getopts d:g:p:t:v flag; do
 done
 
 export FOUNDRY_PROFILE=$profile
+
+# Use the Seismic-flavored forge for the seismic profile (mercury EVM, ssolc).
+# Stock forge can't parse shielded types like suint256.
+if [ "$FOUNDRY_PROFILE" = "seismic" ]; then
+	forge_bin=sforge
+else
+	forge_bin=forge
+fi
+
 echo Using profile: $FOUNDRY_PROFILE
+echo Forge binary: $forge_bin
 echo Higher verbosity: $verbose
 echo Gas report: $gas
 echo Test Match pattern: $test
@@ -34,10 +44,10 @@ fi
 
 if [ -z "$test" ]; then
 	if [ -z "$directory" ]; then
-		forge test --match-path "test/*" $gasReport $verbosity --force
+		"$forge_bin" test --match-path "test/*" $gasReport $verbosity --force
 	else
-		forge test --match-path "$directory/*.t.sol" $gasReport $verbosity --force
+		"$forge_bin" test --match-path "$directory/*.t.sol" $gasReport $verbosity --force
 	fi
 else
-	forge test --match-test "$test" $gasReport $verbosity --force
+	"$forge_bin" test --match-test "$test" $gasReport $verbosity --force
 fi

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import { IERC20 } from "../../../../lib/common/src/interfaces/IERC20.sol";
 
@@ -94,7 +94,7 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
     function test_forceTransfer_succeedsForManager() public {
         uint256 amount = 1_000e6;
         mYieldToOneForcedTransfer.setBalanceOf(address(alice), amount);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), 0);
 
         vm.prank(freezeManager);
         mYieldToOneForcedTransfer.freeze(alice);
@@ -102,21 +102,21 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
         vm.prank(forcedTransferManager);
         mYieldToOneForcedTransfer.forceTransfer(alice, bob, amount);
 
-        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), 0);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), amount);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), amount);
     }
 
     function test_forceTransfer_revertsWhenNotFrozen() public {
         uint256 amount = 1_000e6;
         mYieldToOneForcedTransfer.setBalanceOf(address(alice), amount);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), 0);
 
         vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
         vm.prank(forcedTransferManager);
         mYieldToOneForcedTransfer.forceTransfer(alice, bob, amount);
 
-        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), amount);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), amount);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), 0);
     }
 
     function test_forceTransfer_arrayLengthMismatch() public {
@@ -138,7 +138,7 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
     function test_forceTransfer_revertsForNonManager() public {
         uint256 amount = 1_000e6;
         mYieldToOneForcedTransfer.setBalanceOf(address(alice), amount);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), 0);
 
         vm.prank(freezeManager);
         mYieldToOneForcedTransfer.freeze(alice);
@@ -172,15 +172,15 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
             vm.prank(forcedTransferManager);
             mYieldToOneForcedTransfer.forceTransfer(alice, bob, transferAmount);
 
-            assertEq(mYieldToOneForcedTransfer.balanceOf(alice), aliceBalance - transferAmount);
-            assertEq(mYieldToOneForcedTransfer.balanceOf(bob), bobBalance + transferAmount);
+            assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), aliceBalance - transferAmount);
+            assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), bobBalance + transferAmount);
         } else {
             vm.prank(forcedTransferManager);
             vm.expectRevert(abi.encodeWithSelector(IFreezable.AccountNotFrozen.selector, alice));
             mYieldToOneForcedTransfer.forceTransfer(alice, bob, transferAmount);
 
-            assertEq(mYieldToOneForcedTransfer.balanceOf(alice), aliceBalance);
-            assertEq(mYieldToOneForcedTransfer.balanceOf(bob), bobBalance);
+            assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), aliceBalance);
+            assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), bobBalance);
         }
     }
 
@@ -212,10 +212,10 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
         vm.prank(forcedTransferManager);
         mYieldToOneForcedTransfer.forceTransfers(frozenAccounts, recipients, amounts);
 
-        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), 0);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), 0);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(carol), amount1);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(david), amount2);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(carol), amount1);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(david), amount2);
     }
 
     function test_forceTransfers_revertsWhenNotFrozen() public {
@@ -244,10 +244,10 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
         mYieldToOneForcedTransfer.forceTransfers(frozenAccounts, recipients, amounts);
 
         // alice and bob's balance should remain unchanged
-        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), amount1);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(bob), amount2);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(carol), 0);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(david), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), amount1);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), amount2);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(carol), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(david), 0);
     }
 
     function test_forceTransfers_revertsForNonManager() public {
@@ -333,8 +333,8 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
             mYieldToOneForcedTransfer.forceTransfers(frozenAccounts, recipients, amounts);
 
             for (uint256 i = 0; i < numOfAccounts; i++) {
-                assertEq(mYieldToOneForcedTransfer.balanceOf(frozenAccounts[i]), initialBalances[i] - amounts[i]);
-                assertEq(mYieldToOneForcedTransfer.balanceOf(recipients[i]), amounts[i]);
+                assertEq(mYieldToOneForcedTransfer.getBalanceOf(frozenAccounts[i]), initialBalances[i] - amounts[i]);
+                assertEq(mYieldToOneForcedTransfer.getBalanceOf(recipients[i]), amounts[i]);
             }
         } else {
             vm.prank(forcedTransferManager);
@@ -342,10 +342,59 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
             mYieldToOneForcedTransfer.forceTransfers(frozenAccounts, recipients, amounts);
 
             for (uint256 i = 0; i < numOfAccounts; i++) {
-                assertEq(mYieldToOneForcedTransfer.balanceOf(frozenAccounts[i]), initialBalances[i]);
-                assertEq(mYieldToOneForcedTransfer.balanceOf(recipients[i]), 0);
+                assertEq(mYieldToOneForcedTransfer.getBalanceOf(frozenAccounts[i]), initialBalances[i]);
+                assertEq(mYieldToOneForcedTransfer.getBalanceOf(recipients[i]), 0);
             }
         }
+    }
+
+    /* ============ inherited native infra paths ============ */
+
+    function test_nativeTransferFrom_allowlistedCaller() public {
+        // The FT subclass does not override the native, allowlist-gated `approve` / `transferFrom`
+        // paths, so it inherits them from MYieldToOne. An allowlisted caller can drive a native
+        // `transferFrom(uint256)` against the shared shielded allowance slot.
+        uint256 amount = 1_000e6;
+        mYieldToOneForcedTransfer.setBalanceOf(alice, amount);
+
+        vm.prank(admin);
+        mYieldToOneForcedTransfer.setAllowlisted(carol, true);
+
+        vm.prank(alice);
+        mYieldToOneForcedTransfer.approve(carol, amount);
+
+        assertEq(mYieldToOneForcedTransfer.getShieldedAllowance(alice, carol), amount);
+
+        vm.expectEmit();
+        emit IERC20.Transfer(alice, bob, amount);
+
+        vm.prank(carol);
+        mYieldToOneForcedTransfer.transferFrom(alice, bob, amount);
+
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(bob), amount);
+        assertEq(mYieldToOneForcedTransfer.getShieldedAllowance(alice, carol), 0);
+    }
+
+    function test_nativeTransferFrom_nonInfraCallerReverts() public {
+        uint256 amount = 1_000e6;
+        mYieldToOneForcedTransfer.setBalanceOf(alice, amount);
+        mYieldToOneForcedTransfer.setShieldedAllowance(alice, carol, amount);
+
+        vm.expectRevert(IMYieldToOne.UseShieldedTransfer.selector);
+
+        vm.prank(carol);
+        mYieldToOneForcedTransfer.transferFrom(alice, bob, amount);
+    }
+
+    function test_balanceOf_allowlistedInfraCanReadAnyHolder() public {
+        mYieldToOneForcedTransfer.setBalanceOf(alice, 1_000e6);
+
+        vm.prank(admin);
+        mYieldToOneForcedTransfer.setAllowlisted(carol, true);
+
+        vm.prank(carol);
+        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), 1_000e6);
     }
 
     /* ============ claimYield ============ */
@@ -370,7 +419,7 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
         assertEq(mYieldToOneForcedTransfer.claimYield(), yield);
 
         assertEq(mYieldToOneForcedTransfer.yield(), 0);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(yieldRecipient), yield);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(yieldRecipient), yield);
     }
 
     function test_claimYield_paused() external {
@@ -446,8 +495,8 @@ contract MYieldToOneForcedTransferUnitTest is BaseUnitTest {
         // Previously accrued yield is NOT claimed: it remains with the contract,
         // neither recipient receives a mint, and yield() still reflects the full amount.
         assertEq(mYieldToOneForcedTransfer.yield(), accruedYield);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(yieldRecipient), 0);
-        assertEq(mYieldToOneForcedTransfer.balanceOf(alice), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(yieldRecipient), 0);
+        assertEq(mYieldToOneForcedTransfer.getBalanceOf(alice), 0);
     }
 
     function test_setYieldRecipient_paused() public {

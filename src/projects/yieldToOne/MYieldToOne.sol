@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
+import { ERC20ExtendedUpgradeable } from "../../../lib/common/src/ERC20ExtendedUpgradeable.sol";
 import { IERC20 } from "../../../lib/common/src/interfaces/IERC20.sol";
+import { IERC20Extended } from "../../../lib/common/src/interfaces/IERC20Extended.sol";
 
 import { IMYieldToOne } from "./interfaces/IMYieldToOne.sol";
 
@@ -15,7 +17,21 @@ abstract contract MYieldToOneStorageLayout {
     struct MYieldToOneStorageStruct {
         uint256 totalSupply;
         address yieldRecipient;
-        mapping(address account => uint256 balance) balanceOf;
+        mapping(address account => suint256 balance) balanceOf;
+        // Sole allowance store, written by BOTH the shielded and native (ABI-cast) approve/transferFrom.
+        // The inherited ERC20Extended `allowance` slot is never written (native writes here; permit reverts).
+        mapping(address account => mapping(address spender => suint256 allowance)) shieldedAllowance;
+        // Admin-curated trusted M0 infra; gates the native approve/transferFrom paths and balanceOf reads.
+        mapping(address account => bool isAllowlisted) allowlist;
+        // Encrypted Transfer events: per-recipient public-key registry. An unset key triggers the
+        // empty-ciphertext fallback emit; the recipient still recovers the amount via its gated balanceOf.
+        mapping(address account => bytes publicKey) publicKeys;
+        // Contract public key (plain bytes); off-chain decryption clients ECDH against this.
+        bytes _contractPublicKey;
+        // Contract private key (shielded ECDH input); set once via `setContractKey` (MUST be sent as TxSeismic 0x4A).
+        sbytes32 contractPrivateKey;
+        // Monotonic counter feeding the per-emit AES-GCM nonce; pre-incremented so nonces never repeat under one key.
+        uint256 encryptedEventNonce;
     }
 
     // keccak256(abi.encode(uint256(keccak256("M0.storage.MYieldToOne")) - 1)) & ~bytes32(uint256(0xff))
@@ -133,16 +149,158 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         _setYieldRecipient(account);
     }
 
+    /* ============ Allowlist Management ============ */
+
+    /// @inheritdoc IMYieldToOne
+    function setAllowlisted(address account, bool status) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setAllowlisted(account, status);
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function setAllowlisted(address[] calldata accounts, bool status) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i; i < accounts.length; ++i) {
+            _setAllowlisted(accounts[i], status);
+        }
+    }
+
+    /* ============ Encrypted-Event Keypair Management ============ */
+
+    /// @inheritdoc IMYieldToOne
+    /// @dev One-shot guard casts the shielded key to `bytes32` for a zero-check only (no write-back).
+    function setContractKey(
+        sbytes32 privateKey,
+        bytes calldata publicKey
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (publicKey.length != 33) revert InvalidPublicKeyLength();
+
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+
+        // One-shot guard (control-flow compare only; see @dev).
+        if (bytes32($.contractPrivateKey) != bytes32(0)) revert ContractKeyAlreadySet();
+
+        $.contractPrivateKey = privateKey;
+        $._contractPublicKey = publicKey;
+
+        emit ContractKeySet(publicKey);
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function registerPublicKey(bytes calldata publicKey) external virtual {
+        if (publicKey.length != 33) revert InvalidPublicKeyLength();
+
+        _getMYieldToOneStorageLocation().publicKeys[msg.sender] = publicKey;
+
+        emit PublicKeyRegistered(msg.sender);
+    }
+
+    /* ============ Shielded ERC20 Entry Points ============ */
+
+    /// @inheritdoc IMYieldToOne
+    function transfer(address recipient, suint256 amount) external returns (bool) {
+        // User-to-user path: encrypted-bytes emit.
+        _shieldedTransfer(msg.sender, recipient, amount, true);
+        return true;
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function approve(address spender, suint256 amount) external returns (bool) {
+        _shieldedApprove(msg.sender, spender, amount);
+        return true;
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function transferFrom(address sender, address recipient, suint256 amount) external returns (bool) {
+        // User-to-user path via allowance: encrypted-bytes emit.
+        _spendAllowanceAndTransfer(sender, recipient, amount, true);
+        return true;
+    }
+
+    /* ============ Inherited IERC20 / IERC20Extended Entry Points (Allowlist-Gated) ============ */
+    // Re-enabled for trusted infra only: native `approve` if the SPENDER is infra, native
+    // `transferFrom` if the CALLER is infra (`_isInfra`). Both write the same `shieldedAllowance`
+    // slot as the `suint256` overloads (ABI-cast only), so the paths can't diverge. `transfer` and
+    // both `permit` overloads always revert. Everyone else uses the `suint256` overloads above.
+
+    /// @inheritdoc IERC20
+    function transfer(
+        address /* recipient */,
+        uint256 /* amount */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        revert UseShieldedTransfer();
+    }
+
+    /// @inheritdoc IERC20
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        if (!_isInfra(msg.sender)) revert UseShieldedTransfer();
+
+        // Infra path: amount already public via bridge calldata, so emit the plaintext Transfer.
+        _spendAllowanceAndTransfer(sender, recipient, suint256(amount), false);
+        return true;
+    }
+
+    /// @inheritdoc IERC20
+    function approve(
+        address spender,
+        uint256 amount
+    ) external override(ERC20ExtendedUpgradeable, IERC20) returns (bool) {
+        if (!_isInfra(spender)) revert UseShieldedApprove();
+
+        _shieldedApprove(msg.sender, spender, suint256(amount));
+        return true;
+    }
+
+    /// @inheritdoc IERC20Extended
+    function permit(
+        address /* owner */,
+        address /* spender */,
+        uint256 /* value */,
+        uint256 /* deadline */,
+        uint8 /* v */,
+        bytes32 /* r */,
+        bytes32 /* s */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20Extended) {
+        revert UseShieldedApprove();
+    }
+
+    /// @inheritdoc IERC20Extended
+    function permit(
+        address /* owner */,
+        address /* spender */,
+        uint256 /* value */,
+        uint256 /* deadline */,
+        bytes memory /* signature */
+    ) external pure override(ERC20ExtendedUpgradeable, IERC20Extended) {
+        revert UseShieldedApprove();
+    }
+
     /* ============ View/Pure Functions ============ */
 
     /// @inheritdoc IERC20
+    /// @dev Shielded read, gated to `account` (TxSeismic 0x4A signed read — plain eth_call zeroes
+    ///      msg.sender and reverts) or trusted infra (`_isInfra`). Not readable by arbitrary callers.
     function balanceOf(address account) public view override returns (uint256) {
-        return _getMYieldToOneStorageLocation().balanceOf[account];
+        if (msg.sender != account && !_isInfra(msg.sender)) revert Unauthorized();
+        return uint256(_getMYieldToOneStorageLocation().balanceOf[account]);
     }
 
     /// @inheritdoc IERC20
     function totalSupply() public view returns (uint256) {
         return _getMYieldToOneStorageLocation().totalSupply;
+    }
+
+    /// @inheritdoc IERC20
+    /// @dev Shielded read; requires msg.sender == owner or spender (TxSeismic 0x4A signed read).
+    ///      Sole allowance source — the inherited unshielded `allowance` slot is never written.
+    function allowance(
+        address owner,
+        address spender
+    ) public view override(ERC20ExtendedUpgradeable, IERC20) returns (uint256) {
+        if (msg.sender != owner && msg.sender != spender) revert Unauthorized();
+        return uint256(_getMYieldToOneStorageLocation().shieldedAllowance[owner][spender]);
     }
 
     /// @inheritdoc IMYieldToOne
@@ -158,6 +316,21 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     /// @inheritdoc IMYieldToOne
     function yieldRecipient() public view returns (address) {
         return _getMYieldToOneStorageLocation().yieldRecipient;
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function isAllowlisted(address account) external view returns (bool) {
+        return _getMYieldToOneStorageLocation().allowlist[account];
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function publicKeyOf(address account) external view returns (bytes memory) {
+        return _getMYieldToOneStorageLocation().publicKeys[account];
+    }
+
+    /// @inheritdoc IMYieldToOne
+    function contractPublicKey() external view returns (bytes memory) {
+        return _getMYieldToOneStorageLocation()._contractPublicKey;
     }
 
     /* ============ Hooks For Internal Interactive Functions ============ */
@@ -228,7 +401,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
         // NOTE: Can be `unchecked` because the max amount of $M is never greater than `type(uint240).max`.
         unchecked {
-            $.balanceOf[recipient] += amount;
+            $.balanceOf[recipient] = $.balanceOf[recipient] + suint256(amount);
             $.totalSupply += amount;
         }
 
@@ -245,7 +418,7 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
 
         // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` is used in MExtension.
         unchecked {
-            $.balanceOf[account] -= amount;
+            $.balanceOf[account] = $.balanceOf[account] - suint256(amount);
             $.totalSupply -= amount;
         }
 
@@ -253,19 +426,168 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
     }
 
     /**
-     * @dev   Internal balance update function called on transfer.
-     * @param sender    The sender's address.
-     * @param recipient The recipient's address.
-     * @param amount    The amount to be transferred.
+     * @dev   Internal balance update used by both the inherited (now-unreachable from outside)
+     *        and the shielded transfer paths, and by `MYieldToOneForcedTransfer._forceTransfer`.
+     *        Casts the public `uint256` to the shielded storage type at the boundary.
      */
     function _update(address sender, address recipient, uint256 amount) internal override {
         MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
 
-        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` for `sender` is used in MExtension.
+        // NOTE: Can be `unchecked` because `_revertIfInsufficientBalance` for `sender` runs
+        // before this call (in `MExtension._transfer` and in `_shieldedTransfer`).
         unchecked {
-            $.balanceOf[sender] -= amount;
-            $.balanceOf[recipient] += amount;
+            $.balanceOf[sender] = $.balanceOf[sender] - suint256(amount);
+            $.balanceOf[recipient] = $.balanceOf[recipient] + suint256(amount);
         }
+    }
+
+    /**
+     * @dev   Shared allowance-spend + transfer for both `transferFrom` overloads. Decrements the
+     *        shielded allowance (the sole store), then delegates to `_shieldedTransfer`. Reverts
+     *        `InsufficientAllowance(spender, 0, amount)` — zeroed payload, no shielded-value leak.
+     *        `encryptEmit` only selects the Transfer event shape (see `_shieldedTransfer`).
+     */
+    function _spendAllowanceAndTransfer(address sender, address recipient, suint256 amount, bool encryptEmit) internal {
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+        suint256 spenderAllowance = $.shieldedAllowance[sender][msg.sender];
+
+        // Infinite-allowance shortcut (mirrors ERC20ExtendedUpgradeable.transferFrom)
+        if (uint256(spenderAllowance) != type(uint256).max) {
+            if (spenderAllowance < amount) revert IERC20Extended.InsufficientAllowance(msg.sender, 0, uint256(amount));
+
+            // NOTE: Can be `unchecked` because the `spenderAllowance < amount` check above guarantees
+            //       `spenderAllowance >= amount`, so the subtraction never underflows.
+            unchecked {
+                $.shieldedAllowance[sender][msg.sender] = spenderAllowance - amount;
+            }
+        }
+
+        _shieldedTransfer(sender, recipient, amount, encryptEmit);
+    }
+
+    /**
+     * @dev   Shielded transfer pipeline mirroring `MExtension._transfer` via a suint256→uint256 bridge;
+     *        reuses `_beforeTransfer` (freeze/pause). Reverts `InsufficientBalance(account, 0, amount)`
+     *        — zeroed payload. `encryptEmit`: true => encrypted-bytes Transfer (user paths); false =>
+     *        plaintext Transfer(uint256) (infra paths, amount already public).
+     */
+    function _shieldedTransfer(address sender, address recipient, suint256 amount, bool encryptEmit) internal {
+        uint256 amount_ = uint256(amount);
+
+        _revertIfInvalidRecipient(recipient);
+        _beforeTransfer(sender, recipient, amount_);
+
+        if (encryptEmit) {
+            _emitEncryptedTransfer(sender, recipient, amount);
+        } else {
+            emit Transfer(sender, recipient, amount_);
+        }
+
+        if (amount_ == 0) return;
+
+        if (_getMYieldToOneStorageLocation().balanceOf[sender] < amount) {
+            revert InsufficientBalance(sender, 0, amount_);
+        }
+
+        _update(sender, recipient, amount_);
+    }
+
+    /* ============ Encrypted Transfer Event Pipeline ============ */
+
+    /**
+     * @dev   Emits the encrypted-bytes Transfer for a user-to-user shielded transfer; amount is
+     *        AES-GCM-encrypted under HKDF(ECDH(contractPrivKey, recipientPubKey)). Unregistered
+     *        recipient => empty-ciphertext fallback (transfer still succeeds; amount only via gated
+     *        balanceOf). Reverts `ContractKeyNotSet` if the keypair is not installed. Nonce: see slot 8.
+     */
+    function _emitEncryptedTransfer(address from, address to, suint256 amount) internal {
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+        bytes memory pubKey = $.publicKeys[to];
+
+        if (pubKey.length == 0) {
+            emit Transfer(from, to, bytes(""));
+            return;
+        }
+
+        if (bytes32($.contractPrivateKey) == bytes32(0)) revert ContractKeyNotSet();
+
+        // Pre-increment so the first nonce is 1 and no two emits reuse a nonce under one key.
+        uint256 n = ++$.encryptedEventNonce;
+
+        sbytes32 sharedSecret = _ecdh($.contractPrivateKey, pubKey);
+        sbytes32 aesKey = _hkdf(sharedSecret);
+        bytes12 nonce = bytes12(keccak256(abi.encode(from, to, n)));
+        bytes memory ciphertext = _aesGcmEncrypt(aesKey, nonce, abi.encode(uint256(amount)));
+
+        emit Transfer(from, to, ciphertext);
+    }
+
+    /**
+     * @dev   Seismic ECDH precompile (0x65): shared secret of the shielded `privKey` and `peerPubKey`.
+     *        Reverts `PrecompileFailed`.
+     */
+    function _ecdh(sbytes32 privKey, bytes memory peerPubKey) internal view returns (sbytes32) {
+        (bool success, bytes memory result) = address(0x65).staticcall(abi.encodePacked(bytes32(privKey), peerPubKey));
+        if (!success) revert PrecompileFailed(address(0x65));
+        return sbytes32(abi.decode(result, (bytes32)));
+    }
+
+    /**
+     * @dev   Seismic HKDF precompile (0x68): expands the shared secret into an AES-GCM key.
+     *        Reverts `PrecompileFailed`.
+     */
+    function _hkdf(sbytes32 sharedSecret) internal view returns (sbytes32) {
+        (bool success, bytes memory result) = address(0x68).staticcall(abi.encodePacked(bytes32(sharedSecret)));
+        if (!success) revert PrecompileFailed(address(0x68));
+        return sbytes32(abi.decode(result, (bytes32)));
+    }
+
+    /**
+     * @dev   Seismic AES-GCM-encrypt precompile (0x66): encrypts `plaintext` under `key` / `nonce`,
+     *        auth tag included. Reverts `PrecompileFailed`.
+     */
+    function _aesGcmEncrypt(sbytes32 key, bytes12 nonce, bytes memory plaintext) internal view returns (bytes memory) {
+        (bool success, bytes memory ciphertext) = address(0x66).staticcall(
+            abi.encodePacked(bytes32(key), nonce, plaintext)
+        );
+        if (!success) revert PrecompileFailed(address(0x66));
+        return ciphertext;
+    }
+
+    /**
+     * @dev   Writes the shielded `shieldedAllowance` slot (never the inherited one); reuses `_beforeApprove`.
+     */
+    function _shieldedApprove(address account, address spender, suint256 amount) internal {
+        uint256 amount_ = uint256(amount);
+
+        _beforeApprove(account, spender, amount_);
+
+        _getMYieldToOneStorageLocation().shieldedAllowance[account][spender] = amount;
+
+        emit Approval(account, spender, amount_);
+    }
+
+    /**
+     * @dev   Ungated shielded balance accessor for internal use (bypasses the `balanceOf` gate).
+     */
+    function _balanceOf(address account) internal view returns (suint256) {
+        return _getMYieldToOneStorageLocation().balanceOf[account];
+    }
+
+    /**
+     * @dev   Trusted M0 infra = the `swapFacility` immutable OR the admin-curated `allowlist`. Gates
+     *        the native approve/transferFrom paths and the `balanceOf` read.
+     */
+    function _isInfra(address account) internal view returns (bool) {
+        return account == swapFacility || _getMYieldToOneStorageLocation().allowlist[account];
+    }
+
+    /**
+     * @dev   Shielded-space override; reverts `InsufficientBalance(account, 0, amount)` — zeroed
+     *        payload, no balance leak. The `IMExtension.InsufficientBalance` shape is unchanged.
+     */
+    function _revertIfInsufficientBalance(address account, uint256 amount) internal view override {
+        if (_balanceOf(account) < suint256(amount)) revert InsufficientBalance(account, 0, amount);
     }
 
     /**
@@ -282,5 +604,23 @@ contract MYieldToOne is IMYieldToOne, MYieldToOneStorageLayout, MExtension, Free
         $.yieldRecipient = yieldRecipient_;
 
         emit YieldRecipientSet(yieldRecipient_);
+    }
+
+    /**
+     * @dev   Sets the infra allowlist status of `account`.
+     * @param account The address whose allowlist status is being set.
+     * @param status  The new allowlist status (`true` = allowlisted).
+     */
+    function _setAllowlisted(address account, bool status) internal {
+        if (account == address(0)) revert ZeroAllowlistAccount();
+
+        MYieldToOneStorageStruct storage $ = _getMYieldToOneStorageLocation();
+
+        // Return early if the status is unchanged.
+        if ($.allowlist[account] == status) return;
+
+        $.allowlist[account] = status;
+
+        emit AllowlistSet(account, status);
     }
 }
